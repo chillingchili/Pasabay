@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pasabay — Driver Home</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="phone phone--dark">
+    <!-- Map Background -->
+    <div class="map-container">
+      <div class="map-grid"></div>
+      <svg width="390" height="844" viewBox="0 0 390 844" fill="none" style="position:absolute;inset:0">
+        <!-- City blocks -->
+        <rect x="30" y="200" width="130" height="100" rx="3" fill="rgba(255,255,255,0.02)"/>
+        <rect x="180" y="180" width="100" height="140" rx="3" fill="rgba(255,255,255,0.025)"/>
+        <rect x="300" y="220" width="70" height="80" rx="3" fill="rgba(255,255,255,0.015)"/>
+        <rect x="20" y="340" width="160" height="120" rx="3" fill="rgba(255,255,255,0.018)"/>
+        <rect x="210" y="360" width="150" height="100" rx="3" fill="rgba(255,255,255,0.022)"/>
+        <rect x="50" y="500" width="120" height="100" rx="3" fill="rgba(255,255,255,0.02)"/>
+        <rect x="200" y="490" width="100" height="130" rx="3" fill="rgba(255,255,255,0.015)"/>
+
+        <!-- Major roads -->
+        <line x1="0" y1="330" x2="390" y2="330" stroke="rgba(255,255,255,0.06)" stroke-width="3"/>
+        <line x1="0" y1="480" x2="390" y2="480" stroke="rgba(255,255,255,0.05)" stroke-width="2.5"/>
+        <line x1="170" y1="100" x2="170" y2="700" stroke="rgba(255,255,255,0.06)" stroke-width="3"/>
+        <line x1="300" y1="150" x2="300" y2="650" stroke="rgba(255,255,255,0.05)" stroke-width="2.5"/>
+
+        <!-- Minor roads -->
+        <line x1="0" y1="250" x2="170" y2="250" stroke="rgba(255,255,255,0.03)" stroke-width="1.5"/>
+        <line x1="170" y1="410" x2="390" y2="410" stroke="rgba(255,255,255,0.03)" stroke-width="1.5"/>
+        <line x1="80" y1="200" x2="80" y2="480" stroke="rgba(255,255,255,0.03)" stroke-width="1.5"/>
+        <line x1="240" y1="180" x2="240" y2="480" stroke="rgba(255,255,255,0.03)" stroke-width="1.5"/>
+
+        <!-- Route glow -->
+        <path d="M 195 620 L 195 480 Q 195 460 210 440 L 300 380 Q 310 370 310 350 L 310 280 Q 310 260 300 250 L 260 220" 
+              stroke="rgba(13,158,117,0.2)" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        
+        <!-- Route line -->
+        <path d="M 195 620 L 195 480 Q 195 460 210 440 L 300 380 Q 310 370 310 350 L 310 280 Q 310 260 300 250 L 260 220" 
+              stroke="#0D9E75" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar status-bar--light" style="position:relative;z-index:10">
+      <span class="status-bar__time">9:52</span>
+      <div class="status-dots">
+        <span class="status-dot"></span>
+        <span class="status-dot"></span>
+        <span class="status-dot"></span>
+      </div>
+    </div>
+
+    <!-- Destination Bar -->
+    <div style="position:relative;z-index:10;padding:4px 16px 0;">
+      <div class="dest-bar">
+        <span class="dest-bar__dot"></span>
+        <span class="dest-bar__text">SM City Cebu</span>
+        <span class="dest-bar__status">Driving</span>
+        <div class="dest-bar__menu">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#999">
+            <circle cx="12" cy="5" r="2"/>
+            <circle cx="12" cy="12" r="2"/>
+            <circle cx="12" cy="19" r="2"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pasabay Request Popup -->
+    <div class="request-popup" style="top:110px;">
+      <div class="request-popup__header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0D9E75" stroke-width="2.5" stroke-linecap="round" style="vertical-align:middle;margin-right:4px;">
+          <path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z"/>
+        </svg>
+        Pasabay request
+      </div>
+      <div class="request-popup__passenger">
+        <div class="avatar avatar--sm" style="background:#e0885a;color:#fff;">MR</div>
+        <div class="request-popup__info">
+          <div class="request-popup__name">
+            Maria R. · ★ 4.8
+          </div>
+          <div class="request-popup__route">USC Gate → IT Park</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="fare-chip fare-chip--sm">+ ₱18</div>
+        </div>
+      </div>
+      <div class="btn-pair" style="padding-bottom:4px;">
+        <button class="btn btn--outline btn--sm">Decline</button>
+        <button class="btn btn--primary btn--sm">Accept</button>
+      </div>
+    </div>
+
+    <!-- User Location Pin (driver) -->
+    <div class="user-pin" style="left:182px;top:610px;">
+      <div class="user-pin__pulse"></div>
+      <div class="user-pin__dot"></div>
+    </div>
+
+    <!-- Bottom Info Bar -->
+    <div class="info-bar">
+      <div class="info-bar__block">
+        <span class="info-bar__label">To destination</span>
+        <span class="info-bar__value">SM City Cebu</span>
+      </div>
+      <div class="info-bar__block" style="text-align:right;">
+        <span class="info-bar__label">ETA</span>
+        <span class="info-bar__value">18 <span class="info-bar__unit">min</span></span>
+      </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav" style="position:absolute;bottom:0;left:0;right:0;z-index:20;">
+      <a href="driver-home.html" class="bottom-nav__item bottom-nav__item--active">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        <span>Home</span>
+      </a>
+      <a href="history.html" class="bottom-nav__item">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <span>History</span>
+      </a>
+      <a href="profile.html" class="bottom-nav__item">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Profile</span>
+      </a>
+    </nav>
+  </div>
+</body>
+</html>

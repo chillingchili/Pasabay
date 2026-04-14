@@ -16,6 +16,17 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
 
+## Artifacts
+
+### Pasabay (Mobile App) — `artifacts/pasabay`
+Expo/React Native campus rideshare app for USC (University of San Cebu) students.
+- **Brand**: Teal/emerald green `#0D9E75`, accent amber `#FBBF24`
+- **Auth**: USC `@usc.edu.ph` email only, AsyncStorage (no backend)
+- **Roles**: Passenger (default) + Driver (requires license + vehicle verification)
+- **Screens**: Splash, Welcome, Sign Up, Login, School ID Verify, Driver License Verify, Vehicle Details, Passenger Home (map), Driver Home (map + ride requests), Matching animation, Match Found, History, Profile
+- **Context**: `context/AppContext.tsx` — user auth, ride history, role switching
+- **Colors**: `constants/colors.ts` + `hooks/useColors.ts`
+
 ## Key Commands
 
 - `pnpm run typecheck` — full typecheck across all packages

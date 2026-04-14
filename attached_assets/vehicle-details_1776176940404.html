@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pasabay — Vehicle Details</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .color-grid {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 8px 0 4px;
+    }
+    .color-swatch {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid var(--border-light);
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .color-swatch:hover { transform: scale(1.1); }
+    .color-swatch--active {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span class="status-bar__time">9:41</span>
+      <div class="status-dots">
+        <span class="status-dot"></span>
+        <span class="status-dot"></span>
+        <span class="status-dot"></span>
+      </div>
+    </div>
+
+    <!-- Back + Header -->
+    <div style="padding:4px 20px 0;">
+      <a href="verify-driver.html" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text-secondary);text-decoration:none;margin-bottom:16px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Back
+      </a>
+    </div>
+
+    <div class="page-header" style="padding-bottom:8px;">
+      <h1 class="page-header__title">Vehicle details</h1>
+      <p class="page-header__subtitle">Tell us about your car so passengers can find you</p>
+    </div>
+
+    <!-- Scrollable Form -->
+    <div class="page-scroll" style="padding:12px 20px 0;">
+      <!-- Car illustration -->
+      <div style="text-align:center;padding:8px 0 20px;">
+        <svg width="100" height="60" viewBox="0 0 100 60" fill="none">
+          <rect x="15" y="20" width="70" height="26" rx="8" fill="var(--primary-light)"/>
+          <rect x="25" y="8" width="50" height="20" rx="6" fill="var(--primary-light)"/>
+          <rect x="30" y="12" width="16" height="12" rx="2" fill="var(--primary)" opacity="0.3"/>
+          <rect x="54" y="12" width="16" height="12" rx="2" fill="var(--primary)" opacity="0.3"/>
+          <circle cx="28" cy="50" r="7" fill="var(--text-muted)"/>
+          <circle cx="28" cy="50" r="3.5" fill="var(--bg-offwhite)"/>
+          <circle cx="72" cy="50" r="7" fill="var(--text-muted)"/>
+          <circle cx="72" cy="50" r="3.5" fill="var(--bg-offwhite)"/>
+        </svg>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">License plate number</label>
+        <input type="text" class="form-input" placeholder="e.g. ABC 1234" style="text-transform:uppercase;">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Car make</label>
+          <select class="form-select">
+            <option value="" disabled selected>Select</option>
+            <option>Toyota</option>
+            <option>Honda</option>
+            <option>Mitsubishi</option>
+            <option>Nissan</option>
+            <option>Hyundai</option>
+            <option>Suzuki</option>
+            <option>Ford</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Car model</label>
+          <input type="text" class="form-input" placeholder="e.g. Vios">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Year</label>
+          <input type="number" class="form-input" placeholder="e.g. 2019" min="2000" max="2026">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Seat capacity</label>
+          <select class="form-select">
+            <option value="" disabled selected>Select</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+            <option>5</option>
+            <option>6</option>
+            <option>7</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Color picker -->
+      <div class="form-group">
+        <label class="form-label">Car color</label>
+        <div class="color-grid">
+          <div class="color-swatch" style="background:#fff;" title="White"></div>
+          <div class="color-swatch color-swatch--active" style="background:#C0C0C0;" title="Silver"></div>
+          <div class="color-swatch" style="background:#333;" title="Black"></div>
+          <div class="color-swatch" style="background:#8B0000;" title="Red"></div>
+          <div class="color-swatch" style="background:#1a3a6b;" title="Blue"></div>
+          <div class="color-swatch" style="background:#2d5a2d;" title="Green"></div>
+          <div class="color-swatch" style="background:#D4A574;" title="Beige"></div>
+          <div class="color-swatch" style="background:#8B6914;" title="Gold"></div>
+        </div>
+      </div>
+
+      <!-- Fuel efficiency -->
+      <div style="padding:12px 0;border-top:1px solid var(--border-lighter);margin-top:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <label class="form-label" style="margin:0;">Fuel efficiency (km/L)</label>
+          <span class="badge badge--primary">Optional</span>
+        </div>
+        <input type="number" class="form-input" placeholder="Default: 20 km/L" step="0.5">
+        <p style="font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.4;">This value is validated against your car's estimated range. Used to calculate fair fuel-sharing costs.</p>
+      </div>
+
+      <!-- Submit -->
+      <div style="padding:16px 0 40px;">
+        <button class="btn btn--primary">Save vehicle</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

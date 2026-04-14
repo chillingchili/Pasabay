@@ -1,0 +1,185 @@
+import React, { useEffect, useRef, useState } from "react";
+import { Animated, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Feather } from "@expo/vector-icons";
+import { MapBackground } from "@/components/MapBackground";
+import { useColors } from "@/hooks/useColors";
+import { useApp } from "@/context/AppContext";
+
+const QUICK_DESTINATIONS = ["IT Park, Lahug", "SM City Cebu", "Ayala Center", "JY Square", "Mango Square"];
+
+export default function PassengerHomeScreen() {
+  const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const { user } = useApp();
+  const [destination, setDestination] = useState("IT Park, Lahug");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const sheetAnim = useRef(new Animated.Value(0)).current;
+
+  const topPad = Platform.OS === "web" ? 67 : insets.top;
+
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.8, duration: 1200, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
+      ])
+    );
+    pulse.start();
+    Animated.spring(sheetAnim, { toValue: 1, tension: 50, friction: 10, useNativeDriver: true }).start();
+    return () => pulse.stop();
+  }, [pulseAnim, sheetAnim]);
+
+  const handleFindRide = () => {
+    if (!destination) return;
+    router.push("/(main)/matching");
+  };
+
+  const greeting = user?.name ? `Hi, ${user.name.split(" ")[0]}` : "Hi there";
+
+  return (
+    <View style={styles.container}>
+      <MapBackground showRoute={!!destination} />
+
+      <View style={[styles.topArea, { paddingTop: topPad + 8 }]}>
+        <View style={styles.greetingRow}>
+          <Text style={[styles.greeting, { fontFamily: "Inter_600SemiBold" }]}>{greeting} 👋</Text>
+          <View style={[styles.driversBadge, { backgroundColor: colors.primary }]}>
+            <Feather name="navigation" size={11} color="#fff" />
+            <Text style={[styles.driversBadgeText, { fontFamily: "Inter_500Medium" }]}>2 nearby</Text>
+          </View>
+        </View>
+
+        <View style={[styles.searchContainer, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
+          <View style={[styles.searchDot, { backgroundColor: colors.primary }]} />
+          <TextInput
+            style={[styles.searchInput, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}
+            value={destination}
+            onChangeText={setDestination}
+            placeholder="Where are you headed?"
+            placeholderTextColor={colors.textSecondary}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+          />
+          <Pressable style={[styles.searchBtn, { backgroundColor: colors.primary }]}>
+            <Feather name="search" size={16} color="#fff" />
+          </Pressable>
+        </View>
+
+        {showSuggestions && (
+          <View style={[styles.suggestions, { backgroundColor: "#fff" }]}>
+            {QUICK_DESTINATIONS.filter(d => d.toLowerCase().includes(destination.toLowerCase()) && d !== destination).map(d => (
+              <Pressable
+                key={d}
+                style={styles.suggestionItem}
+                onPress={() => { setDestination(d); setShowSuggestions(false); }}
+              >
+                <Feather name="map-pin" size={14} color={colors.primary} />
+                <Text style={[styles.suggestionText, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}>{d}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+      </View>
+
+      <View style={styles.userPin}>
+        <Animated.View style={[styles.pulse, { transform: [{ scale: pulseAnim }], backgroundColor: `${colors.primary}30` }]} />
+        <View style={[styles.pin, { backgroundColor: colors.primary, borderColor: "#fff" }]} />
+      </View>
+
+      <Animated.View
+        style={[styles.bottomSheet, { backgroundColor: "rgba(255,255,255,0.97)", transform: [{ translateY: sheetAnim.interpolate({ inputRange: [0, 1], outputRange: [200, 0] }) }] }]}
+      >
+        <View style={[styles.handle, { backgroundColor: colors.border }]} />
+
+        {destination ? (
+          <>
+            <View style={styles.destRow}>
+              <View style={[styles.destIcon, { backgroundColor: colors.primaryLight }]}>
+                <Feather name="map-pin" size={16} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.destLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Drop-off</Text>
+                <Text style={[styles.destValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{destination}</Text>
+              </View>
+              <View style={[styles.fareChip, { backgroundColor: colors.accentBg }]}>
+                <Text style={[styles.fareLabel, { color: colors.accentDark, fontFamily: "Inter_400Regular" }]}>fare</Text>
+                <Text style={[styles.fareAmount, { color: colors.accentDark, fontFamily: "Inter_700Bold" }]}>₱18</Text>
+              </View>
+            </View>
+
+            <View style={styles.statChips}>
+              <StatChip label="Distance" value="3.2 km" colors={colors} />
+              <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+              <StatChip label="Walk" value="~4 min" colors={colors} />
+              <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+              <StatChip label="ETA" value="~12 min" colors={colors} />
+            </View>
+
+            <Pressable
+              style={({ pressed }) => [styles.findBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }]}
+              onPress={handleFindRide}
+            >
+              <Feather name="search" size={18} color="#fff" />
+              <Text style={[styles.findBtnText, { fontFamily: "Inter_600SemiBold" }]}>Find a pasabay</Text>
+            </Pressable>
+          </>
+        ) : (
+          <View style={styles.emptyState}>
+            <Text style={[styles.emptyText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Enter a destination to find a ride</Text>
+          </View>
+        )}
+      </Animated.View>
+    </View>
+  );
+}
+
+function StatChip({ label, value, colors }: { label: string; value: string; colors: ReturnType<typeof useColors> }) {
+  return (
+    <View style={styles.statChip}>
+      <Text style={[styles.statLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>{label}</Text>
+      <Text style={[styles.statValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{value}</Text>
+    </View>
+  );
+}
+
+import { Platform } from "react-native";
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  topArea: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, paddingHorizontal: 16, gap: 8 },
+  greetingRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 2 },
+  greeting: { fontSize: 15, color: "#fff" },
+  driversBadge: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20 },
+  driversBadgeText: { fontSize: 12, color: "#fff" },
+  searchContainer: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 10, paddingLeft: 16, gap: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
+  searchDot: { width: 8, height: 8, borderRadius: 4 },
+  searchInput: { flex: 1, fontSize: 14, height: 34 },
+  searchBtn: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  suggestions: { borderRadius: 12, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 5 },
+  suggestionItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#f5f5f5" },
+  suggestionText: { fontSize: 14 },
+  userPin: { position: "absolute", left: "50%", top: "55%", transform: [{ translateX: -12 }, { translateY: -12 }], alignItems: "center", justifyContent: "center", zIndex: 5 },
+  pulse: { position: "absolute", width: 40, height: 40, borderRadius: 20 },
+  pin: { width: 16, height: 16, borderRadius: 8, borderWidth: 3 },
+  bottomSheet: { position: "absolute", bottom: 0, left: 0, right: 0, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 100, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 10 },
+  handle: { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 16 },
+  destRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
+  destIcon: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  destLabel: { fontSize: 11, marginBottom: 2 },
+  destValue: { fontSize: 15 },
+  fareChip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  fareLabel: { fontSize: 10 },
+  fareAmount: { fontSize: 14 },
+  statChips: { flexDirection: "row", backgroundColor: "#f7f7f7", borderRadius: 12, padding: 12, marginBottom: 14, alignItems: "center" },
+  statChip: { flex: 1, alignItems: "center" },
+  statLabel: { fontSize: 10, marginBottom: 3 },
+  statValue: { fontSize: 14 },
+  statDivider: { width: 1, height: 28 },
+  findBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", height: 52, borderRadius: 14, gap: 8 },
+  findBtnText: { color: "#fff", fontSize: 16 },
+  emptyState: { paddingVertical: 20, alignItems: "center" },
+  emptyText: { fontSize: 14 },
+});
