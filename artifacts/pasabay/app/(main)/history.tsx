@@ -1,10 +1,9 @@
 import React, { useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useApp, RideHistory } from "@/context/AppContext";
-import { Platform } from "react-native";
 
 const TABS = ["All", "Completed", "Canceled"] as const;
 type FilterTab = typeof TABS[number];

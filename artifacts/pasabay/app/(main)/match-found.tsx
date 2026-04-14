@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Animated, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -107,8 +107,6 @@ export default function MatchFoundScreen() {
     </View>
   );
 }
-
-import { Platform } from "react-native";
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

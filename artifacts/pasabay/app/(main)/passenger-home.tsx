@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Animated, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -90,7 +90,13 @@ export default function PassengerHomeScreen() {
       </View>
 
       <Animated.View
-        style={[styles.bottomSheet, { backgroundColor: "rgba(255,255,255,0.97)", transform: [{ translateY: sheetAnim.interpolate({ inputRange: [0, 1], outputRange: [200, 0] }) }] }]}
+        style={[
+          styles.bottomSheet,
+          {
+            backgroundColor: "rgba(255,255,255,0.97)",
+            transform: [{ translateY: sheetAnim.interpolate({ inputRange: [0, 1], outputRange: [200, 0] }) }],
+          },
+        ]}
       >
         <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
@@ -144,8 +150,6 @@ function StatChip({ label, value, colors }: { label: string; value: string; colo
     </View>
   );
 }
-
-import { Platform } from "react-native";
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

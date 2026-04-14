@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { MapBackground } from "@/components/MapBackground";
@@ -58,7 +58,11 @@ export default function DriverHomeScreen() {
 
       {requestVisible && !accepted && (
         <Animated.View
-          style={[styles.requestPopup, { backgroundColor: "rgba(255,255,255,0.97)", transform: [{ translateY: slideAnim }] }]}
+          style={[
+            styles.requestPopup,
+            { backgroundColor: "rgba(255,255,255,0.97)", top: topPad + 76 },
+            { transform: [{ translateY: slideAnim }] },
+          ]}
         >
           <View style={styles.requestHeader}>
             <Feather name="star" size={12} color={colors.primary} />
@@ -94,7 +98,7 @@ export default function DriverHomeScreen() {
       )}
 
       {accepted && (
-        <View style={[styles.acceptedInfo, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
+        <View style={[styles.acceptedInfo, { backgroundColor: "rgba(255,255,255,0.97)", top: topPad + 76 }]}>
           <View style={styles.acceptedHeader}>
             <View style={[styles.acceptedIcon, { backgroundColor: colors.primaryLight }]}>
               <Feather name="user" size={16} color={colors.primary} />
@@ -128,14 +132,14 @@ export default function DriverHomeScreen() {
         </View>
         <View style={styles.infoBlock}>
           <Text style={[styles.infoLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>ETA</Text>
-          <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>18 <Text style={[styles.infoUnit, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>min</Text></Text>
+          <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
+            18 <Text style={[styles.infoUnit, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>min</Text>
+          </Text>
         </View>
       </View>
     </View>
   );
 }
-
-import { Platform } from "react-native";
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -146,7 +150,7 @@ const styles = StyleSheet.create({
   statusTag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   statusTagText: { fontSize: 12 },
   menuBtn: { padding: 4 },
-  requestPopup: { position: "absolute", top: Platform.OS === "web" ? 135 : 115, left: 16, right: 16, borderRadius: 16, padding: 14, gap: 10, zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20, elevation: 8 },
+  requestPopup: { position: "absolute", left: 16, right: 16, borderRadius: 16, padding: 14, gap: 10, zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20, elevation: 8 },
   requestHeader: { flexDirection: "row", alignItems: "center", gap: 5 },
   requestHeaderText: { fontSize: 13 },
   requestBody: { flexDirection: "row", alignItems: "center", gap: 10 },
@@ -161,7 +165,7 @@ const styles = StyleSheet.create({
   declineBtnText: { fontSize: 14 },
   acceptBtn: { flex: 2, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   acceptBtnText: { color: "#fff", fontSize: 14 },
-  acceptedInfo: { position: "absolute", top: Platform.OS === "web" ? 135 : 115, left: 16, right: 16, borderRadius: 16, padding: 14, zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 5 },
+  acceptedInfo: { position: "absolute", left: 16, right: 16, borderRadius: 16, padding: 14, zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 5 },
   acceptedHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
   acceptedIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   acceptedTitle: { fontSize: 14 },

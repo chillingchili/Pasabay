@@ -1,11 +1,10 @@
 import React, { useState } from "react";
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
-import { Platform } from "react-native";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -52,7 +51,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <View style={styles.roleCard}>
+        <View style={[styles.roleCard, { backgroundColor: colors.card }]}>
           <View style={[styles.roleIcon, { backgroundColor: colors.primaryLight }]}>
             <Feather name={activeRole === "driver" ? "truck" : "user"} size={22} color={colors.primary} />
           </View>
@@ -223,7 +222,7 @@ const styles = StyleSheet.create({
   badges: { flexDirection: "row", gap: 8, marginTop: 4 },
   badge: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
   badgeText: { fontSize: 12 },
-  roleCard: { flexDirection: "row", alignItems: "center", padding: 14, borderRadius: 14, backgroundColor: "#f7f7f7", marginBottom: 16, gap: 12 },
+  roleCard: { flexDirection: "row", alignItems: "center", padding: 14, borderRadius: 14, marginBottom: 16, gap: 12 },
   roleIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   roleName: { fontSize: 14 },
   roleLabel: { fontSize: 11, marginTop: 1 },

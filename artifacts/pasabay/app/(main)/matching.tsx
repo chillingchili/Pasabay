@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -12,20 +12,15 @@ export default function MatchingScreen() {
   const ring2 = useRef(new Animated.Value(1)).current;
   const ring3 = useRef(new Animated.Value(1)).current;
 
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
-
   useEffect(() => {
     const createRingAnim = (anim: Animated.Value, delay: number) =>
       Animated.loop(
         Animated.sequence([
           Animated.delay(delay),
-          Animated.parallel([
-            Animated.timing(anim, { toValue: 2.2, duration: 1400, useNativeDriver: true }),
-          ]),
+          Animated.timing(anim, { toValue: 2.2, duration: 1400, useNativeDriver: true }),
           Animated.timing(anim, { toValue: 1, duration: 0, useNativeDriver: true }),
         ])
       );
-
     const a1 = createRingAnim(ring1, 0);
     const a2 = createRingAnim(ring2, 400);
     const a3 = createRingAnim(ring3, 800);
@@ -61,16 +56,19 @@ export default function MatchingScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.content}>
+      <View style={[styles.content, { paddingTop: (Platform.OS === "web" ? 67 : insets.top) + 40 }]}>
         <View style={styles.ringsContainer}>
           {[ring1, ring2, ring3].map((r, i) => (
             <Animated.View
               key={i}
-              style={[styles.ring, {
-                borderColor: `${colors.primary}${i === 0 ? "30" : i === 1 ? "20" : "10"}`,
-                transform: [{ scale: r }],
-                opacity: r.interpolate({ inputRange: [1, 2.2], outputRange: [0.6, 0] }),
-              }]}
+              style={[
+                styles.ring,
+                {
+                  borderColor: `${colors.primary}${i === 0 ? "30" : i === 1 ? "20" : "10"}`,
+                  transform: [{ scale: r }],
+                  opacity: r.interpolate({ inputRange: [1, 2.2], outputRange: [0.6, 0] }),
+                },
+              ]}
             />
           ))}
           <View style={[styles.centerIcon, { backgroundColor: colors.primary }]}>
@@ -130,11 +128,9 @@ function FareStat({ label, value, colors }: { label: string; value: string; colo
   );
 }
 
-import { Platform } from "react-native";
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24, paddingTop: 40 },
+  content: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 },
   ringsContainer: { width: 140, height: 140, alignItems: "center", justifyContent: "center", marginBottom: 32 },
   ring: { position: "absolute", width: 100, height: 100, borderRadius: 50, borderWidth: 2 },
   centerIcon: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center" },
