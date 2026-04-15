@@ -117,50 +117,49 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | — | Pending |
-| AUTH-02 | — | Pending |
-| AUTH-03 | — | Pending |
-| AUTH-04 | — | Pending |
-| AUTH-05 | — | Pending |
-| ROLE-01 | — | Pending |
-| ROLE-02 | — | Pending |
-| ROLE-03 | — | Pending |
-| DRVR-01 | — | Pending |
-| DRVR-02 | — | Pending |
-| DRVR-03 | — | Pending |
-| DRVR-04 | — | Pending |
-| PASS-01 | — | Pending |
-| PASS-02 | — | Pending |
-| PASS-03 | — | Pending |
-| PASS-04 | — | Pending |
-| DRIV-01 | — | Pending |
-| DRIV-02 | — | Pending |
-| DRIV-03 | — | Pending |
-| DRIV-04 | — | Pending |
-| DRIV-05 | — | Pending |
-| MATCH-01 | — | Pending |
-| MATCH-02 | — | Pending |
-| MATCH-03 | — | Pending |
-| MATCH-04 | — | Pending |
-| MATCH-05 | — | Pending |
-| TRIP-01 | — | Pending |
-| TRIP-02 | — | Pending |
-| TRIP-03 | — | Pending |
-| TRIP-04 | — | Pending |
-| RATE-01 | — | Pending |
-| RATE-02 | — | Pending |
-| RATE-03 | — | Pending |
-| RATE-04 | — | Pending |
-| PROF-01 | — | Pending |
-| PROF-02 | — | Pending |
-| PROF-03 | — | Pending |
-| PROF-04 | — | Pending |
-| PROF-05 | — | Pending |
+| AUTH-01 | Phase 2 | Pending |
+| AUTH-02 | Phase 2 | Pending |
+| AUTH-03 | Phase 2 | Pending |
+| AUTH-04 | Phase 2 | Pending |
+| AUTH-05 | Phase 2 | Pending |
+| ROLE-01 | Phase 3 | Pending |
+| ROLE-02 | Phase 3 | Pending |
+| ROLE-03 | Phase 3 | Pending |
+| DRVR-01 | Phase 4 | Pending |
+| DRVR-02 | Phase 4 | Pending |
+| DRVR-03 | Phase 4 | Pending |
+| DRVR-04 | Phase 4 | Pending |
+| PASS-01 | Phase 5 | Pending |
+| PASS-02 | Phase 5 | Pending |
+| PASS-03 | Phase 5 | Pending |
+| PASS-04 | Phase 5 | Pending |
+| DRIV-01 | Phase 6 | Pending |
+| DRIV-02 | Phase 6 | Pending |
+| DRIV-03 | Phase 6 | Pending |
+| DRIV-04 | Phase 6 | Pending |
+| DRIV-05 | Phase 6 | Pending |
+| MATCH-01 | Phase 8 | Pending |
+| MATCH-02 | Phase 7 | Pending |
+| MATCH-03 | Phase 8 | Pending |
+| MATCH-04 | Phase 8 | Pending |
+| MATCH-05 | Phase 7 | Pending |
+| TRIP-01 | Phase 9 | Pending |
+| TRIP-02 | Phase 9 | Pending |
+| TRIP-03 | Phase 9 | Pending |
+| TRIP-04 | Phase 9 | Pending |
+| RATE-01 | Phase 10 | Pending |
+| RATE-02 | Phase 10 | Pending |
+| RATE-03 | Phase 10 | Pending |
+| RATE-04 | Phase 10 | Pending |
+| PROF-01 | Phase 10 | Pending |
+| PROF-02 | Phase 10 | Pending |
+| PROF-03 | Phase 10 | Pending |
+| PROF-04 | Phase 10 | Pending |
+| PROF-05 | Phase 2 (logout from any screen) | Pending |
 
 **Coverage:**
 - v1 requirements: 34 total
-- Mapped to phases: 0
-- Unmapped: 34 ⚠️
+- Mapped to phases: 34/34 ✓
 
 ---
 *Requirements defined: 2026-04-15*
