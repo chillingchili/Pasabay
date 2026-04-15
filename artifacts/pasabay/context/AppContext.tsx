@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import type { GoogleUserInfo } from "@/hooks/useGoogleAuth";
 
 export type UserRole = "passenger" | "driver";
 
@@ -12,6 +13,8 @@ export interface UserProfile {
   totalRides: number;
   verified: boolean;
   driverVerified: boolean;
+  googleId?: string;
+  avatar?: string;
   vehicle?: {
     make: string;
     model: string;
@@ -42,6 +45,7 @@ interface AppContextValue {
   rideHistory: RideHistory[];
   activeRole: UserRole;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (googleUser: GoogleUserInfo) => Promise<{ isNew: boolean }>;
   logout: () => void;
   signup: (email: string, password: string) => Promise<void>;
   setSchoolIdVerified: () => void;
@@ -129,9 +133,44 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setActiveRole(mockUser.role);
   }, []);
 
+  const loginWithGoogle = useCallback(async (googleUser: GoogleUserInfo): Promise<{ isNew: boolean }> => {
+    const existing = await AsyncStorage.getItem("pasabay_user");
+    if (existing) {
+      const parsed = JSON.parse(existing) as UserProfile;
+      if (parsed.email === googleUser.email) {
+        const updated: UserProfile = {
+          ...parsed,
+          googleId: googleUser.id,
+          avatar: googleUser.picture,
+          name: googleUser.name || parsed.name,
+        };
+        await saveUser(updated);
+        setActiveRole(updated.role);
+        return { isNew: false };
+      }
+    }
+
+    const newUser: UserProfile = {
+      id: `google_${googleUser.id}`,
+      name: googleUser.name,
+      email: googleUser.email,
+      role: "passenger",
+      rating: 5.0,
+      totalRides: 0,
+      verified: false,
+      driverVerified: false,
+      googleId: googleUser.id,
+      avatar: googleUser.picture,
+    };
+    await saveUser(newUser);
+    setActiveRole("passenger");
+    return { isNew: true };
+  }, []);
+
   const logout = useCallback(() => {
     AsyncStorage.removeItem("pasabay_user");
     setUser(null);
+    setActiveRole("passenger");
   }, []);
 
   const setSchoolIdVerified = useCallback(() => {
@@ -167,6 +206,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       rideHistory,
       activeRole,
       login,
+      loginWithGoogle,
       logout,
       signup,
       setSchoolIdVerified,
