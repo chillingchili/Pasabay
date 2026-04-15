@@ -14,9 +14,12 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.pasabay.app"
     },
-    "android": {},
+    "android": {
+      "package": "com.pasabay.app"
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },
