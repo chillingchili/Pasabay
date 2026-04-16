@@ -15,7 +15,10 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.pasabay.app"
+      "bundleIdentifier": "com.pasabay.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.pasabay.app"
@@ -33,6 +36,15 @@
       "expo-font",
       "expo-web-browser"
     ],
+    "extra": {
+      "apiUrl": "https://your-api-url.ngrok.io",
+      "router": {
+        "origin": "https://replit.com/"
+      },
+      "eas": {
+        "projectId": "e536caef-8f88-495e-8605-52d84d008b50"
+      }
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
