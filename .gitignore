@@ -50,3 +50,13 @@ Thumbs.db
 
 #docs for app specs
 .docs
+
+#local agent
+.planning
+
+#gitignore
+.gitignore
+
+.replit
+.npmrc
+.replitignore
