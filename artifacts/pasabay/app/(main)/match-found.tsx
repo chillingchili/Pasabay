@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from "react";
-import { Animated, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Alert, Animated, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -20,7 +20,7 @@ function _calcEtaMin(
 export default function MatchFoundScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { matchConfirmed, clearMatchConfirmed, completedRide, clearCompletedRide, addRideHistory, activeRide, driverLocation } = useApp();
+  const { matchConfirmed, clearMatchConfirmed, completedRide, clearCompletedRide, addRideHistory, activeRide, driverLocation, clearActiveRide } = useApp();
   const slideAnim = useRef(new Animated.Value(60)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const badgeScale = useRef(new Animated.Value(0.6)).current;
@@ -64,6 +64,17 @@ export default function MatchFoundScreen() {
       router.replace("/(main)/passenger-home");
     }
   }, [completedRide]);
+
+  // Detect ride cancellation: matchConfirmed becomes null while activeRide still exists
+  const didCancelRef = useRef(false);
+  useEffect(() => {
+    if (!matchConfirmed && activeRide && !didCancelRef.current && !completedRide) {
+      didCancelRef.current = true;
+      Alert.alert("Ride Canceled", "The driver canceled this ride. Please request a new ride.");
+      clearActiveRide();
+      router.replace("/(main)/passenger-home");
+    }
+  }, [matchConfirmed, activeRide, completedRide]);
 
   const handleDecline = () => {
     if (matchConfirmed?.rideId) {
