@@ -21,6 +21,7 @@ export interface UserProfile {
   totalRides: number;
   verified: boolean;
   driverVerified: boolean;
+  driverStatus?: string;
   googleId?: string;
   avatar?: string;
   vehicle?: {
@@ -32,6 +33,7 @@ export interface UserProfile {
     seats: number;
     fuelEfficiency: number;
   };
+  fuelEfficiencyEstimate?: number;
 }
 
 export interface RideHistory {
@@ -102,9 +104,11 @@ function mapApiUser(data: any): UserProfile {
     totalRides: data.totalRides ?? 0,
     verified: data.schoolIdStatus === "verified",
     driverVerified: data.driverStatus === "verified",
+    driverStatus: data.driverStatus ?? undefined,
     googleId: data.googleId ?? undefined,
     avatar: data.avatar ?? undefined,
     vehicle: data.vehicle ?? undefined,
+    fuelEfficiencyEstimate: data.fuelEfficiencyEstimate ?? undefined,
   };
 }
 
@@ -258,6 +262,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         await setTokens(accessToken, refreshToken);
         const profile = mapApiUser(apiUser);
         setUserState(profile);
+        // Restore driver verification state from AsyncStorage
+        try {
+          const stored = await AsyncStorage.getItem("pasabay_driver_verified");
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            setUser(prev => prev ? {
+              ...prev,
+              driverVerified: parsed.driverVerified ?? prev.driverVerified,
+              driverStatus: parsed.driverStatus ?? prev.driverStatus,
+              vehicle: parsed.vehicle ?? prev.vehicle,
+              fuelEfficiencyEstimate: parsed.fuelEfficiencyEstimate ?? prev.fuelEfficiencyEstimate,
+            } : null);
+          }
+        } catch {
+          // ignore stale data
+        }
         loadRideHistory();
         initSocket();
       } catch {
@@ -319,6 +339,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       disconnectSocket();
       setSocketConnected(false);
       await clearTokens();
+      await AsyncStorage.removeItem("pasabay_driver_verified");
       setUser(null);
       setActiveRole("passenger");
       setRideHistory([]);
@@ -345,25 +366,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const setDriverVerified = useCallback(async (vehicle: UserProfile["vehicle"]) => {
     if (!user) return;
-    try {
-      await apiRequest("/users/driver", {
-        method: "POST",
-        body: JSON.stringify({
-          plate: vehicle?.plate,
-          make: vehicle?.make,
-          model: vehicle?.model,
-          year: parseInt(vehicle?.year ?? "2020"),
-          color: vehicle?.color,
-          seats: vehicle?.seats ?? 4,
-          fuelEfficiency: vehicle?.fuelEfficiency ?? 20,
-        }),
-      });
-    } catch {
-      // ignore
-    }
-    const updated: UserProfile = { ...user, driverVerified: true, role: "driver", vehicle };
+    const response = await apiRequest<any>("/users/driver", {
+      method: "POST",
+      body: JSON.stringify({
+        plate: vehicle?.plate,
+        make: vehicle?.make,
+        model: vehicle?.model,
+        year: parseInt(vehicle?.year ?? "2020"),
+        color: vehicle?.color,
+        seats: vehicle?.seats ?? 4,
+        fuelEfficiency: vehicle?.fuelEfficiency ?? 20,
+      }),
+    });
+    const updated: UserProfile = {
+      ...user,
+      driverVerified: true,
+      driverStatus: response.driverStatus ?? "submitted",
+      role: "driver",
+      vehicle: response.vehicle ?? vehicle,
+      fuelEfficiencyEstimate: response.fuelEfficiencyEstimate ?? undefined,
+    };
     setUser(updated);
     setActiveRole("driver");
+    await AsyncStorage.setItem("pasabay_driver_verified", JSON.stringify({
+      driverVerified: true,
+      driverStatus: updated.driverStatus,
+      vehicle: updated.vehicle,
+      fuelEfficiencyEstimate: updated.fuelEfficiencyEstimate,
+    }));
+    return response;
   }, [user]);
 
   const switchRole = useCallback(async (role: UserRole) => {
