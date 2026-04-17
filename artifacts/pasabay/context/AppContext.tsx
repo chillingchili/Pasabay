@@ -3,12 +3,13 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import type { GoogleUserInfo } from "@/hooks/useGoogleAuth";
 import { apiRequest, clearTokens, setTokens, getTokens, API_BASE } from "@/lib/api";
 import {
-  connectSocket, disconnectSocket,
+  connectSocket, disconnectSocket, reconnectSocket,
   onMatchRequest, onMatchConfirmed, onMatchDeclined,
   onRideCompleted, onRideCanceled,
   onMatchAccepted, onDriverLocationUpdate,
   type MatchRequestPayload, type MatchConfirmedPayload, type RideCompletedPayload,
 } from "@/lib/socket";
+import { useNetworkStatus } from "@/lib/network";
 
 export type UserRole = "passenger" | "driver";
 
@@ -72,6 +73,7 @@ interface AppContextValue {
   rideHistory: RideHistory[];
   activeRole: UserRole;
   socketConnected: boolean;
+  networkStatus: "online" | "offline" | "reconnecting";
   pendingMatchRequest: MatchRequestPayload | null;
   matchConfirmed: MatchConfirmedPayload | null;
   completedRide: RideCompletedPayload | null;
@@ -145,6 +147,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [rideHistory, setRideHistory] = useState<RideHistory[]>([]);
   const [activeRole, setActiveRole] = useState<UserRole>("passenger");
   const [socketConnected, setSocketConnected] = useState(false);
+  const [networkStatus, setNetworkStatus] = useState<"online" | "offline" | "reconnecting">("online");
   const [pendingMatchRequest, setPendingMatchRequest] = useState<MatchRequestPayload | null>(null);
   const [matchConfirmed, setMatchConfirmed] = useState<MatchConfirmedPayload | null>(null);
   const [completedRide, setCompletedRide] = useState<RideCompletedPayload | null>(null);
@@ -220,6 +223,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return () => {};
     }
   }, []);
+
+  // Monitor network status and handle socket reconnection
+  const network = useNetworkStatus();
+  const prevOnlineRef = useRef(true);
+
+  useEffect(() => {
+    const currentlyOnline = network.isOnline;
+    const wasOnline = prevOnlineRef.current;
+    prevOnlineRef.current = currentlyOnline;
+
+    if (!currentlyOnline) {
+      setSocketConnected(false);
+      setNetworkStatus("offline");
+    } else if (currentlyOnline && !wasOnline) {
+      // Just came back online — reconnect socket
+      setNetworkStatus("reconnecting");
+      reconnectSocket()
+        .then(() => {
+          setSocketConnected(true);
+          setNetworkStatus("online");
+        })
+        .catch(() => {
+          setSocketConnected(false);
+          setNetworkStatus("online"); // network is back even if socket fails
+        });
+    }
+  }, [network.isOnline]);
 
   const refreshUser = useCallback(async () => {
     try {
@@ -424,6 +454,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       rideHistory,
       activeRole,
       socketConnected,
+      networkStatus,
       pendingMatchRequest,
       matchConfirmed,
       completedRide,

@@ -6,7 +6,7 @@ const IS_DEV = DOMAIN !== undefined && DOMAIN !== "localhost";
 
 const SOCKET_URL = IS_DEV
   ? `https://${DOMAIN}:8080`
-  : "http://localhost:8080";
+  : "http://192.168.254.187:3000";
 
 let socket: Socket | null = null;
 
@@ -54,6 +54,14 @@ export function getSocket(): Socket | null {
 
 export function isSocketConnected(): boolean {
   return socket?.connected ?? false;
+}
+
+/**
+ * Explicitly reconnect the socket. Disconnects then reconnects.
+ */
+export async function reconnectSocket(): Promise<void> {
+  disconnectSocket();
+  await connectSocket();
 }
 
 export type MatchRequestPayload = {
