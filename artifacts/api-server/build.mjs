@@ -104,6 +104,10 @@ async function buildAll() {
       "puppeteer",
       "puppeteer-core",
       "electron",
+      "zod",
+      "zod/v4",
+      "dotenv",
+      "dotenv/config",
     ],
     sourcemap: "linked",
     plugins: [
