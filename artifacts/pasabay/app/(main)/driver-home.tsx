@@ -1,16 +1,29 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Animated, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { MapBackground } from "@/components/MapBackground";
 import { useColors } from "@/hooks/useColors";
+import { useApp } from "@/context/AppContext";
+import {
+  emitDriverOnline, emitDriverOffline, emitMatchAccept, emitMatchDecline,
+  emitRideComplete, onDriverRouteSet, onDriverError,
+} from "@/lib/socket";
+import type { MatchRequestPayload } from "@/lib/socket";
+
+const USC_ORIGIN = { lat: 10.2969, lng: 123.9008, name: "USC Main Gate" };
+const SM_DEST = { lat: 10.3278, lng: 123.9028, name: "SM City Cebu" };
 
 export default function DriverHomeScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const [requestVisible, setRequestVisible] = useState(true);
-  const [accepted, setAccepted] = useState(false);
+  const { user, pendingMatchRequest, clearPendingMatch } = useApp();
+
+  const [isOnline, setIsOnline] = useState(false);
+  const [routeInfo, setRouteInfo] = useState<{ distanceKm: number; durationMin: number } | null>(null);
+  const [accepted, setAccepted] = useState<MatchRequestPayload | null>(null);
   const [timer, setTimer] = useState(60);
+
   const slideAnim = useRef(new Animated.Value(-160)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
@@ -39,24 +52,94 @@ export default function DriverHomeScreen() {
     return () => clearInterval(interval);
   }, [accepted]);
 
+  useEffect(() => {
+    const offRouteSet = onDriverRouteSet((data) => {
+      setRouteInfo({ distanceKm: data.distanceKm, durationMin: data.durationMin });
+      setIsOnline(true);
+    });
+    const offError = onDriverError((data) => {
+      Alert.alert("Driver Error", data.message);
+      setIsOnline(false);
+    });
+    return () => {
+      offRouteSet();
+      offError();
+    };
+  }, []);
+
+  const handleGoOnline = () => {
+    emitDriverOnline({
+      originName: USC_ORIGIN.name,
+      originLat: USC_ORIGIN.lat,
+      originLng: USC_ORIGIN.lng,
+      destName: SM_DEST.name,
+      destLat: SM_DEST.lat,
+      destLng: SM_DEST.lng,
+    });
+  };
+
+  const handleGoOffline = () => {
+    emitDriverOffline();
+    setIsOnline(false);
+    setRouteInfo(null);
+    setAccepted(null);
+  };
+
+  const handleAccept = (req: MatchRequestPayload) => {
+    emitMatchAccept({
+      routeId: req.routeId,
+      passengerId: req.passengerId,
+      pickupLat: req.pickup.lat,
+      pickupLng: req.pickup.lng,
+      dropoffLat: req.dropoff.lat,
+      dropoffLng: req.dropoff.lng,
+      pickupName: req.pickup.name,
+      dropoffName: req.dropoff.name,
+      fare: req.fare,
+      matchingFee: req.matchingFee,
+      distanceKm: req.distanceKm,
+    });
+    setAccepted(req);
+    setTimer(60);
+    clearPendingMatch();
+  };
+
+  const handleDecline = (req: MatchRequestPayload) => {
+    emitMatchDecline(req.passengerId);
+    clearPendingMatch();
+  };
+
+  const handleCompleteRide = () => {
+    if (accepted) {
+      emitRideComplete(accepted.routeId);
+      setAccepted(null);
+      setTimer(60);
+    }
+  };
+
+  const destLabel = SM_DEST.name;
+  const etaMin = routeInfo?.durationMin ?? 18;
+
   return (
     <View style={styles.container}>
       <MapBackground showRoute={true} driverRoute={true} />
 
       <View style={[styles.topBar, { paddingTop: topPad + 8, paddingHorizontal: 16 }]}>
         <View style={[styles.destBar, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
-          <View style={[styles.destDot, { backgroundColor: colors.primary }]} />
-          <Text style={[styles.destText, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>SM City Cebu</Text>
-          <View style={[styles.statusTag, { backgroundColor: colors.primaryLight }]}>
-            <Text style={[styles.statusTagText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>Driving</Text>
-          </View>
-          <Pressable style={styles.menuBtn}>
-            <Feather name="more-vertical" size={16} color={colors.textSecondary} />
+          <View style={[styles.destDot, { backgroundColor: isOnline ? colors.primary : colors.textMuted }]} />
+          <Text style={[styles.destText, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{destLabel}</Text>
+          <Pressable
+            style={[styles.statusTag, { backgroundColor: isOnline ? colors.primaryLight : colors.card }]}
+            onPress={isOnline ? handleGoOffline : handleGoOnline}
+          >
+            <Text style={[styles.statusTagText, { color: isOnline ? colors.primary : colors.textSecondary, fontFamily: "Inter_500Medium" }]}>
+              {isOnline ? "Online" : "Go Online"}
+            </Text>
           </Pressable>
         </View>
       </View>
 
-      {requestVisible && !accepted && (
+      {pendingMatchRequest && !accepted && (
         <Animated.View
           style={[
             styles.requestPopup,
@@ -70,26 +153,34 @@ export default function DriverHomeScreen() {
           </View>
           <View style={styles.requestBody}>
             <View style={[styles.passengerAvatar, { backgroundColor: "#e0885a" }]}>
-              <Text style={[styles.passengerAvatarText, { fontFamily: "Inter_700Bold" }]}>MR</Text>
+              <Text style={[styles.passengerAvatarText, { fontFamily: "Inter_700Bold" }]}>
+                {pendingMatchRequest.passengerName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+              </Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.passengerName, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>Maria R. · ★ 4.8</Text>
-              <Text style={[styles.passengerRoute, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>USC Gate → IT Park</Text>
+              <Text style={[styles.passengerName, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
+                {pendingMatchRequest.passengerName} · ★{pendingMatchRequest.passengerRating.toFixed(1)}
+              </Text>
+              <Text style={[styles.passengerRoute, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
+                {pendingMatchRequest.pickup.name} → {pendingMatchRequest.dropoff.name}
+              </Text>
             </View>
             <View style={[styles.fareAdd, { backgroundColor: colors.accentBg }]}>
-              <Text style={[styles.fareAddText, { color: colors.accentDark, fontFamily: "Inter_700Bold" }]}>+ ₱18</Text>
+              <Text style={[styles.fareAddText, { color: colors.accentDark, fontFamily: "Inter_700Bold" }]}>
+                + ₱{pendingMatchRequest.total.toFixed(0)}
+              </Text>
             </View>
           </View>
           <View style={styles.requestActions}>
             <Pressable
               style={[styles.declineBtn, { borderColor: colors.border }]}
-              onPress={() => setRequestVisible(false)}
+              onPress={() => handleDecline(pendingMatchRequest)}
             >
               <Text style={[styles.declineBtnText, { color: colors.textSecondary, fontFamily: "Inter_500Medium" }]}>Decline</Text>
             </Pressable>
             <Pressable
               style={[styles.acceptBtn, { backgroundColor: colors.primary }]}
-              onPress={() => setAccepted(true)}
+              onPress={() => handleAccept(pendingMatchRequest)}
             >
               <Text style={[styles.acceptBtnText, { fontFamily: "Inter_600SemiBold" }]}>Accept</Text>
             </Pressable>
@@ -105,15 +196,17 @@ export default function DriverHomeScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.acceptedTitle, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>Heading to pickup</Text>
-              <Text style={[styles.acceptedSubtitle, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>USC Gate · Maria R.</Text>
+              <Text style={[styles.acceptedSubtitle, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
+                {accepted.pickup.name} · {accepted.passengerName}
+              </Text>
             </View>
             {timer > 0 ? (
               <View style={[styles.timerBadge, { backgroundColor: timer < 20 ? colors.destructiveLight : colors.primaryLight }]}>
                 <Text style={[styles.timerText, { color: timer < 20 ? colors.destructive : colors.primary, fontFamily: "Inter_700Bold" }]}>{timer}s</Text>
               </View>
             ) : (
-              <Pressable style={[styles.noShowBtn, { backgroundColor: colors.destructiveLight }]}>
-                <Text style={[styles.noShowText, { color: colors.destructive, fontFamily: "Inter_500Medium" }]}>No-Show</Text>
+              <Pressable style={[styles.noShowBtn, { backgroundColor: colors.destructiveLight }]} onPress={handleCompleteRide}>
+                <Text style={[styles.noShowText, { color: colors.destructive, fontFamily: "Inter_500Medium" }]}>Complete</Text>
               </Pressable>
             )}
           </View>
@@ -128,12 +221,12 @@ export default function DriverHomeScreen() {
       <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 80, 100) }]}>
         <View style={styles.infoBlock}>
           <Text style={[styles.infoLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>To destination</Text>
-          <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>SM City Cebu</Text>
+          <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{destLabel}</Text>
         </View>
         <View style={styles.infoBlock}>
           <Text style={[styles.infoLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>ETA</Text>
           <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
-            18 <Text style={[styles.infoUnit, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>min</Text>
+            {etaMin} <Text style={[styles.infoUnit, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>min</Text>
           </Text>
         </View>
       </View>
@@ -149,7 +242,6 @@ const styles = StyleSheet.create({
   destText: { flex: 1, fontSize: 14 },
   statusTag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   statusTagText: { fontSize: 12 },
-  menuBtn: { padding: 4 },
   requestPopup: { position: "absolute", left: 16, right: 16, borderRadius: 16, padding: 14, gap: 10, zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20, elevation: 8 },
   requestHeader: { flexDirection: "row", alignItems: "center", gap: 5 },
   requestHeaderText: { fontSize: 13 },

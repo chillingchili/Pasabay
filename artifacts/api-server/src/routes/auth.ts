@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, refreshTokensTable } from "@workspace/db/schema";
+import { usersTable, refreshTokensTable, vehiclesTable } from "@workspace/db/schema";
 import { eq, and, gt } from "drizzle-orm";
 import { hashPassword, verifyPassword } from "../lib/password.js";
 import { signAccessToken, signRefreshToken, hashRefreshToken, verifyAccessToken } from "../lib/jwt.js";
@@ -152,8 +152,19 @@ router.post("/refresh", async (req, res) => {
 
   await db.update(refreshTokensTable).set({ revoked: true }).where(eq(refreshTokensTable.id, stored.id));
 
+  const [vehicle] = await db.select().from(vehiclesTable)
+    .where(eq(vehiclesTable.userId, user.id)).limit(1);
+
   const tokens = await issueTokens(user.id, user.email, user.role);
-  res.json(tokens);
+  res.json({
+    ...tokens,
+    user: {
+      id: user.id, email: user.email, name: user.name, role: user.role,
+      activeRole: user.activeRole, schoolIdStatus: user.schoolIdStatus,
+      driverStatus: user.driverStatus, rating: user.rating, totalRides: user.totalRides,
+      avatar: user.avatar, vehicle: vehicle ?? null,
+    },
+  });
 });
 
 router.post("/logout", requireAuth, async (req, res) => {

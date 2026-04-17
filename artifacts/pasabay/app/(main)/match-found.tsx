@@ -4,10 +4,13 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
+import { useApp } from "@/context/AppContext";
+import { emitRideCancel } from "@/lib/socket";
 
 export default function MatchFoundScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { matchConfirmed, clearMatchConfirmed, completedRide, clearCompletedRide, addRideHistory } = useApp();
   const slideAnim = useRef(new Animated.Value(60)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const badgeScale = useRef(new Animated.Value(0.6)).current;
@@ -21,6 +24,45 @@ export default function MatchFoundScreen() {
       Animated.spring(badgeScale, { toValue: 1, tension: 80, friction: 8, useNativeDriver: true }),
     ]).start();
   }, [slideAnim, fadeAnim, badgeScale]);
+
+  useEffect(() => {
+    if (completedRide) {
+      addRideHistory({
+        id: completedRide.rideId,
+        route: `${matchConfirmed?.pickup.name ?? "–"} → ${matchConfirmed?.dropoff.name ?? "–"}`,
+        from: matchConfirmed?.pickup.name ?? "–",
+        to: matchConfirmed?.dropoff.name ?? "–",
+        date: `Today, ${new Date().toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" })}`,
+        fare: completedRide.total,
+        status: "completed",
+        withName: matchConfirmed?.driver.name,
+      });
+      clearCompletedRide();
+      clearMatchConfirmed();
+      router.replace("/(main)/passenger-home");
+    }
+  }, [completedRide]);
+
+  const handleDecline = () => {
+    if (matchConfirmed?.rideId) {
+      emitRideCancel(matchConfirmed.rideId, "Passenger declined after match");
+    }
+    clearMatchConfirmed();
+    router.replace("/(main)/passenger-home");
+  };
+
+  const handleAccept = () => {
+    router.replace("/(main)/passenger-home");
+  };
+
+  const driver = matchConfirmed?.driver;
+  const vehicle = driver?.vehicle;
+  const pickup = matchConfirmed?.pickup;
+  const fare = matchConfirmed?.fare ?? 0;
+  const matchingFee = matchConfirmed?.matchingFee ?? 0;
+  const driverInitials = driver?.name
+    ? driver.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+    : "DR";
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -36,28 +78,40 @@ export default function MatchFoundScreen() {
 
           <View style={styles.driverCard}>
             <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-              <Text style={[styles.avatarText, { fontFamily: "Inter_700Bold" }]}>RV</Text>
+              <Text style={[styles.avatarText, { fontFamily: "Inter_700Bold" }]}>{driverInitials}</Text>
             </View>
-            <Text style={[styles.driverName, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Renz Villanueva</Text>
+            <Text style={[styles.driverName, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
+              {driver?.name ?? "Your Driver"}
+            </Text>
             <View style={styles.ratingRow}>
               <Feather name="star" size={13} color={colors.primary} />
-              <Text style={[styles.ratingText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>4.9 · 142 rides</Text>
+              <Text style={[styles.ratingText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
+                {driver?.rating?.toFixed(1) ?? "5.0"}
+              </Text>
             </View>
           </View>
 
-          <View style={[styles.vehicleCard, { backgroundColor: colors.card }]}>
-            <View style={[styles.vehicleIcon, { backgroundColor: colors.primaryLight }]}>
-              <Feather name="truck" size={20} color={colors.primary} />
+          {vehicle && (
+            <View style={[styles.vehicleCard, { backgroundColor: colors.card }]}>
+              <View style={[styles.vehicleIcon, { backgroundColor: colors.primaryLight }]}>
+                <Feather name="truck" size={20} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.vehicleName, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
+                  {vehicle.make} {vehicle.model} · {vehicle.color}
+                </Text>
+                <Text style={[styles.vehiclePlate, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
+                  {vehicle.plate}
+                </Text>
+              </View>
+              <View style={[styles.seatBadge, { backgroundColor: colors.primaryLight }]}>
+                <Feather name="users" size={12} color={colors.primary} />
+                <Text style={[styles.seatBadgeText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>
+                  {vehicle.seats} seats
+                </Text>
+              </View>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.vehicleName, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>Toyota Vios · Silver</Text>
-              <Text style={[styles.vehiclePlate, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>ABC 1234 · 2019</Text>
-            </View>
-            <View style={[styles.seatBadge, { backgroundColor: colors.primaryLight }]}>
-              <Feather name="users" size={12} color={colors.primary} />
-              <Text style={[styles.seatBadgeText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>4 seats</Text>
-            </View>
-          </View>
+          )}
 
           <View style={[styles.pickupCard, { borderColor: colors.borderLighter }]}>
             <View style={[styles.pickupIcon, { backgroundColor: colors.primaryLight }]}>
@@ -65,10 +119,9 @@ export default function MatchFoundScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.pickupLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Pickup at</Text>
-              <Text style={[styles.pickupValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>USC Main Gate</Text>
-            </View>
-            <View style={[styles.walkBadge, { backgroundColor: colors.primaryLight }]}>
-              <Text style={[styles.walkBadgeText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>Walk ~3 min</Text>
+              <Text style={[styles.pickupValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
+                {pickup?.name ?? "Your pickup point"}
+              </Text>
             </View>
           </View>
 
@@ -76,11 +129,13 @@ export default function MatchFoundScreen() {
             <Text style={[styles.fareTitle, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Your fare</Text>
             <View style={styles.fareAmountRow}>
               <Text style={[styles.fareCurrency, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}>₱</Text>
-              <Text style={[styles.fareNumber, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>18</Text>
-              <View style={styles.feeChip}>
-                <Text style={[styles.feeText, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>+ ₱7 </Text>
-                <Text style={[styles.feeLabel, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>service fee</Text>
-              </View>
+              <Text style={[styles.fareNumber, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>{fare.toFixed(0)}</Text>
+              {matchingFee > 0 && (
+                <View style={styles.feeChip}>
+                  <Text style={[styles.feeText, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>+ ₱{matchingFee.toFixed(0)} </Text>
+                  <Text style={[styles.feeLabel, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>service fee</Text>
+                </View>
+              )}
             </View>
             <Text style={[styles.fareNote, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>
               Fuel share only — all rides comply with LTFRB cost-sharing guidelines
@@ -92,13 +147,13 @@ export default function MatchFoundScreen() {
       <View style={[styles.actionBar, { backgroundColor: colors.background, borderTopColor: colors.borderLighter, paddingBottom: Math.max(insets.bottom + 8, 24) }]}>
         <Pressable
           style={[styles.btnDecline, { borderColor: `${colors.destructive}40` }]}
-          onPress={() => router.replace("/(main)/passenger-home")}
+          onPress={handleDecline}
         >
           <Text style={[styles.btnDeclineText, { color: colors.destructive, fontFamily: "Inter_500Medium" }]}>Decline</Text>
         </Pressable>
         <Pressable
           style={[styles.btnAccept, { backgroundColor: colors.primary }]}
-          onPress={() => router.replace("/(main)/passenger-home")}
+          onPress={handleAccept}
         >
           <Feather name="check" size={18} color="#fff" />
           <Text style={[styles.btnAcceptText, { fontFamily: "Inter_600SemiBold" }]}>Accept ride</Text>
@@ -130,8 +185,6 @@ const styles = StyleSheet.create({
   pickupIcon: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   pickupLabel: { fontSize: 11, marginBottom: 2 },
   pickupValue: { fontSize: 14 },
-  walkBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  walkBadgeText: { fontSize: 12 },
   fareSection: { borderTopWidth: 1, paddingTop: 16, gap: 6 },
   fareTitle: { fontSize: 12 },
   fareAmountRow: { flexDirection: "row", alignItems: "flex-end", gap: 4 },

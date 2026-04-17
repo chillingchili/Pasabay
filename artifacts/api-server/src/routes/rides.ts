@@ -7,6 +7,7 @@ import { calculatePassengerFare } from "../lib/fare.js";
 import { getRoute, projectPointOnPolyline, polylineDistanceKm, haversineKm } from "../lib/osrm.js";
 import type { RoutePoint } from "../lib/osrm.js";
 import { z } from "zod/v4";
+import { getIo } from "../lib/io.js";
 
 const router = Router();
 
@@ -170,6 +171,31 @@ router.post("/request", requireAuth, async (req, res) => {
 
   matches.sort((a, b) => a.pickupEtaMin - b.pickupEtaMin);
   const best = matches[0];
+
+  const [passenger] = await db.select({
+    id: usersTable.id, name: usersTable.name, rating: usersTable.rating, avatar: usersTable.avatar,
+  }).from(usersTable).where(eq(usersTable.id, passengerId)).limit(1);
+
+  const matchPayload = {
+    passengerId,
+    passengerName: passenger?.name ?? "Passenger",
+    passengerRating: passenger?.rating ?? 5.0,
+    passengerAvatar: passenger?.avatar ?? null,
+    routeId: best.routeId,
+    pickup: { ...best.pickupSnapped, name: pickupName },
+    dropoff: { ...best.dropoffSnapped, name: dropoffName },
+    distanceKm: best.passengerDistKm,
+    fare: best.fare,
+    matchingFee: best.matchingFee,
+    total: best.fare + best.matchingFee,
+    pickupEtaMin: best.pickupEtaMin,
+  };
+
+  try {
+    getIo().to(`user:${best.driverId}`).emit("match:request", matchPayload);
+  } catch {
+    // socket not initialized yet — ignore
+  }
 
   res.json({
     matched: true,

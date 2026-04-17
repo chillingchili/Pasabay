@@ -4,6 +4,7 @@ import app from "./app.js";
 import { logger } from "./lib/logger.js";
 import { registerSocketHandlers } from "./sockets/index.js";
 import { runMigrations } from "./lib/migrate.js";
+import { setIo } from "./lib/io.js";
 
 export const httpServer = http.createServer(app);
 
@@ -41,6 +42,7 @@ async function start() {
       process.exit(1);
     }
     logger.info({ port }, "Server listening");
+    setIo(io);
     registerSocketHandlers(io);
   });
 }
