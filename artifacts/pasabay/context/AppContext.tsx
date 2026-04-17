@@ -6,6 +6,7 @@ import {
   connectSocket, disconnectSocket,
   onMatchRequest, onMatchConfirmed, onMatchDeclined,
   onRideCompleted, onRideCanceled,
+  onMatchAccepted, onDriverLocationUpdate,
   type MatchRequestPayload, type MatchConfirmedPayload, type RideCompletedPayload,
 } from "@/lib/socket";
 
@@ -161,15 +162,44 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
       const offMatchConfirmed = onMatchConfirmed((data) => {
         setMatchConfirmed(data);
+        setActiveRide({
+          rideId: data.rideId,
+          driver: {
+            id: data.driver.id,
+            name: data.driver.name,
+            rating: data.driver.rating,
+            avatar: data.driver.avatar ?? undefined,
+            vehicle: data.driver.vehicle
+              ? { make: data.driver.vehicle.make, model: data.driver.vehicle.model, color: data.driver.vehicle.color, plate: data.driver.vehicle.plate }
+              : null,
+          },
+          pickup: data.pickup,
+          dropoff: data.dropoff,
+          fare: data.fare,
+          matchingFee: data.matchingFee,
+          total: data.total,
+          distanceKm: data.distanceKm,
+        });
       });
       const offMatchDeclined = onMatchDeclined(() => {
         setMatchConfirmed(null);
+        setActiveRide(null);
+        setDriverLocation(null);
       });
       const offRideCompleted = onRideCompleted((data) => {
         setCompletedRide(data);
       });
       const offRideCanceled = onRideCanceled(() => {
         setMatchConfirmed(null);
+        setActiveRide(null);
+        setDriverLocation(null);
+      });
+      const offMatchAccepted = onMatchAccepted(() => {
+        // Driver side: rideId will be set by driver-home.tsx listening directly.
+        // This listener exists for completeness but driver tracks rideId locally.
+      });
+      const offDriverLocation = onDriverLocationUpdate((data) => {
+        setDriverLocation({ lat: data.lat, lng: data.lng, heading: data.heading });
       });
 
       return () => {
@@ -178,6 +208,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         offMatchDeclined();
         offRideCompleted();
         offRideCanceled();
+        offMatchAccepted();
+        offDriverLocation();
       };
     } catch {
       setSocketConnected(false);

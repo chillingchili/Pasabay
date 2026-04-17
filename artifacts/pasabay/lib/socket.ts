@@ -164,6 +164,11 @@ export function onMatchDeclined(cb: (data: { message: string }) => void) {
   return () => { socket?.off("match:declined", cb); };
 }
 
+export function onMatchAccepted(cb: (data: { rideId: string; passengerId: string }) => void) {
+  socket?.on("match:accepted_confirmed", cb);
+  return () => { socket?.off("match:accepted_confirmed", cb); };
+}
+
 export function onRideCompleted(cb: (data: RideCompletedPayload) => void) {
   socket?.on("ride:completed", cb);
   return () => { socket?.off("ride:completed", cb); };
