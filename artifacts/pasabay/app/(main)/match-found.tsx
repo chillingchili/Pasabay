@@ -20,7 +20,7 @@ function _calcEtaMin(
 export default function MatchFoundScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { matchConfirmed, clearMatchConfirmed, completedRide, clearCompletedRide, addRideHistory, activeRide, driverLocation, clearActiveRide } = useApp();
+  const { matchConfirmed, clearMatchConfirmed, completedRide, clearCompletedRide, addRideHistory, activeRide, driverLocation, clearActiveRide, networkStatus } = useApp();
   const slideAnim = useRef(new Animated.Value(60)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const badgeScale = useRef(new Animated.Value(0.6)).current;
@@ -176,8 +176,10 @@ export default function MatchFoundScreen() {
                 </Text>
               </View>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <View style={[styles.liveDot, { backgroundColor: colors.primary }]} />
-                <Text style={[styles.liveText, { color: colors.primary, fontFamily: "Inter_600SemiBold" }]}>Live</Text>
+                <View style={[styles.liveDot, { backgroundColor: networkStatus === "online" ? colors.primary : colors.destructive }]} />
+                <Text style={[styles.liveText, { color: networkStatus === "online" ? colors.primary : colors.destructive, fontFamily: "Inter_600SemiBold" }]}>
+                  {networkStatus === "online" ? "Live" : "Offline"}
+                </Text>
               </View>
               <Text style={[styles.etaText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>
                 ~{Math.max(1, Math.round(_calcEtaMin(driverLocation, pickup)))} min away

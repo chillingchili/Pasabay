@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { MapBackground } from "@/components/MapBackground";
 import { PreMatchModal } from "@/components/PreMatchModal";
+import LoadingOverlay from "@/components/LoadingOverlay";
 import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
 
@@ -17,6 +18,7 @@ export default function PassengerHomeScreen() {
   const [destination, setDestination] = useState("IT Park, Lahug");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showPreMatch, setShowPreMatch] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const sheetAnim = useRef(new Animated.Value(0)).current;
 
@@ -41,6 +43,7 @@ export default function PassengerHomeScreen() {
 
   const handleConfirmRide = () => {
     setShowPreMatch(false);
+    setIsLoading(true);
     router.push({
       pathname: "/(main)/matching",
       params: {
@@ -53,6 +56,7 @@ export default function PassengerHomeScreen() {
         dropoffName: destination,
       },
     });
+    setTimeout(() => setIsLoading(false), 1000);
   };
 
   const handleCancelRide = () => {
@@ -64,6 +68,7 @@ export default function PassengerHomeScreen() {
   return (
     <View style={styles.container}>
       <MapBackground showRoute={!!destination} />
+      <LoadingOverlay visible={isLoading} message="Navigating..." />
 
       <View style={[styles.topArea, { paddingTop: topPad + 8 }]}>
         <View style={styles.greetingRow}>

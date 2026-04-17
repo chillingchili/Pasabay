@@ -3,6 +3,7 @@ import { Alert, Animated, Platform, Pressable, StyleSheet, Text, View } from "re
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { MapBackground } from "@/components/MapBackground";
+import LoadingOverlay from "@/components/LoadingOverlay";
 import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
 import {
@@ -21,6 +22,7 @@ export default function DriverHomeScreen() {
   const { user, pendingMatchRequest, clearPendingMatch, activeRide, clearActiveRide } = useApp();
 
   const [isOnline, setIsOnline] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [routeInfo, setRouteInfo] = useState<{ distanceKm: number; durationMin: number } | null>(null);
   const [accepted, setAccepted] = useState<MatchRequestPayload | null>(null);
   const [rideId, setRideId] = useState<string | null>(null);
@@ -77,6 +79,7 @@ export default function DriverHomeScreen() {
   }, []);
 
   const handleGoOnline = () => {
+    setIsLoading(true);
     emitDriverOnline({
       originName: USC_ORIGIN.name,
       originLat: USC_ORIGIN.lat,
@@ -85,15 +88,19 @@ export default function DriverHomeScreen() {
       destLat: SM_DEST.lat,
       destLng: SM_DEST.lng,
     });
+    // Brief loading state since emit is fire-and-forget
+    setTimeout(() => setIsLoading(false), 500);
   };
 
   const handleGoOffline = () => {
+    setIsLoading(true);
     emitDriverOffline();
     setIsOnline(false);
     setRouteInfo(null);
     setAccepted(null);
     setRideId(null);
     clearActiveRide();
+    setTimeout(() => setIsLoading(false), 300);
   };
 
   const handleAccept = (req: MatchRequestPayload) => {
@@ -161,6 +168,7 @@ export default function DriverHomeScreen() {
   return (
     <View style={styles.container}>
       <MapBackground showRoute={true} driverRoute={true} />
+      <LoadingOverlay visible={isLoading} message={isOnline ? "Going offline..." : "Going online..."} />
 
       <View style={[styles.topBar, { paddingTop: topPad + 8, paddingHorizontal: 16 }]}>
         <View style={[styles.destBar, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
