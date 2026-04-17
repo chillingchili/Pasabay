@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
+import { apiRequest } from "@/lib/api";
 
 const COLORS_LIST = [
   { name: "White", hex: "#fff" },
@@ -33,26 +34,73 @@ export default function VehicleDetailsScreen() {
   const [carColor, setCarColor] = useState("Silver");
   const [fuelEff, setFuelEff] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const currentYear = new Date().getFullYear();
+
+  const validate = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!plate.trim()) errors.plate = "Plate number is required";
+    else if (!/^[a-zA-Z0-9\s]{3,10}$/.test(plate.trim())) errors.plate = "3-10 alphanumeric characters";
+    if (!make) errors.make = "Select a car make";
+    if (!model.trim()) errors.model = "Model is required";
+    const yearNum = parseInt(year);
+    if (!year || isNaN(yearNum)) errors.year = "Year is required";
+    else if (yearNum < 1990 || yearNum > currentYear) errors.year = `Must be between 1990 and ${currentYear}`;
+    if (!carColor) errors.color = "Select a color";
+    const seatsNum = parseInt(seats);
+    if (seatsNum < 1 || seatsNum > 8) errors.seats = "Must be between 1 and 8";
+    if (fuelEff) {
+      const eff = parseFloat(fuelEff);
+      if (isNaN(eff) || eff <= 0 || eff > 30) errors.fuelEff = "Must be between 5 and 30 km/L";
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSave = async () => {
-    if (!plate || !make || !model || !year) {
-      Alert.alert("Required Fields", "Please fill in all required vehicle details.");
-      return;
-    }
+    setError(null);
+    if (!validate()) return;
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const response = await apiRequest<{
+        vehicle: { plate: string; make: string; model: string; year: number; color: string; seats: number; fuelEfficiency: number };
+        fuelEfficiencyApproved: boolean;
+        fuelEfficiency: number;
+        message: string;
+      }>("/users/driver", {
+        method: "POST",
+        body: JSON.stringify({
+          plate: plate.trim(),
+          make,
+          model: model.trim(),
+          year: parseInt(year),
+          color: carColor,
+          seats: parseInt(seats),
+          fuelEfficiency: fuelEff ? parseFloat(fuelEff) : undefined,
+        }),
+      });
+      const serverFuelEff = response.fuelEfficiency;
+      if (!response.fuelEfficiencyApproved && fuelEff) {
+        Alert.alert("Fuel Efficiency Adjusted", `Fuel efficiency adjusted to ${serverFuelEff.toFixed(1)} km/L based on vehicle specs.`);
+      }
       setDriverVerified({
-        make,
-        model,
-        year,
-        plate: plate.toUpperCase(),
-        color: carColor,
-        seats: parseInt(seats),
-        fuelEfficiency: parseFloat(fuelEff) || 20,
+        plate: response.vehicle.plate,
+        make: response.vehicle.make,
+        model: response.vehicle.model,
+        year: String(response.vehicle.year),
+        color: response.vehicle.color,
+        seats: response.vehicle.seats,
+        fuelEfficiency: serverFuelEff,
       });
       router.replace("/(main)/driver-home");
+    } catch (err: unknown) {
+      const message = (err as { message?: string })?.message ?? "Failed to submit vehicle details. Please try again.";
+      setError(message);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (
@@ -80,13 +128,14 @@ export default function VehicleDetailsScreen() {
         <View style={styles.form}>
           <FormGroup label="License plate number" colors={colors}>
             <TextInput
-              style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card, fontFamily: "Inter_400Regular" }]}
+              style={[styles.input, { color: colors.foreground, borderColor: fieldErrors.plate ? "#ef4444" : colors.border, backgroundColor: colors.card, fontFamily: "Inter_400Regular" }]}
               value={plate}
-              onChangeText={t => setPlate(t.toUpperCase())}
+              onChangeText={t => { setPlate(t.toUpperCase()); if (fieldErrors.plate) setFieldErrors(prev => { const n = { ...prev }; delete n.plate; return n; }); }}
               placeholder="e.g. ABC 1234"
               placeholderTextColor={colors.textMuted}
               autoCapitalize="characters"
             />
+            {fieldErrors.plate && <Text style={[styles.fieldError, { color: "#ef4444" }]}>{fieldErrors.plate}</Text>}
           </FormGroup>
 
           <View style={styles.row}>
@@ -97,40 +146,43 @@ export default function VehicleDetailsScreen() {
                     {CAR_MAKES.map(m => (
                       <Pressable
                         key={m}
-                        onPress={() => setMake(m)}
-                        style={[styles.chip, { backgroundColor: make === m ? colors.primary : colors.card, borderColor: make === m ? colors.primary : colors.border }]}
+                        onPress={() => { setMake(m); if (fieldErrors.make) setFieldErrors(prev => { const n = { ...prev }; delete n.make; return n; }); }}
+                        style={[styles.chip, { backgroundColor: make === m ? colors.primary : colors.card, borderColor: fieldErrors.make ? "#ef4444" : make === m ? colors.primary : colors.border }]}
                       >
                         <Text style={[styles.chipText, { color: make === m ? "#fff" : colors.foreground, fontFamily: "Inter_500Medium" }]}>{m}</Text>
                       </Pressable>
                     ))}
                   </View>
                 </ScrollView>
+                {fieldErrors.make && <Text style={[styles.fieldError, { color: "#ef4444" }]}>{fieldErrors.make}</Text>}
               </FormGroup>
             </View>
           </View>
 
           <FormGroup label="Car model" colors={colors}>
             <TextInput
-              style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card, fontFamily: "Inter_400Regular" }]}
+              style={[styles.input, { color: colors.foreground, borderColor: fieldErrors.model ? "#ef4444" : colors.border, backgroundColor: colors.card, fontFamily: "Inter_400Regular" }]}
               value={model}
-              onChangeText={setModel}
+              onChangeText={t => { setModel(t); if (fieldErrors.model) setFieldErrors(prev => { const n = { ...prev }; delete n.model; return n; }); }}
               placeholder="e.g. Vios"
               placeholderTextColor={colors.textMuted}
             />
+            {fieldErrors.model && <Text style={[styles.fieldError, { color: "#ef4444" }]}>{fieldErrors.model}</Text>}
           </FormGroup>
 
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
               <FormGroup label="Year" colors={colors}>
                 <TextInput
-                  style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card, fontFamily: "Inter_400Regular" }]}
+                  style={[styles.input, { color: colors.foreground, borderColor: fieldErrors.year ? "#ef4444" : colors.border, backgroundColor: colors.card, fontFamily: "Inter_400Regular" }]}
                   value={year}
-                  onChangeText={setYear}
+                  onChangeText={t => { setYear(t); if (fieldErrors.year) setFieldErrors(prev => { const n = { ...prev }; delete n.year; return n; }); }}
                   placeholder="e.g. 2019"
                   placeholderTextColor={colors.textMuted}
                   keyboardType="numeric"
                   maxLength={4}
                 />
+                {fieldErrors.year && <Text style={[styles.fieldError, { color: "#ef4444" }]}>{fieldErrors.year}</Text>}
               </FormGroup>
             </View>
             <View style={{ flex: 1 }}>
@@ -139,13 +191,14 @@ export default function VehicleDetailsScreen() {
                   {SEAT_OPTIONS.map(s => (
                     <Pressable
                       key={s}
-                      onPress={() => setSeats(s)}
-                      style={[styles.seatChip, { backgroundColor: seats === s ? colors.primary : colors.card, borderColor: seats === s ? colors.primary : colors.border }]}
+                      onPress={() => { setSeats(s); if (fieldErrors.seats) setFieldErrors(prev => { const n = { ...prev }; delete n.seats; return n; }); }}
+                      style={[styles.seatChip, { backgroundColor: seats === s ? colors.primary : colors.card, borderColor: fieldErrors.seats ? "#ef4444" : seats === s ? colors.primary : colors.border }]}
                     >
                       <Text style={[styles.chipText, { color: seats === s ? "#fff" : colors.foreground, fontFamily: "Inter_500Medium" }]}>{s}</Text>
                     </Pressable>
                   ))}
                 </View>
+                {fieldErrors.seats && <Text style={[styles.fieldError, { color: "#ef4444" }]}>{fieldErrors.seats}</Text>}
               </FormGroup>
             </View>
           </View>
@@ -192,12 +245,26 @@ export default function VehicleDetailsScreen() {
             </Text>
           </View>
 
+          {error && (
+            <View style={[styles.errorBanner, { backgroundColor: "#fef2f2", borderColor: "#fecaca" }]}>
+              <Feather name="alert-circle" size={16} color="#ef4444" />
+              <Text style={[styles.errorText, { color: "#ef4444" }]}>{error}</Text>
+              <Pressable onPress={handleSave} style={styles.retryBtn}>
+                <Text style={[styles.retryText, { color: "#ef4444" }]}>Retry</Text>
+              </Pressable>
+            </View>
+          )}
+
           <Pressable
-            style={[styles.btnPrimary, { backgroundColor: loading ? colors.mutedForeground : colors.primary }]}
+            style={[styles.btnPrimary, { backgroundColor: (loading || Object.keys(fieldErrors).length > 0) ? colors.mutedForeground : colors.primary }]}
             onPress={handleSave}
-            disabled={loading}
+            disabled={loading || Object.keys(fieldErrors).length > 0}
           >
-            <Text style={[styles.btnPrimaryText, { fontFamily: "Inter_600SemiBold" }]}>{loading ? "Saving..." : "Save vehicle"}</Text>
+            {loading ? (
+              <Text style={[styles.btnPrimaryText, { fontFamily: "Inter_600SemiBold" }]}>Submitting...</Text>
+            ) : (
+              <Text style={[styles.btnPrimaryText, { fontFamily: "Inter_600SemiBold" }]}>Save vehicle</Text>
+            )}
           </Pressable>
         </View>
       </ScrollView>
@@ -239,4 +306,9 @@ const styles = StyleSheet.create({
   hint: { fontSize: 11, lineHeight: 15 },
   btnPrimary: { height: 52, borderRadius: 14, alignItems: "center", justifyContent: "center", marginTop: 8 },
   btnPrimaryText: { color: "#fff", fontSize: 16 },
+  fieldError: { fontSize: 12, marginTop: 4, fontFamily: "Inter_400Regular" },
+  errorBanner: { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, borderRadius: 10, borderWidth: 1, marginTop: 4 },
+  errorText: { fontSize: 13, flex: 1, fontFamily: "Inter_400Regular" },
+  retryBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 },
+  retryText: { fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
 });
