@@ -7,7 +7,8 @@ import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
 import {
   emitDriverOnline, emitDriverOffline, emitMatchAccept, emitMatchDecline,
-  emitRideComplete, onDriverRouteSet, onDriverError,
+  emitRideComplete, emitRideCancel, onDriverRouteSet, onDriverError,
+  onMatchAccepted,
 } from "@/lib/socket";
 import type { MatchRequestPayload } from "@/lib/socket";
 
@@ -17,11 +18,12 @@ const SM_DEST = { lat: 10.3278, lng: 123.9028, name: "SM City Cebu" };
 export default function DriverHomeScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { user, pendingMatchRequest, clearPendingMatch } = useApp();
+  const { user, pendingMatchRequest, clearPendingMatch, activeRide, clearActiveRide } = useApp();
 
   const [isOnline, setIsOnline] = useState(false);
   const [routeInfo, setRouteInfo] = useState<{ distanceKm: number; durationMin: number } | null>(null);
   const [accepted, setAccepted] = useState<MatchRequestPayload | null>(null);
+  const [rideId, setRideId] = useState<string | null>(null);
   const [timer, setTimer] = useState(60);
 
   const slideAnim = useRef(new Animated.Value(-160)).current;
@@ -51,6 +53,13 @@ export default function DriverHomeScreen() {
     }, 1000);
     return () => clearInterval(interval);
   }, [accepted]);
+
+  useEffect(() => {
+    const off = onMatchAccepted((data) => {
+      setRideId(data.rideId);
+    });
+    return off;
+  }, []);
 
   useEffect(() => {
     const offRouteSet = onDriverRouteSet((data) => {
@@ -83,6 +92,8 @@ export default function DriverHomeScreen() {
     setIsOnline(false);
     setRouteInfo(null);
     setAccepted(null);
+    setRideId(null);
+    clearActiveRide();
   };
 
   const handleAccept = (req: MatchRequestPayload) => {
@@ -110,10 +121,14 @@ export default function DriverHomeScreen() {
   };
 
   const handleCompleteRide = () => {
-    if (accepted) {
-      emitRideComplete(accepted.routeId);
+    if (rideId) {
+      emitRideComplete(rideId);
       setAccepted(null);
+      setRideId(null);
       setTimer(60);
+      clearActiveRide();
+    } else {
+      Alert.alert("Error", "Ride ID not available");
     }
   };
 
