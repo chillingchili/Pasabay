@@ -7,13 +7,24 @@ import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
 import { emitRideCancel } from "@/lib/socket";
 
+function _calcEtaMin(
+  driverLoc: { lat: number; lng: number },
+  pickup: { lat: number; lng: number },
+): number {
+  const dlat = (driverLoc.lat - pickup.lat) * 111;
+  const dlng = (driverLoc.lng - pickup.lng) * 111 * Math.cos((pickup.lat * Math.PI) / 180);
+  const distKm = Math.sqrt(dlat * dlat + dlng * dlng);
+  return (distKm / 30) * 60; // assume 30 km/h
+}
+
 export default function MatchFoundScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { matchConfirmed, clearMatchConfirmed, completedRide, clearCompletedRide, addRideHistory } = useApp();
+  const { matchConfirmed, clearMatchConfirmed, completedRide, clearCompletedRide, addRideHistory, activeRide, driverLocation } = useApp();
   const slideAnim = useRef(new Animated.Value(60)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const badgeScale = useRef(new Animated.Value(0.6)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
@@ -24,6 +35,17 @@ export default function MatchFoundScreen() {
       Animated.spring(badgeScale, { toValue: 1, tension: 80, friction: 8, useNativeDriver: true }),
     ]).start();
   }, [slideAnim, fadeAnim, badgeScale]);
+
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.4, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+      ])
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [pulseAnim]);
 
   useEffect(() => {
     if (completedRide) {
@@ -125,6 +147,33 @@ export default function MatchFoundScreen() {
             </View>
           </View>
 
+          {/* Ride status indicator */}
+          <View style={[styles.rideStatusCard, { backgroundColor: colors.card }]}>
+            <Animated.View style={[styles.statusDot, { backgroundColor: colors.primary, transform: [{ scale: pulseAnim }] }]} />
+            <Text style={[styles.rideStatusText, { color: colors.textSecondary, fontFamily: "Inter_500Medium" }]}>
+              {driverLocation ? "Driver is nearby" : "Driver is heading to pickup"}
+            </Text>
+          </View>
+
+          {/* Driver location card — only shown when driverLocation is available */}
+          {driverLocation && pickup && (
+            <View style={[styles.driverLocationCard, { backgroundColor: colors.card }]}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
+                <Feather name="navigation" size={14} color={colors.primary} />
+                <Text style={[styles.driverLocationText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
+                  Driver location: {driverLocation.lat.toFixed(4)}, {driverLocation.lng.toFixed(4)}
+                </Text>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <View style={[styles.liveDot, { backgroundColor: colors.primary }]} />
+                <Text style={[styles.liveText, { color: colors.primary, fontFamily: "Inter_600SemiBold" }]}>Live</Text>
+              </View>
+              <Text style={[styles.etaText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>
+                ~{Math.max(1, Math.round(_calcEtaMin(driverLocation, pickup)))} min away
+              </Text>
+            </View>
+          )}
+
           <View style={[styles.fareSection, { borderColor: colors.borderLighter }]}>
             <Text style={[styles.fareTitle, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Your fare</Text>
             <View style={styles.fareAmountRow}>
@@ -185,6 +234,14 @@ const styles = StyleSheet.create({
   pickupIcon: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   pickupLabel: { fontSize: 11, marginBottom: 2 },
   pickupValue: { fontSize: 14 },
+  rideStatusCard: { flexDirection: "row", alignItems: "center", padding: 12, borderRadius: 12, gap: 10 },
+  statusDot: { width: 10, height: 10, borderRadius: 5 },
+  rideStatusText: { fontSize: 14 },
+  driverLocationCard: { padding: 14, borderRadius: 14, gap: 8 },
+  driverLocationText: { fontSize: 13 },
+  liveDot: { width: 8, height: 8, borderRadius: 4 },
+  liveText: { fontSize: 12 },
+  etaText: { fontSize: 13, marginTop: 2 },
   fareSection: { borderTopWidth: 1, paddingTop: 16, gap: 6 },
   fareTitle: { fontSize: 12 },
   fareAmountRow: { flexDirection: "row", alignItems: "flex-end", gap: 4 },
