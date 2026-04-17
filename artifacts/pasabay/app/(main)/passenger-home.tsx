@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { MapBackground } from "@/components/MapBackground";
+import { PreMatchModal } from "@/components/PreMatchModal";
 import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
 
@@ -15,6 +16,7 @@ export default function PassengerHomeScreen() {
   const { user } = useApp();
   const [destination, setDestination] = useState("IT Park, Lahug");
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showPreMatch, setShowPreMatch] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const sheetAnim = useRef(new Animated.Value(0)).current;
 
@@ -34,7 +36,27 @@ export default function PassengerHomeScreen() {
 
   const handleFindRide = () => {
     if (!destination) return;
-    router.push("/(main)/matching");
+    setShowPreMatch(true);
+  };
+
+  const handleConfirmRide = () => {
+    setShowPreMatch(false);
+    router.push({
+      pathname: "/(main)/matching",
+      params: {
+        destination,
+        pickupLat: "10.2969",
+        pickupLng: "123.9008",
+        dropoffLat: "10.3157",
+        dropoffLng: "123.9030",
+        pickupName: "USC Main Gate",
+        dropoffName: destination,
+      },
+    });
+  };
+
+  const handleCancelRide = () => {
+    setShowPreMatch(false);
   };
 
   const greeting = user?.name ? `Hi, ${user.name.split(" ")[0]}` : "Hi there";
@@ -138,6 +160,16 @@ export default function PassengerHomeScreen() {
           </View>
         )}
       </Animated.View>
+
+      <PreMatchModal
+        visible={showPreMatch}
+        destination={destination}
+        fareEstimate={18}
+        distanceKm={3.2}
+        etaMin={12}
+        onConfirm={handleConfirmRide}
+        onCancel={handleCancelRide}
+      />
     </View>
   );
 }
