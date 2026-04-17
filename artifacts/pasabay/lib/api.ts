@@ -5,7 +5,7 @@ const IS_DEV = process.env.EXPO_PUBLIC_DOMAIN !== undefined && process.env.EXPO_
 
 export const API_BASE = IS_DEV
   ? `https://${DOMAIN}:8080/api`
-  : `http://localhost:8080/api`;
+  : `http://192.168.254.187:3000/api`;
 
 const ACCESS_KEY = "pasabay_access_token";
 const REFRESH_KEY = "pasabay_refresh_token";
@@ -56,6 +56,31 @@ async function refreshAccessToken(): Promise<string | null> {
 export interface ApiError {
   status: number;
   message: string;
+}
+
+/**
+ * Maps API error status codes to user-friendly messages.
+ */
+export function formatApiError(err: ApiError | unknown): string {
+  if (!err || typeof err !== "object") return "Something went wrong. Please try again.";
+
+  const apiErr = err as ApiError;
+
+  // Network errors (no response, fetch failed)
+  if (apiErr.status === undefined || apiErr.status === 0) {
+    return "No internet connection. Please check your network.";
+  }
+
+  switch (apiErr.status) {
+    case 401:
+      return "Session expired. Please log in again.";
+    case 404:
+      return "Service not available. Please try again later.";
+    case 500:
+      return "Server error. Please try again in a moment.";
+    default:
+      return apiErr.message || "Something went wrong. Please try again.";
+  }
 }
 
 export async function apiRequest<T = unknown>(

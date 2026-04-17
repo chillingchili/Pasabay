@@ -5,8 +5,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, formatApiError } from "@/lib/api";
 import { onMatchDeclined } from "@/lib/socket";
+import LoadingOverlay from "@/components/LoadingOverlay";
+import ErrorBanner from "@/components/ErrorBanner";
 
 export default function MatchingScreen() {
   const insets = useSafeAreaInsets();
@@ -24,6 +26,9 @@ export default function MatchingScreen() {
   const [fareEst, setFareEst] = useState<number | null>(null);
   const [distEst, setDistEst] = useState<number | null>(null);
   const [etaEst, setEtaEst] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const didNavigate = useRef(false);
 
   const ring1 = useRef(new Animated.Value(1)).current;
@@ -82,6 +87,8 @@ export default function MatchingScreen() {
           body: JSON.stringify({ pickupLat, pickupLng, dropoffLat, dropoffLng, pickupName, dropoffName }),
         });
 
+        setIsLoading(false);
+
         if (!result.matched) {
           setStatus(result.message ?? "No drivers found. Try again in a moment.");
           setSearching(false);
@@ -96,6 +103,9 @@ export default function MatchingScreen() {
         setEtaEst(result.pickupEtaMin);
         setStatus("Driver found! Waiting for confirmation…");
       } catch (err: any) {
+        setIsLoading(false);
+        setErrorMessage(formatApiError(err));
+        setShowError(true);
         setStatus("Connection error. Please try again.");
         setSearching(false);
         setTimeout(() => {
@@ -133,6 +143,12 @@ export default function MatchingScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <LoadingOverlay visible={isLoading} message="Searching for drivers..." />
+      <ErrorBanner
+        message={errorMessage}
+        visible={showError}
+        onDismiss={() => setShowError(false)}
+      />
       <View style={[styles.content, { paddingTop: (Platform.OS === "web" ? 67 : insets.top) + 40 }]}>
         <View style={styles.ringsContainer}>
           {[ring1, ring2, ring3].map((r, i) => (
