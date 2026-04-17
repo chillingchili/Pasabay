@@ -25,6 +25,7 @@ export default function SignupScreen() {
   const { signup, loginWithGoogle } = useApp();
   const { signInWithGoogle, loading: googleLoading } = useGoogleAuth();
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -34,6 +35,10 @@ export default function SignupScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleSignup = async () => {
+    if (!name.trim()) {
+      Alert.alert("Required", "Please enter your full name.");
+      return;
+    }
     if (!email.endsWith("@usc.edu.ph")) {
       Alert.alert("Invalid Email", "Please use your USC school email (@usc.edu.ph).");
       return;
@@ -52,10 +57,10 @@ export default function SignupScreen() {
     }
     setLoading(true);
     try {
-      await signup(email, password);
+      await signup(name.trim(), email, password);
       router.replace("/verify-school-id");
-    } catch {
-      Alert.alert("Error", "Something went wrong. Please try again.");
+    } catch (err: any) {
+      Alert.alert("Sign Up Failed", err?.message ?? "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -105,6 +110,18 @@ export default function SignupScreen() {
         <Text style={[styles.subtitle, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Join the USC Pasabay community</Text>
 
         <View style={styles.form}>
+          <FormGroup label="Full name" colors={colors}>
+            <TextInput
+              style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card, fontFamily: "Inter_400Regular" }]}
+              value={name}
+              onChangeText={setName}
+              placeholder="Juan Dela Cruz"
+              placeholderTextColor={colors.textMuted}
+              autoCapitalize="words"
+              autoComplete="name"
+            />
+          </FormGroup>
+
           <FormGroup label="School email" colors={colors}>
             <TextInput
               style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card, fontFamily: "Inter_400Regular" }]}

@@ -37,8 +37,8 @@ export default function LoginScreen() {
     try {
       await login(email, password);
       router.replace("/(main)/passenger-home");
-    } catch {
-      Alert.alert("Error", "Login failed. Please try again.");
+    } catch (err: any) {
+      Alert.alert("Login Failed", err?.message ?? "Incorrect email or password. Please try again.");
     } finally {
       setLoading(false);
     }

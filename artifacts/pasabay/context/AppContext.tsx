@@ -1,6 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { GoogleUserInfo } from "@/hooks/useGoogleAuth";
+import { apiRequest, clearTokens, setTokens, getTokens, API_BASE } from "@/lib/api";
+import {
+  connectSocket, disconnectSocket,
+  onMatchRequest, onMatchConfirmed, onMatchDeclined,
+  onRideCompleted, onRideCanceled,
+  type MatchRequestPayload, type MatchConfirmedPayload, type RideCompletedPayload,
+} from "@/lib/socket";
 
 export type UserRole = "passenger" | "driver";
 
@@ -44,153 +51,277 @@ interface AppContextValue {
   isLoading: boolean;
   rideHistory: RideHistory[];
   activeRole: UserRole;
+  socketConnected: boolean;
+  pendingMatchRequest: MatchRequestPayload | null;
+  matchConfirmed: MatchConfirmedPayload | null;
+  completedRide: RideCompletedPayload | null;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: (googleUser: GoogleUserInfo) => Promise<{ isNew: boolean }>;
   logout: () => void;
-  signup: (email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string) => Promise<void>;
   setSchoolIdVerified: () => void;
   setDriverVerified: (vehicle: UserProfile["vehicle"]) => void;
   switchRole: (role: UserRole) => void;
   addRideHistory: (ride: RideHistory) => void;
+  refreshUser: () => Promise<void>;
+  clearPendingMatch: () => void;
+  clearMatchConfirmed: () => void;
+  clearCompletedRide: () => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-const MOCK_HISTORY: RideHistory[] = [
-  { id: "1", route: "USC Main → IT Park, Lahug", from: "USC Main", to: "IT Park, Lahug", date: "Today, 8:30 AM", fare: 18, status: "completed", withName: "Renz V." },
-  { id: "2", route: "USC Gate → SM City Cebu", from: "USC Gate", to: "SM City Cebu", date: "Yesterday, 5:15 PM", fare: 24, status: "completed", withName: "Ana M." },
-  { id: "3", route: "USC Main → Ayala Center", from: "USC Main", to: "Ayala Center", date: "Yesterday, 12:40 PM", fare: 0, status: "canceled", cancelReason: "No match" },
-  { id: "4", route: "IT Park → USC Talamban", from: "IT Park", to: "USC Talamban", date: "Apr 10, 4:00 PM", fare: 22, status: "completed", withName: "Mark L." },
-  { id: "5", route: "USC Main → JY Square", from: "USC Main", to: "JY Square", date: "Apr 9, 7:45 AM", fare: 15, status: "completed", withName: "Carlo S." },
-  { id: "6", route: "Banilad → USC Talamban", from: "Banilad", to: "USC Talamban", date: "Apr 8, 6:30 PM", fare: 12, status: "completed", withName: "Lisa T." },
-  { id: "7", route: "USC Gate → Mango Square", from: "USC Gate", to: "Mango Square", date: "Apr 7, 8:10 AM", fare: 0, status: "canceled", cancelReason: "Driver no-show" },
-];
+function mapApiUser(data: any): UserProfile {
+  return {
+    id: data.id,
+    name: data.name,
+    email: data.email,
+    role: data.activeRole ?? data.role ?? "passenger",
+    rating: data.rating ?? 5.0,
+    totalRides: data.totalRides ?? 0,
+    verified: data.schoolIdStatus === "verified",
+    driverVerified: data.driverStatus === "verified",
+    googleId: data.googleId ?? undefined,
+    avatar: data.avatar ?? undefined,
+    vehicle: data.vehicle ?? undefined,
+  };
+}
+
+function mapApiRide(r: any): RideHistory {
+  const d = new Date(r.createdAt);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  let dateStr: string;
+  if (d.toDateString() === today.toDateString()) {
+    dateStr = `Today, ${d.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" })}`;
+  } else if (d.toDateString() === yesterday.toDateString()) {
+    dateStr = `Yesterday, ${d.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" })}`;
+  } else {
+    dateStr = `${d.toLocaleDateString("en-PH", { month: "short", day: "numeric" })}, ${d.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" })}`;
+  }
+
+  return {
+    id: r.id,
+    route: `${r.fromName} → ${r.toName}`,
+    from: r.fromName,
+    to: r.toName,
+    date: dateStr,
+    fare: (r.fare ?? 0) + (r.matchingFee ?? 0),
+    status: r.status === "completed" ? "completed" : "canceled",
+    withName: r.driverName ?? undefined,
+  };
+}
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [rideHistory, setRideHistory] = useState<RideHistory[]>(MOCK_HISTORY);
+  const [rideHistory, setRideHistory] = useState<RideHistory[]>([]);
   const [activeRole, setActiveRole] = useState<UserRole>("passenger");
+  const [socketConnected, setSocketConnected] = useState(false);
+  const [pendingMatchRequest, setPendingMatchRequest] = useState<MatchRequestPayload | null>(null);
+  const [matchConfirmed, setMatchConfirmed] = useState<MatchConfirmedPayload | null>(null);
+  const [completedRide, setCompletedRide] = useState<RideCompletedPayload | null>(null);
+
+  const setUserState = (profile: UserProfile) => {
+    setUser(profile);
+    setActiveRole(profile.role);
+  };
+
+  const initSocket = useCallback(async () => {
+    try {
+      await connectSocket();
+      setSocketConnected(true);
+
+      const offMatchRequest = onMatchRequest((data) => {
+        setPendingMatchRequest(data);
+      });
+      const offMatchConfirmed = onMatchConfirmed((data) => {
+        setMatchConfirmed(data);
+      });
+      const offMatchDeclined = onMatchDeclined(() => {
+        setMatchConfirmed(null);
+      });
+      const offRideCompleted = onRideCompleted((data) => {
+        setCompletedRide(data);
+      });
+      const offRideCanceled = onRideCanceled(() => {
+        setMatchConfirmed(null);
+      });
+
+      return () => {
+        offMatchRequest();
+        offMatchConfirmed();
+        offMatchDeclined();
+        offRideCompleted();
+        offRideCanceled();
+      };
+    } catch {
+      setSocketConnected(false);
+      return () => {};
+    }
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    try {
+      const data = await apiRequest<any>("/users/profile");
+      const profile = mapApiUser(data);
+      setUserState(profile);
+    } catch {
+      // ignore, keep existing state
+    }
+  }, []);
+
+  const loadRideHistory = useCallback(async () => {
+    try {
+      const data = await apiRequest<any>("/rides/history?limit=20");
+      const rides = Array.isArray(data?.rides) ? data.rides.map(mapApiRide) : [];
+      setRideHistory(rides);
+    } catch {
+      setRideHistory([]);
+    }
+  }, []);
 
   useEffect(() => {
-    const loadUser = async () => {
+    const init = async () => {
       try {
-        const stored = await AsyncStorage.getItem("pasabay_user");
-        if (stored) {
-          const parsed = JSON.parse(stored) as UserProfile;
-          setUser(parsed);
-          setActiveRole(parsed.role);
+        const { refresh } = await getTokens();
+        if (!refresh) return;
+
+        const res = await fetch(`${API_BASE}/auth/refresh`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refreshToken: refresh }),
+        });
+
+        if (!res.ok) {
+          await clearTokens();
+          return;
         }
+
+        const { accessToken, refreshToken, user: apiUser } = await res.json() as any;
+        await setTokens(accessToken, refreshToken);
+        const profile = mapApiUser(apiUser);
+        setUserState(profile);
+        loadRideHistory();
+        initSocket();
       } catch {
-        // ignore
+        // session expired or network error — stay logged out
       } finally {
         setIsLoading(false);
       }
     };
-    loadUser();
+    init();
   }, []);
 
-  const saveUser = async (u: UserProfile) => {
-    await AsyncStorage.setItem("pasabay_user", JSON.stringify(u));
-    setUser(u);
-  };
+  const signup = useCallback(async (name: string, email: string, password: string) => {
+    const data = await apiRequest<any>("/auth/signup", {
+      method: "POST",
+      body: JSON.stringify({ name, email, password }),
+    });
+    await setTokens(data.accessToken, data.refreshToken);
+    const profile = mapApiUser(data.user);
+    setUserState(profile);
+    initSocket();
+  }, [initSocket]);
 
-  const signup = useCallback(async (email: string, _password: string) => {
-    const newUser: UserProfile = {
-      id: Date.now().toString(),
-      name: email.split("@")[0].replace(".", " ").replace(/\b\w/g, c => c.toUpperCase()),
-      email,
-      role: "passenger",
-      rating: 5.0,
-      totalRides: 0,
-      verified: false,
-      driverVerified: false,
-    };
-    await saveUser(newUser);
-  }, []);
-
-  const login = useCallback(async (email: string, _password: string) => {
-    const existing = await AsyncStorage.getItem("pasabay_user");
-    if (existing) {
-      const parsed = JSON.parse(existing) as UserProfile;
-      if (parsed.email === email) {
-        setUser(parsed);
-        setActiveRole(parsed.role);
-        return;
-      }
-    }
-    const mockUser: UserProfile = {
-      id: "demo",
-      name: "Juan Dela Cruz",
-      email: "juan.delacruz@usc.edu.ph",
-      role: "passenger",
-      rating: 4.8,
-      totalRides: 23,
-      verified: true,
-      driverVerified: false,
-    };
-    await saveUser(mockUser);
-    setActiveRole(mockUser.role);
-  }, []);
+  const login = useCallback(async (email: string, password: string) => {
+    const data = await apiRequest<any>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+    await setTokens(data.accessToken, data.refreshToken);
+    const profile = mapApiUser(data.user);
+    setUserState(profile);
+    loadRideHistory();
+    initSocket();
+  }, [loadRideHistory, initSocket]);
 
   const loginWithGoogle = useCallback(async (googleUser: GoogleUserInfo): Promise<{ isNew: boolean }> => {
-    const existing = await AsyncStorage.getItem("pasabay_user");
-    if (existing) {
-      const parsed = JSON.parse(existing) as UserProfile;
-      if (parsed.email === googleUser.email) {
-        const updated: UserProfile = {
-          ...parsed,
-          googleId: googleUser.id,
-          avatar: googleUser.picture,
-          name: googleUser.name || parsed.name,
-        };
-        await saveUser(updated);
-        setActiveRole(updated.role);
-        return { isNew: false };
-      }
+    const data = await apiRequest<any>("/auth/google", {
+      method: "POST",
+      body: JSON.stringify({
+        googleId: googleUser.id,
+        email: googleUser.email,
+        name: googleUser.name,
+        avatar: googleUser.picture,
+      }),
+    });
+    await setTokens(data.accessToken, data.refreshToken);
+    const profile = mapApiUser(data.user);
+    setUserState(profile);
+    loadRideHistory();
+    initSocket();
+    return { isNew: data.isNew ?? false };
+  }, [loadRideHistory, initSocket]);
+
+  const logout = useCallback(async () => {
+    try {
+      await apiRequest("/auth/logout", { method: "POST" });
+    } catch {
+      // ignore
+    } finally {
+      disconnectSocket();
+      setSocketConnected(false);
+      await clearTokens();
+      setUser(null);
+      setActiveRole("passenger");
+      setRideHistory([]);
+      setPendingMatchRequest(null);
+      setMatchConfirmed(null);
+      setCompletedRide(null);
     }
-
-    const newUser: UserProfile = {
-      id: `google_${googleUser.id}`,
-      name: googleUser.name,
-      email: googleUser.email,
-      role: "passenger",
-      rating: 5.0,
-      totalRides: 0,
-      verified: false,
-      driverVerified: false,
-      googleId: googleUser.id,
-      avatar: googleUser.picture,
-    };
-    await saveUser(newUser);
-    setActiveRole("passenger");
-    return { isNew: true };
   }, []);
 
-  const logout = useCallback(() => {
-    AsyncStorage.removeItem("pasabay_user");
-    setUser(null);
-    setActiveRole("passenger");
-  }, []);
-
-  const setSchoolIdVerified = useCallback(() => {
+  const setSchoolIdVerified = useCallback(async () => {
     if (!user) return;
-    const updated = { ...user, verified: true };
-    saveUser(updated);
+    try {
+      await apiRequest("/users/school-id", {
+        method: "POST",
+        body: JSON.stringify({ status: "submitted" }),
+      });
+    } catch {
+      // ignore
+    }
+    setUser({ ...user, verified: true });
   }, [user]);
 
-  const setDriverVerified = useCallback((vehicle: UserProfile["vehicle"]) => {
+  const setDriverVerified = useCallback(async (vehicle: UserProfile["vehicle"]) => {
     if (!user) return;
+    try {
+      await apiRequest("/users/driver", {
+        method: "POST",
+        body: JSON.stringify({
+          plate: vehicle?.plate,
+          make: vehicle?.make,
+          model: vehicle?.model,
+          year: parseInt(vehicle?.year ?? "2020"),
+          color: vehicle?.color,
+          seats: vehicle?.seats ?? 4,
+          fuelEfficiency: vehicle?.fuelEfficiency ?? 20,
+        }),
+      });
+    } catch {
+      // ignore
+    }
     const updated: UserProfile = { ...user, driverVerified: true, role: "driver", vehicle };
-    saveUser(updated);
+    setUser(updated);
     setActiveRole("driver");
   }, [user]);
 
-  const switchRole = useCallback((role: UserRole) => {
+  const switchRole = useCallback(async (role: UserRole) => {
     setActiveRole(role);
     if (user) {
-      const updated = { ...user, role };
-      saveUser(updated);
+      try {
+        await apiRequest("/users/switch-role", {
+          method: "POST",
+          body: JSON.stringify({ role }),
+        });
+      } catch {
+        // ignore
+      }
+      setUser({ ...user, role });
     }
   }, [user]);
 
@@ -205,6 +336,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       isLoading,
       rideHistory,
       activeRole,
+      socketConnected,
+      pendingMatchRequest,
+      matchConfirmed,
+      completedRide,
       login,
       loginWithGoogle,
       logout,
@@ -213,6 +348,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setDriverVerified,
       switchRole,
       addRideHistory,
+      refreshUser,
+      clearPendingMatch: () => setPendingMatchRequest(null),
+      clearMatchConfirmed: () => setMatchConfirmed(null),
+      clearCompletedRide: () => setCompletedRide(null),
     }}>
       {children}
     </AppContext.Provider>
