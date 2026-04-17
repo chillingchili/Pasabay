@@ -45,6 +45,23 @@ export interface RideHistory {
   cancelReason?: string;
 }
 
+export interface ActiveRide {
+  rideId: string;
+  driver: {
+    id: string;
+    name: string;
+    rating: number;
+    avatar?: string;
+    vehicle?: { make: string; model: string; color: string; plate: string } | null;
+  };
+  pickup: { lat: number; lng: number; name: string };
+  dropoff: { lat: number; lng: number; name: string };
+  fare: number;
+  matchingFee: number;
+  total: number;
+  distanceKm: number;
+}
+
 interface AppContextValue {
   user: UserProfile | null;
   isAuthenticated: boolean;
@@ -55,6 +72,8 @@ interface AppContextValue {
   pendingMatchRequest: MatchRequestPayload | null;
   matchConfirmed: MatchConfirmedPayload | null;
   completedRide: RideCompletedPayload | null;
+  activeRide: ActiveRide | null;
+  driverLocation: { lat: number; lng: number; heading?: number } | null;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: (googleUser: GoogleUserInfo) => Promise<{ isNew: boolean }>;
   logout: () => void;
@@ -67,6 +86,7 @@ interface AppContextValue {
   clearPendingMatch: () => void;
   clearMatchConfirmed: () => void;
   clearCompletedRide: () => void;
+  clearActiveRide: () => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -123,6 +143,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [pendingMatchRequest, setPendingMatchRequest] = useState<MatchRequestPayload | null>(null);
   const [matchConfirmed, setMatchConfirmed] = useState<MatchConfirmedPayload | null>(null);
   const [completedRide, setCompletedRide] = useState<RideCompletedPayload | null>(null);
+  const [activeRide, setActiveRide] = useState<ActiveRide | null>(null);
+  const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number; heading?: number } | null>(null);
 
   const setUserState = (profile: UserProfile) => {
     setUser(profile);
@@ -271,6 +293,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setPendingMatchRequest(null);
       setMatchConfirmed(null);
       setCompletedRide(null);
+      setActiveRide(null);
+      setDriverLocation(null);
     }
   }, []);
 
@@ -340,6 +364,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       pendingMatchRequest,
       matchConfirmed,
       completedRide,
+      activeRide,
+      driverLocation,
       login,
       loginWithGoogle,
       logout,
@@ -352,6 +378,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       clearPendingMatch: () => setPendingMatchRequest(null),
       clearMatchConfirmed: () => setMatchConfirmed(null),
       clearCompletedRide: () => setCompletedRide(null),
+      clearActiveRide: () => { setActiveRide(null); setDriverLocation(null); },
     }}>
       {children}
     </AppContext.Provider>
