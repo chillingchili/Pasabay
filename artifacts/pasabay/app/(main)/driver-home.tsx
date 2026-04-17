@@ -132,6 +132,29 @@ export default function DriverHomeScreen() {
     }
   };
 
+  const handleNoShow = () => {
+    Alert.alert(
+      "Passenger No-Show",
+      "Cancel this ride and notify the passenger?",
+      [
+        { text: "Keep Waiting", style: "cancel" },
+        {
+          text: "Cancel Ride",
+          style: "destructive",
+          onPress: () => {
+            if (rideId) {
+              emitRideCancel(rideId, "Passenger no-show");
+              setAccepted(null);
+              setRideId(null);
+              setTimer(60);
+              clearActiveRide();
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const destLabel = SM_DEST.name;
   const etaMin = routeInfo?.durationMin ?? 18;
 
@@ -220,8 +243,8 @@ export default function DriverHomeScreen() {
                 <Text style={[styles.timerText, { color: timer < 20 ? colors.destructive : colors.primary, fontFamily: "Inter_700Bold" }]}>{timer}s</Text>
               </View>
             ) : (
-              <Pressable style={[styles.noShowBtn, { backgroundColor: colors.destructiveLight }]} onPress={handleCompleteRide}>
-                <Text style={[styles.noShowText, { color: colors.destructive, fontFamily: "Inter_500Medium" }]}>Complete</Text>
+              <Pressable style={[styles.noShowBtn, { backgroundColor: colors.destructive }]} onPress={handleNoShow}>
+                <Text style={[styles.noShowText, { color: "#fff", fontFamily: "Inter_600SemiBold" }]}>Passenger No-Show</Text>
               </Pressable>
             )}
           </View>
