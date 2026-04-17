@@ -73,7 +73,7 @@ export function formatApiError(err: ApiError | unknown): string {
 
   switch (apiErr.status) {
     case 401:
-      return "Session expired. Please log in again.";
+      return apiErr.message || "Session expired. Please log in again.";
     case 404:
       return "Service not available. Please try again later.";
     case 500:
@@ -102,6 +102,12 @@ export async function apiRequest<T = unknown>(
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
   if (res.status === 401 && retry) {
+    const { refresh } = await getTokens();
+    if (!refresh) {
+      // No refresh token means user is already logged out — suppress error
+      const err: ApiError = { status: 401, message: "" };
+      throw err;
+    }
     const newAccess = await refreshAccessToken();
     if (newAccess) {
       return apiRequest<T>(path, options, false);

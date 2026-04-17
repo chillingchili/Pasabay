@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Alert, Animated, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Animated, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { MapBackground } from "@/components/MapBackground";
+import { RealMap } from "@/components/RealMap";
 import LoadingOverlay from "@/components/LoadingOverlay";
 import { useColors } from "@/hooks/useColors";
+import { useLocation } from "@/hooks/useLocation";
 import { useApp } from "@/context/AppContext";
 import {
   emitDriverOnline, emitDriverOffline, emitMatchAccept, emitMatchDecline,
@@ -12,14 +13,13 @@ import {
   onMatchAccepted,
 } from "@/lib/socket";
 import type { MatchRequestPayload } from "@/lib/socket";
-
-const USC_ORIGIN = { lat: 10.2969, lng: 123.9008, name: "USC Main Gate" };
-const SM_DEST = { lat: 10.3278, lng: 123.9028, name: "SM City Cebu" };
+import { getRoute } from "@/lib/osrm";
 
 export default function DriverHomeScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const { user, pendingMatchRequest, clearPendingMatch, activeRide, clearActiveRide } = useApp();
+  const { location: userLoc } = useLocation();
 
   const [isOnline, setIsOnline] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,11 +27,27 @@ export default function DriverHomeScreen() {
   const [accepted, setAccepted] = useState<MatchRequestPayload | null>(null);
   const [rideId, setRideId] = useState<string | null>(null);
   const [timer, setTimer] = useState(60);
+  const [destQuery, setDestQuery] = useState("");
+  const [showDestSuggestions, setShowDestSuggestions] = useState(false);
+  const [selectedDest, setSelectedDest] = useState<{ lat: number; lng: number; name: string } | null>(null);
+  const [routePolyline, setRoutePolyline] = useState<{ lat: number; lng: number }[] | null>(null);
 
   const slideAnim = useRef(new Animated.Value(-160)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
+
+  const DEST_OPTIONS = [
+    { name: "IT Park, Lahug", lat: 10.3157, lng: 123.9030 },
+    { name: "SM City Cebu", lat: 10.3278, lng: 123.9028 },
+    { name: "Ayala Center", lat: 10.3080, lng: 123.8980 },
+    { name: "JY Square", lat: 10.3200, lng: 123.9050 },
+    { name: "Mango Square", lat: 10.3100, lng: 123.9000 },
+  ];
+
+  const filteredDests = destQuery
+    ? DEST_OPTIONS.filter(d => d.name.toLowerCase().includes(destQuery.toLowerCase()))
+    : DEST_OPTIONS;
 
   useEffect(() => {
     Animated.spring(slideAnim, { toValue: 0, tension: 50, friction: 10, useNativeDriver: true }).start();
@@ -78,17 +94,45 @@ export default function DriverHomeScreen() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!userLoc || !selectedDest) return;
+    let cancelled = false;
+    const fetch = async () => {
+      const route = await getRoute(userLoc, selectedDest);
+      if (cancelled) return;
+      if (route) {
+        setRoutePolyline(route.polyline);
+        setRouteInfo({ distanceKm: route.distanceKm, durationMin: Math.round(route.durationSec / 60) });
+      }
+    };
+    fetch();
+    return () => { cancelled = true; };
+  }, [selectedDest, userLoc]);
+
+  const handleSelectDest = (d: { name: string; lat: number; lng: number }) => {
+    setSelectedDest(d);
+    setDestQuery(d.name);
+    setShowDestSuggestions(false);
+  };
+
   const handleGoOnline = () => {
+    if (!selectedDest) {
+      Alert.alert("Set Destination", "Please select your destination before going online.");
+      return;
+    }
+    if (!userLoc) {
+      Alert.alert("Location Required", "Please enable location services to go online.");
+      return;
+    }
     setIsLoading(true);
     emitDriverOnline({
-      originName: USC_ORIGIN.name,
-      originLat: USC_ORIGIN.lat,
-      originLng: USC_ORIGIN.lng,
-      destName: SM_DEST.name,
-      destLat: SM_DEST.lat,
-      destLng: SM_DEST.lng,
+      originName: "Current Location",
+      originLat: userLoc.lat,
+      originLng: userLoc.lng,
+      destName: selectedDest.name,
+      destLat: selectedDest.lat,
+      destLng: selectedDest.lng,
     });
-    // Brief loading state since emit is fire-and-forget
     setTimeout(() => setIsLoading(false), 500);
   };
 
@@ -162,18 +206,31 @@ export default function DriverHomeScreen() {
     );
   };
 
-  const destLabel = SM_DEST.name;
   const etaMin = routeInfo?.durationMin ?? 18;
 
   return (
     <View style={styles.container}>
-      <MapBackground showRoute={true} driverRoute={true} />
+      <RealMap
+        showRoute={!!routePolyline}
+        routePolyline={routePolyline ?? undefined}
+        userLocation={userLoc ?? undefined}
+        pickupPoint={selectedDest ?? undefined}
+      />
       <LoadingOverlay visible={isLoading} message={isOnline ? "Going offline..." : "Going online..."} />
 
       <View style={[styles.topBar, { paddingTop: topPad + 8, paddingHorizontal: 16 }]}>
         <View style={[styles.destBar, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
           <View style={[styles.destDot, { backgroundColor: isOnline ? colors.primary : colors.textMuted }]} />
-          <Text style={[styles.destText, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{destLabel}</Text>
+          <TextInput
+            style={[styles.destInput, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}
+            value={destQuery}
+            onChangeText={(t) => { setDestQuery(t); setShowDestSuggestions(true); }}
+            onFocus={() => setShowDestSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowDestSuggestions(false), 200)}
+            placeholder="Set destination..."
+            placeholderTextColor={colors.textMuted}
+            editable={!isOnline}
+          />
           <Pressable
             style={[styles.statusTag, { backgroundColor: isOnline ? colors.primaryLight : colors.card }]}
             onPress={isOnline ? handleGoOffline : handleGoOnline}
@@ -183,13 +240,28 @@ export default function DriverHomeScreen() {
             </Text>
           </Pressable>
         </View>
+
+        {showDestSuggestions && !isOnline && filteredDests.length > 0 && (
+          <View style={[styles.suggestions, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
+            {filteredDests.map(d => (
+              <Pressable
+                key={d.name}
+                style={styles.suggestionItem}
+                onPress={() => handleSelectDest(d)}
+              >
+                <Feather name="map-pin" size={14} color={colors.primary} />
+                <Text style={[styles.suggestionText, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}>{d.name}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
       </View>
 
       {pendingMatchRequest && !accepted && (
         <Animated.View
           style={[
             styles.requestPopup,
-            { backgroundColor: "rgba(255,255,255,0.97)", top: topPad + 76 },
+            { backgroundColor: "rgba(255,255,255,0.97)", top: topPad + (showDestSuggestions ? 180 : 76) },
             { transform: [{ translateY: slideAnim }] },
           ]}
         >
@@ -259,15 +331,10 @@ export default function DriverHomeScreen() {
         </View>
       )}
 
-      <View style={styles.userPin}>
-        <Animated.View style={[styles.pulse, { transform: [{ scale: pulseAnim }], backgroundColor: `${colors.primary}30` }]} />
-        <View style={[styles.pin, { backgroundColor: colors.primary, borderColor: "#fff" }]} />
-      </View>
-
       <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 80, 100) }]}>
         <View style={styles.infoBlock}>
           <Text style={[styles.infoLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>To destination</Text>
-          <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{destLabel}</Text>
+          <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{selectedDest?.name ?? "Not set"}</Text>
         </View>
         <View style={styles.infoBlock}>
           <Text style={[styles.infoLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>ETA</Text>
@@ -285,9 +352,12 @@ const styles = StyleSheet.create({
   topBar: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10 },
   destBar: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 12, paddingLeft: 14, gap: 8, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   destDot: { width: 8, height: 8, borderRadius: 4 },
-  destText: { flex: 1, fontSize: 14 },
+  destInput: { flex: 1, fontSize: 14 },
   statusTag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   statusTagText: { fontSize: 12 },
+  suggestions: { position: "absolute", top: 58, left: 0, right: 0, borderRadius: 12, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
+  suggestionItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#f5f5f5" },
+  suggestionText: { fontSize: 14 },
   requestPopup: { position: "absolute", left: 16, right: 16, borderRadius: 16, padding: 14, gap: 10, zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20, elevation: 8 },
   requestHeader: { flexDirection: "row", alignItems: "center", gap: 5 },
   requestHeaderText: { fontSize: 13 },
@@ -312,9 +382,6 @@ const styles = StyleSheet.create({
   timerText: { fontSize: 16 },
   noShowBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   noShowText: { fontSize: 12 },
-  userPin: { position: "absolute", left: "50%", top: "73%", transform: [{ translateX: -12 }, { translateY: -12 }], alignItems: "center", justifyContent: "center", zIndex: 5 },
-  pulse: { position: "absolute", width: 40, height: 40, borderRadius: 20 },
-  pin: { width: 16, height: 16, borderRadius: 8, borderWidth: 3 },
   infoBar: { position: "absolute", bottom: 0, left: 0, right: 0, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 24, paddingTop: 16 },
   infoBlock: { gap: 3 },
   infoLabel: { fontSize: 11 },

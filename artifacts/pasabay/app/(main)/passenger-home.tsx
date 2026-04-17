@@ -1,28 +1,49 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Animated, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { MapBackground } from "@/components/MapBackground";
+import { RealMap } from "@/components/RealMap";
 import { PreMatchModal } from "@/components/PreMatchModal";
 import LoadingOverlay from "@/components/LoadingOverlay";
 import { useColors } from "@/hooks/useColors";
+import { useLocation } from "@/hooks/useLocation";
 import { useApp } from "@/context/AppContext";
+import { getRoute } from "@/lib/osrm";
+import { haversineKm } from "@/lib/osrm";
 
-const QUICK_DESTINATIONS = ["IT Park, Lahug", "SM City Cebu", "Ayala Center", "JY Square", "Mango Square"];
+const QUICK_DESTINATIONS = ["USC Talamban", "IT Park, Lahug", "SM City Cebu", "Ayala Center", "JY Square", "Mango Square"];
+
+const DEST_COORDS: Record<string, { lat: number; lng: number }> = {
+  "USC Talamban": { lat: 10.3157, lng: 123.9030 },
+  "IT Park, Lahug": { lat: 10.3157, lng: 123.9030 },
+  "SM City Cebu": { lat: 10.3278, lng: 123.9028 },
+  "Ayala Center": { lat: 10.3080, lng: 123.8980 },
+  "JY Square": { lat: 10.3200, lng: 123.9050 },
+  "Mango Square": { lat: 10.3100, lng: 123.9000 },
+};
 
 export default function PassengerHomeScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const { user } = useApp();
-  const [destination, setDestination] = useState("IT Park, Lahug");
+  const { location: userLoc } = useLocation();
+  const [destination, setDestination] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showPreMatch, setShowPreMatch] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [routePolyline, setRoutePolyline] = useState<{ lat: number; lng: number }[] | null>(null);
+  const [fareEstimate, setFareEstimate] = useState(0);
+  const [distanceKm, setDistanceKm] = useState(0);
+  const [etaMin, setEtaMin] = useState(0);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const sheetAnim = useRef(new Animated.Value(0)).current;
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
+
+  const pickupPoint = userLoc ? { lat: userLoc.lat, lng: userLoc.lng, name: "Your location" } : null;
+  const destCoords = destination ? DEST_COORDS[destination] ?? null : null;
+  const dropoffPoint = destCoords ? { lat: destCoords.lat, lng: destCoords.lng, name: destination } : null;
 
   useEffect(() => {
     const pulse = Animated.loop(
@@ -36,6 +57,38 @@ export default function PassengerHomeScreen() {
     return () => pulse.stop();
   }, [pulseAnim, sheetAnim]);
 
+  useEffect(() => {
+    if (!pickupPoint || !dropoffPoint) {
+      setRoutePolyline(null);
+      setFareEstimate(0);
+      setDistanceKm(0);
+      setEtaMin(0);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchRoute = async () => {
+      const route = await getRoute(pickupPoint, dropoffPoint);
+      if (cancelled) return;
+      if (route) {
+        setRoutePolyline(route.polyline);
+        const dist = route.distanceKm;
+        setDistanceKm(dist);
+        setEtaMin(Math.round(route.durationSec / 60));
+        const fare = Math.max(15, Math.round(dist * 5.5 + 8));
+        setFareEstimate(fare);
+      } else {
+        const dist = haversineKm(pickupPoint, dropoffPoint);
+        setDistanceKm(dist);
+        setEtaMin(Math.round(dist * 3));
+        const fare = Math.max(15, Math.round(dist * 5.5 + 8));
+        setFareEstimate(fare);
+      }
+    };
+    fetchRoute();
+    return () => { cancelled = true; };
+  }, [destination, pickupPoint, dropoffPoint]);
+
   const handleFindRide = () => {
     if (!destination) return;
     setShowPreMatch(true);
@@ -44,15 +97,17 @@ export default function PassengerHomeScreen() {
   const handleConfirmRide = () => {
     setShowPreMatch(false);
     setIsLoading(true);
+    const pickup = pickupPoint ?? { lat: 10.2969, lng: 123.9008 };
+    const dropoff = dropoffPoint ?? { lat: 10.3157, lng: 123.9030 };
     router.push({
       pathname: "/(main)/matching",
       params: {
         destination,
-        pickupLat: "10.2969",
-        pickupLng: "123.9008",
-        dropoffLat: "10.3157",
-        dropoffLng: "123.9030",
-        pickupName: "USC Main Gate",
+        pickupLat: String(pickup.lat),
+        pickupLng: String(pickup.lng),
+        dropoffLat: String(dropoff.lat),
+        dropoffLng: String(dropoff.lng),
+        pickupName: pickupPoint?.name ?? "USC Main Gate",
         dropoffName: destination,
       },
     });
@@ -67,7 +122,13 @@ export default function PassengerHomeScreen() {
 
   return (
     <View style={styles.container}>
-      <MapBackground showRoute={!!destination} />
+      <RealMap
+        showRoute={!!routePolyline}
+        routePolyline={routePolyline ?? undefined}
+        pickupPoint={pickupPoint ?? undefined}
+        dropoffPoint={dropoffPoint ?? undefined}
+        userLocation={userLoc ?? undefined}
+      />
       <LoadingOverlay visible={isLoading} message="Navigating..." />
 
       <View style={[styles.topArea, { paddingTop: topPad + 8 }]}>
@@ -111,11 +172,6 @@ export default function PassengerHomeScreen() {
         )}
       </View>
 
-      <View style={styles.userPin}>
-        <Animated.View style={[styles.pulse, { transform: [{ scale: pulseAnim }], backgroundColor: `${colors.primary}30` }]} />
-        <View style={[styles.pin, { backgroundColor: colors.primary, borderColor: "#fff" }]} />
-      </View>
-
       <Animated.View
         style={[
           styles.bottomSheet,
@@ -139,16 +195,16 @@ export default function PassengerHomeScreen() {
               </View>
               <View style={[styles.fareChip, { backgroundColor: colors.accentBg }]}>
                 <Text style={[styles.fareLabel, { color: colors.accentDark, fontFamily: "Inter_400Regular" }]}>fare</Text>
-                <Text style={[styles.fareAmount, { color: colors.accentDark, fontFamily: "Inter_700Bold" }]}>₱18</Text>
+                <Text style={[styles.fareAmount, { color: colors.accentDark, fontFamily: "Inter_700Bold" }]}>₱{fareEstimate}</Text>
               </View>
             </View>
 
             <View style={styles.statChips}>
-              <StatChip label="Distance" value="3.2 km" colors={colors} />
+              <StatChip label="Distance" value={`${distanceKm.toFixed(1)} km`} colors={colors} />
               <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
               <StatChip label="Walk" value="~4 min" colors={colors} />
               <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-              <StatChip label="ETA" value="~12 min" colors={colors} />
+              <StatChip label="ETA" value={`~${etaMin} min`} colors={colors} />
             </View>
 
             <Pressable
@@ -169,9 +225,9 @@ export default function PassengerHomeScreen() {
       <PreMatchModal
         visible={showPreMatch}
         destination={destination}
-        fareEstimate={18}
-        distanceKm={3.2}
-        etaMin={12}
+        fareEstimate={fareEstimate}
+        distanceKm={distanceKm}
+        etaMin={etaMin}
         onConfirm={handleConfirmRide}
         onCancel={handleCancelRide}
       />
@@ -197,14 +253,11 @@ const styles = StyleSheet.create({
   driversBadgeText: { fontSize: 12, color: "#fff" },
   searchContainer: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 10, paddingLeft: 16, gap: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   searchDot: { width: 8, height: 8, borderRadius: 4 },
-  searchInput: { flex: 1, fontSize: 14, height: 34 },
+  searchInput: { flex: 1, fontSize: 14, minHeight: 34 },
   searchBtn: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   suggestions: { borderRadius: 12, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 5 },
   suggestionItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#f5f5f5" },
   suggestionText: { fontSize: 14 },
-  userPin: { position: "absolute", left: "50%", top: "55%", transform: [{ translateX: -12 }, { translateY: -12 }], alignItems: "center", justifyContent: "center", zIndex: 5 },
-  pulse: { position: "absolute", width: 40, height: 40, borderRadius: 20 },
-  pin: { width: 16, height: 16, borderRadius: 8, borderWidth: 3 },
   bottomSheet: { position: "absolute", bottom: 0, left: 0, right: 0, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 100, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 10 },
   handle: { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 16 },
   destRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
