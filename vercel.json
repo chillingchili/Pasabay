@@ -1,6 +1,7 @@
 {
-  "buildCommand": "pnpm build:web",
+  "buildCommand": "cd artifacts/pasabay && pnpm exec expo export --platform web",
   "outputDirectory": "artifacts/pasabay/dist",
+  "installCommand": "pnpm install",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],
