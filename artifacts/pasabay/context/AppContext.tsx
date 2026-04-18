@@ -255,6 +255,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [network.isOnline]);
 
+  const forceLogoutRef = useRef<{ fn: () => Promise<void> }>({ fn: async () => {} });
+
   const refreshUser = useCallback(async () => {
     try {
       const data = await apiRequest<any>("/users/profile");
@@ -263,10 +265,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const apiErr = err as ApiError;
       if (apiErr?.status === 401) {
-        await forceLogout();
+        await forceLogoutRef.current.fn();
       }
     }
-  }, [forceLogout]);
+  }, []);
 
   const loadRideHistory = useCallback(async () => {
     try {
@@ -276,12 +278,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const apiErr = err as ApiError;
       if (apiErr?.status === 401) {
-        await forceLogout();
+        await forceLogoutRef.current.fn();
       } else {
         setRideHistory([]);
       }
     }
-  }, [forceLogout]);
+  }, []);
 
   useEffect(() => {
     const init = async () => {
@@ -431,6 +433,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setDriverLocation(null);
     router.replace("/login");
   }, []);
+
+  forceLogoutRef.current.fn = forceLogout;
 
   const logout = useCallback(async () => {
     try {
