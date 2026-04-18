@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Alert, Animated, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { RealMap } from "@/components/RealMap";
@@ -18,7 +19,7 @@ import { getRoute } from "@/lib/osrm";
 export default function DriverHomeScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { user, pendingMatchRequest, clearPendingMatch, activeRide, clearActiveRide, setActiveRide } = useApp();
+  const { user, pendingMatchRequest, clearPendingMatch, activeRide, clearActiveRide, setActiveRide, switchRole } = useApp();
   const { location: userLoc } = useLocation();
 
   const [isOnline, setIsOnline] = useState(false);
@@ -31,6 +32,7 @@ export default function DriverHomeScreen() {
   const [showDestSuggestions, setShowDestSuggestions] = useState(false);
   const [selectedDest, setSelectedDest] = useState<{ lat: number; lng: number; name: string } | null>(null);
   const [routePolyline, setRoutePolyline] = useState<{ lat: number; lng: number }[] | null>(null);
+  const [isDriverView, setIsDriverView] = useState(true);
 
   const slideAnim = useRef(new Animated.Value(-160)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -235,7 +237,7 @@ export default function DriverHomeScreen() {
     );
   };
 
-  const etaMin = routeInfo?.durationMin ?? 18;
+  const etaMin = selectedDest ? (routeInfo?.durationMin ?? 18) : null;
 
   return (
     <View style={styles.container}>
@@ -244,10 +246,11 @@ export default function DriverHomeScreen() {
         routePolyline={routePolyline ?? undefined}
         userLocation={userLoc ?? undefined}
         pickupPoint={selectedDest ?? undefined}
+        centerOn={selectedDest ?? undefined}
       />
       <LoadingOverlay visible={isLoading} message={isOnline ? "Going offline..." : "Going online..."} />
 
-      <View style={[styles.topBar, { paddingTop: topPad + 8, paddingHorizontal: 16 }]}>
+      <View style={[styles.topBar, { paddingTop: topPad, paddingHorizontal: 16 }]}>
         <View style={[styles.destBar, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
           <View style={[styles.destDot, { backgroundColor: isOnline ? colors.primary : colors.textMuted }]} />
           <TextInput
@@ -269,6 +272,15 @@ export default function DriverHomeScreen() {
             </Text>
           </Pressable>
         </View>
+
+        <Pressable
+          style={[styles.switchBtn, { backgroundColor: "rgba(255,255,255,0.97)" }]}
+          onPress={() => { switchRole("passenger"); router.replace("/(main)/passenger-home"); }}
+        >
+          <Feather name="user" size={16} color={colors.primary} />
+          <Text style={[styles.switchBtnText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>Switch to Passenger</Text>
+          <Feather name="arrow-right" size={16} color={colors.primary} />
+        </Pressable>
 
         {showDestSuggestions && !isOnline && filteredDests.length > 0 && (
           <View style={[styles.suggestions, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
@@ -368,7 +380,8 @@ export default function DriverHomeScreen() {
         <View style={styles.infoBlock}>
           <Text style={[styles.infoLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>ETA</Text>
           <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
-            {etaMin} <Text style={[styles.infoUnit, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>min</Text>
+            {etaMin != null ? `${etaMin} ` : "— "}
+            <Text style={[styles.infoUnit, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>{etaMin != null ? "min" : ""}</Text>
           </Text>
         </View>
       </View>
@@ -382,6 +395,8 @@ const styles = StyleSheet.create({
   destBar: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 12, paddingLeft: 14, gap: 8, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   destDot: { width: 8, height: 8, borderRadius: 4 },
   destInput: { flex: 1, fontSize: 14 },
+  switchBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 12, padding: 10, marginTop: 6, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 },
+  switchBtnText: { fontSize: 13 },
   statusTag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   statusTagText: { fontSize: 12 },
   suggestions: { position: "absolute", top: 58, left: 0, right: 0, borderRadius: 12, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },

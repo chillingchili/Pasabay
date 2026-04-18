@@ -24,7 +24,10 @@
       "package": "com.pasabay.app"
     },
     "web": {
-      "favicon": "./assets/images/icon.png"
+      "favicon": "./assets/images/icon.png",
+      "bundler": "metro",
+      "output": "static",
+      "dangerouslyDisableSSR": true
     },
     "plugins": [
       [

@@ -7,31 +7,20 @@ import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
 import { apiRequest } from "@/lib/api";
 
-const COLORS_LIST = [
-  { name: "White", hex: "#fff" },
-  { name: "Silver", hex: "#C0C0C0" },
-  { name: "Black", hex: "#333" },
-  { name: "Red", hex: "#8B0000" },
-  { name: "Blue", hex: "#1a3a6b" },
-  { name: "Green", hex: "#2d5a2d" },
-  { name: "Beige", hex: "#D4A574" },
-  { name: "Gold", hex: "#8B6914" },
-];
-
 const CAR_MAKES = ["Toyota", "Honda", "Mitsubishi", "Nissan", "Hyundai", "Suzuki", "Ford", "Other"];
 const SEAT_OPTIONS = ["2", "3", "4", "5", "6", "7"];
 
 export default function VehicleDetailsScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { setDriverVerified } = useApp();
+  const { refreshUser } = useApp();
 
   const [plate, setPlate] = useState("");
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
   const [year, setYear] = useState("");
   const [seats, setSeats] = useState("4");
-  const [carColor, setCarColor] = useState("Silver");
+  const [carColor, setCarColor] = useState("");
   const [fuelEff, setFuelEff] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +37,7 @@ export default function VehicleDetailsScreen() {
     const yearNum = parseInt(year);
     if (!year || isNaN(yearNum)) errors.year = "Year is required";
     else if (yearNum < 1990 || yearNum > currentYear) errors.year = `Must be between 1990 and ${currentYear}`;
-    if (!carColor) errors.color = "Select a color";
+    if (!carColor.trim()) errors.color = "Car color is required";
     const seatsNum = parseInt(seats);
     if (seatsNum < 1 || seatsNum > 8) errors.seats = "Must be between 1 and 8";
     if (fuelEff) {
@@ -85,16 +74,12 @@ export default function VehicleDetailsScreen() {
       if (!response.fuelEfficiencyApproved && fuelEff) {
         Alert.alert("Fuel Efficiency Adjusted", `Fuel efficiency adjusted to ${serverFuelEff.toFixed(1)} km/L based on vehicle specs.`);
       }
-      setDriverVerified({
-        plate: response.vehicle.plate,
-        make: response.vehicle.make,
-        model: response.vehicle.model,
-        year: String(response.vehicle.year),
-        color: response.vehicle.color,
-        seats: response.vehicle.seats,
-        fuelEfficiency: serverFuelEff,
-      });
-      router.replace("/(main)/driver-home");
+      await refreshUser();
+      Alert.alert(
+        "Pending Admin Approval",
+        "Your vehicle details have been submitted. An admin will review and certify you as a driver. For now, you can continue as a passenger.",
+        [{ text: "OK", onPress: () => router.replace("/(main)/passenger-home") }]
+      );
     } catch (err: unknown) {
       const message = (err as { message?: string })?.message ?? "Failed to submit vehicle details. Please try again.";
       setError(message);
@@ -204,25 +189,14 @@ export default function VehicleDetailsScreen() {
           </View>
 
           <FormGroup label="Car color" colors={colors}>
-            <View style={styles.colorGrid}>
-              {COLORS_LIST.map(c => (
-                <Pressable
-                  key={c.name}
-                  onPress={() => setCarColor(c.name)}
-                  style={[
-                    styles.colorSwatch,
-                    { backgroundColor: c.hex, borderColor: carColor === c.name ? colors.primary : colors.border, borderWidth: carColor === c.name ? 2.5 : 1.5 },
-                    c.hex === "#fff" && { borderColor: colors.border },
-                  ]}
-                >
-                  {carColor === c.name && (
-                    <View style={styles.colorCheck}>
-                      <Feather name="check" size={10} color={c.hex === "#fff" || c.hex === "#C0C0C0" ? "#333" : "#fff"} />
-                    </View>
-                  )}
-                </Pressable>
-              ))}
-            </View>
+            <TextInput
+              style={[styles.input, { color: colors.foreground, borderColor: fieldErrors.color ? "#ef4444" : colors.border, backgroundColor: colors.card, fontFamily: "Inter_400Regular" }]}
+              value={carColor}
+              onChangeText={t => { setCarColor(t); if (fieldErrors.color) setFieldErrors(prev => { const n = { ...prev }; delete n.color; return n; }); }}
+              placeholder="e.g. Silver, White, Black"
+              placeholderTextColor={colors.textMuted}
+            />
+            {fieldErrors.color && <Text style={[styles.fieldError, { color: "#ef4444" }]}>{fieldErrors.color}</Text>}
           </FormGroup>
 
           <View style={[styles.fuelSection, { borderTopColor: colors.borderLighter }]}>
@@ -256,9 +230,9 @@ export default function VehicleDetailsScreen() {
           )}
 
           <Pressable
-            style={[styles.btnPrimary, { backgroundColor: (loading || Object.keys(fieldErrors).length > 0) ? colors.mutedForeground : colors.primary }]}
+            style={[styles.btnPrimary, { backgroundColor: loading ? colors.mutedForeground : colors.primary }]}
             onPress={handleSave}
-            disabled={loading || Object.keys(fieldErrors).length > 0}
+            disabled={loading}
           >
             {loading ? (
               <Text style={[styles.btnPrimaryText, { fontFamily: "Inter_600SemiBold" }]}>Submitting...</Text>
@@ -296,9 +270,6 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
   seatChip: { width: 40, height: 36, borderRadius: 10, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
   chipText: { fontSize: 13 },
-  colorGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, paddingVertical: 4 },
-  colorSwatch: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
-  colorCheck: { width: 18, height: 18, borderRadius: 9, backgroundColor: "rgba(0,0,0,0.15)", alignItems: "center", justifyContent: "center" },
   fuelSection: { borderTopWidth: 1, paddingTop: 14, gap: 8 },
   fuelHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   optionalBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },

@@ -86,6 +86,7 @@ interface AppContextValue {
   setSchoolIdVerified: () => void;
   setDriverVerified: (vehicle: UserProfile["vehicle"]) => void;
   switchRole: (role: UserRole) => void;
+  loginAsDemo: () => Promise<void>;
   addRideHistory: (ride: RideHistory) => void;
   refreshUser: () => Promise<void>;
   clearPendingMatch: () => void;
@@ -309,10 +310,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         } catch {
           // ignore stale data
         }
+        // Restore school ID verification state from AsyncStorage
+        try {
+          const stored = await AsyncStorage.getItem("pasabay_school_id_verified");
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            setUser(prev => prev ? {
+              ...prev,
+              verified: parsed.verified ?? prev.verified,
+            } : null);
+          }
+        } catch {
+          // ignore stale data
+        }
         loadRideHistory();
         initSocket();
       } catch {
-        // session expired or network error — stay logged out
+        // session expired or network error — try restoring demo mode
+        try {
+          const demo = await AsyncStorage.getItem("pasabay_demo_mode");
+          if (demo === "true") {
+            const demoUser: UserProfile = {
+              id: "demo-user-001",
+              name: "Maria Santos",
+              email: "maria.santos@usc.edu.ph",
+              role: "passenger",
+              rating: 4.8,
+              totalRides: 12,
+              verified: true,
+              driverVerified: true,
+              driverStatus: "verified",
+              vehicle: {
+                make: "Toyota",
+                model: "Vios",
+                year: "2022",
+                plate: "ABC 1234",
+                color: "White",
+                seats: 4,
+                fuelEfficiency: 18,
+              },
+            };
+            setUserState(demoUser);
+            loadRideHistory();
+            initSocket();
+            return;
+          }
+        } catch { /* ignore */ }
       } finally {
         setIsLoading(false);
       }
@@ -371,6 +414,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setSocketConnected(false);
       await clearTokens();
       await AsyncStorage.removeItem("pasabay_driver_verified");
+      await AsyncStorage.removeItem("pasabay_school_id_verified");
+      await AsyncStorage.removeItem("pasabay_demo_mode");
       setUser(null);
       setActiveRole("passenger");
       setRideHistory([]);
@@ -393,6 +438,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // ignore
     }
     setUser({ ...user, verified: true });
+    await AsyncStorage.setItem("pasabay_school_id_verified", JSON.stringify({ verified: true }));
   }, [user]);
 
   const setDriverVerified = useCallback(async (vehicle: UserProfile["vehicle"]) => {
@@ -427,6 +473,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }));
     return response;
   }, [user]);
+
+  const loginAsDemo = useCallback(async () => {
+    const demoUser: UserProfile = {
+      id: "demo-user-001",
+      name: "Maria Santos",
+      email: "maria.santos@usc.edu.ph",
+      role: "passenger",
+      rating: 4.8,
+      totalRides: 12,
+      verified: true,
+      driverVerified: true,
+      driverStatus: "verified",
+      vehicle: {
+        make: "Toyota",
+        model: "Vios",
+        year: "2022",
+        plate: "ABC 1234",
+        color: "White",
+        seats: 4,
+        fuelEfficiency: 18,
+      },
+    };
+    setUserState(demoUser);
+    await AsyncStorage.setItem("pasabay_demo_mode", "true");
+    await AsyncStorage.setItem("pasabay_school_id_verified", JSON.stringify({ verified: true }));
+    await AsyncStorage.setItem("pasabay_driver_verified", JSON.stringify({
+      driverVerified: true,
+      driverStatus: "verified",
+      vehicle: demoUser.vehicle,
+    }));
+    loadRideHistory();
+    initSocket();
+  }, [loadRideHistory, initSocket]);
 
   const switchRole = useCallback(async (role: UserRole) => {
     setActiveRole(role);
@@ -468,6 +547,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setSchoolIdVerified,
       setDriverVerified,
       switchRole,
+      loginAsDemo,
       addRideHistory,
       refreshUser,
       clearPendingMatch: () => setPendingMatchRequest(null),

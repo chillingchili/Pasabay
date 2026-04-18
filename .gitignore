@@ -48,15 +48,11 @@ Thumbs.db
 .cache/
 .local/
 
-#docs for app specs
+# docs for app specs
 .docs
 
-#local agent
+# local agent
 .planning
 
-#gitignore
+# gitignore
 .gitignore
-
-.replit
-.npmrc
-.replitignore

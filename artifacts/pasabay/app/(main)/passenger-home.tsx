@@ -26,7 +26,7 @@ const DEST_COORDS: Record<string, { lat: number; lng: number }> = {
 export default function PassengerHomeScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { user, driverLocation } = useApp();
+  const { user, driverLocation, switchRole } = useApp();
   const { location: userLoc } = useLocation();
   const [destination, setDestination] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -129,16 +129,20 @@ export default function PassengerHomeScreen() {
         dropoffPoint={dropoffPoint ?? undefined}
         userLocation={userLoc ?? undefined}
         driverLocation={driverLocation ?? undefined}
+        centerOn={dropoffPoint ?? undefined}
       />
       <LoadingOverlay visible={isLoading} message="Navigating..." />
 
       <View style={[styles.topArea, { paddingTop: topPad + 8 }]}>
         <View style={styles.greetingRow}>
           <Text style={[styles.greeting, { fontFamily: "Inter_600SemiBold" }]}>{greeting} 👋</Text>
-          <View style={[styles.driversBadge, { backgroundColor: colors.primary }]}>
-            <Feather name="navigation" size={11} color="#fff" />
-            <Text style={[styles.driversBadgeText, { fontFamily: "Inter_500Medium" }]}>2 nearby</Text>
-          </View>
+          <Pressable
+            style={[styles.switchToDriverBtn, { backgroundColor: "rgba(255,255,255,0.2)" }]}
+            onPress={() => { switchRole("driver"); router.replace("/(main)/driver-home"); }}
+          >
+            <Feather name="truck" size={14} color="#fff" />
+            <Text style={[styles.switchToDriverText, { fontFamily: "Inter_500Medium" }]}>Driver</Text>
+          </Pressable>
         </View>
 
         <View style={[styles.searchContainer, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
@@ -250,8 +254,8 @@ const styles = StyleSheet.create({
   topArea: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, paddingHorizontal: 16, gap: 8 },
   greetingRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 2 },
   greeting: { fontSize: 15, color: "#fff" },
-  driversBadge: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20 },
-  driversBadgeText: { fontSize: 12, color: "#fff" },
+  switchToDriverBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  switchToDriverText: { fontSize: 12, color: "#fff" },
   searchContainer: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 10, paddingLeft: 16, gap: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   searchDot: { width: 8, height: 8, borderRadius: 4 },
   searchInput: { flex: 1, fontSize: 14, minHeight: 34 },

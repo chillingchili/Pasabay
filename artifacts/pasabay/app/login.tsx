@@ -22,7 +22,7 @@ function GoogleIcon() {
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { login, loginWithGoogle } = useApp();
+  const { login, loginWithGoogle, loginAsDemo } = useApp();
   const { signInWithGoogle, loading: googleLoading } = useGoogleAuth();
 
   const [email, setEmail] = useState("");
@@ -143,6 +143,14 @@ export default function LoginScreen() {
             )}
           </Pressable>
 
+          <Pressable
+            style={({ pressed }) => [styles.btnDemo, { backgroundColor: colors.primaryLighter, opacity: pressed ? 0.7 : 1 }]}
+            onPress={async () => { await loginAsDemo(); router.replace("/(main)/passenger-home"); }}
+          >
+            <Feather name="zap" size={16} color={colors.primary} />
+            <Text style={[styles.btnDemoText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>Try demo — no sign-in needed</Text>
+          </Pressable>
+
           <Text style={[styles.footer, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
             Don't have an account?{" "}
             <Text style={{ color: colors.primary, fontFamily: "Inter_500Medium" }} onPress={() => router.push("/signup")}>Sign up</Text>
@@ -175,5 +183,7 @@ const styles = StyleSheet.create({
   dividerText: { fontSize: 13 },
   btnGoogle: { height: 52, borderRadius: 14, borderWidth: 1.5, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: "#fff" },
   btnGoogleText: { fontSize: 15 },
+  btnDemo: { height: 44, borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+  btnDemoText: { fontSize: 14 },
   footer: { textAlign: "center", fontSize: 13, marginTop: 4 },
 });

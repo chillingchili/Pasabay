@@ -1,8 +1,0 @@
-uploads = []
-outputs = []
-
-[[generated]]
-id = "OAZZqxPZ_RFu-R6cERcvC"
-uri = "file://artifacts/pasabay/assets/images/icon.png"
-type = "image"
-title = "pasabay app icon"

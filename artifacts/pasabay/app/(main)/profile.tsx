@@ -10,6 +10,7 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const { user, logout, activeRole, switchRole, networkStatus } = useApp();
+  const isRegisteredDriver = user?.driverVerified || user?.vehicle;
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showEditName, setShowEditName] = useState(false);
@@ -66,22 +67,13 @@ export default function ProfileScreen() {
             </Text>
             <Text style={[styles.roleLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Current role</Text>
           </View>
-          {activeRole === "passenger" && (
+          {activeRole === "passenger" && !isRegisteredDriver && (
             <Pressable
               style={[styles.roleSwitchBtn, { backgroundColor: colors.accentBg }]}
               onPress={() => router.push("/vehicle-details")}
             >
               <Feather name="truck" size={12} color={colors.accentDark} />
               <Text style={[styles.roleSwitchText, { color: colors.accentDark, fontFamily: "Inter_500Medium" }]}>Become a driver</Text>
-            </Pressable>
-          )}
-          {activeRole === "driver" && (
-            <Pressable
-              style={[styles.roleSwitchBtn, { backgroundColor: colors.primaryLight }]}
-              onPress={() => switchRole("passenger")}
-            >
-              <Feather name="user" size={12} color={colors.primary} />
-              <Text style={[styles.roleSwitchText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>Switch to passenger</Text>
             </Pressable>
           )}
         </View>

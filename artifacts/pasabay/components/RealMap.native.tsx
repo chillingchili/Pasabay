@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
-import MapView, { Marker, Polyline, PROVIDER_DEFAULT, Region } from "react-native-maps";
+import MapView, { Marker, Polyline, PROVIDER_DEFAULT, type Region } from "react-native-maps";
 import { useColors } from "@/hooks/useColors";
 
 export interface MapPoint {
@@ -16,6 +16,7 @@ interface RealMapProps {
   dropoffPoint?: MapPoint;
   userLocation?: MapPoint;
   driverLocation?: MapPoint;
+  centerOn?: MapPoint;
   initialRegion?: Region;
   onRegionChangeComplete?: (region: Region) => void;
   onMapPress?: (event: any) => void;
@@ -36,16 +37,29 @@ export function RealMap({
   dropoffPoint,
   userLocation,
   driverLocation,
+  centerOn,
   initialRegion,
   onRegionChangeComplete,
   onMapPress,
   style,
 }: RealMapProps) {
   const colors = useColors();
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<any>(null);
   const [region, setRegion] = useState<Region>(initialRegion ?? DEFAULT_REGION);
 
   useEffect(() => {
+    if (centerOn) {
+      const newRegion: Region = {
+        latitude: centerOn.lat,
+        longitude: centerOn.lng,
+        latitudeDelta: 0.015,
+        longitudeDelta: 0.015,
+      };
+      setRegion(newRegion);
+      mapRef.current?.animateToRegion(newRegion, 500);
+      return;
+    }
+
     const points: MapPoint[] = [];
     if (userLocation) points.push(userLocation);
     if (pickupPoint) points.push(pickupPoint);
@@ -75,18 +89,14 @@ export function RealMap({
       setRegion(newRegion);
       mapRef.current?.animateToRegion(newRegion, 500);
     }
-  }, [userLocation, pickupPoint, dropoffPoint, driverLocation, routePolyline]);
-
-  const mapStyle = Platform.OS === "web"
-    ? { flex: 1 }
-    : StyleSheet.absoluteFill;
+  }, [centerOn, userLocation, pickupPoint, dropoffPoint, driverLocation, routePolyline]);
 
   return (
     <View style={[StyleSheet.absoluteFill, style]}>
       <MapView
         ref={mapRef}
         provider={Platform.OS === "ios" ? undefined : PROVIDER_DEFAULT}
-        style={mapStyle}
+        style={StyleSheet.absoluteFill}
         region={region}
         onRegionChangeComplete={onRegionChangeComplete}
         onPress={onMapPress}
@@ -94,6 +104,7 @@ export function RealMap({
         showsMyLocationButton={false}
         showsCompass={false}
         showsScale={false}
+        showsZoomControls={false}
         zoomEnabled
         scrollEnabled
         pitchEnabled={false}

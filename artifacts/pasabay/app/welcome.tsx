@@ -22,7 +22,7 @@ function GoogleIcon() {
 export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { loginWithGoogle } = useApp();
+  const { loginWithGoogle, loginAsDemo } = useApp();
   const { signInWithGoogle, loading: googleLoading } = useGoogleAuth();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -131,6 +131,14 @@ export default function WelcomeScreen() {
           )}
         </Pressable>
 
+        <Pressable
+          style={({ pressed }) => [styles.btnDemo, { borderColor: colors.border, backgroundColor: colors.primaryLighter, opacity: pressed ? 0.7 : 1 }]}
+          onPress={async () => { await loginAsDemo(); router.replace("/(main)/passenger-home"); }}
+        >
+          <Feather name="zap" size={16} color={colors.primary} />
+          <Text style={[styles.btnDemoText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>Try demo — no sign-in needed</Text>
+        </Pressable>
+
         <Text style={[styles.restriction, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>
           Restricted to <Text style={{ color: colors.textSecondary, fontFamily: "Inter_500Medium" }}>@usc.edu.ph</Text> email addresses
         </Text>
@@ -167,6 +175,8 @@ const styles = StyleSheet.create({
   btnOutlineText: { fontSize: 16, fontWeight: "600" },
   btnGoogle: { height: 52, borderRadius: 14, borderWidth: 1.5, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: "#fff" },
   btnGoogleText: { fontSize: 15 },
+  btnDemo: { height: 44, borderRadius: 14, borderWidth: 1.5, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+  btnDemoText: { fontSize: 14 },
   divider: { flexDirection: "row", alignItems: "center", gap: 12, marginVertical: 4 },
   dividerLine: { flex: 1, height: 1 },
   dividerText: { fontSize: 13 },
