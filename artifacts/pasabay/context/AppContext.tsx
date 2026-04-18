@@ -92,6 +92,7 @@ interface AppContextValue {
   clearMatchConfirmed: () => void;
   clearCompletedRide: () => void;
   clearActiveRide: () => void;
+  setActiveRide: (ride: ActiveRide | null) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -473,6 +474,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       clearMatchConfirmed: () => setMatchConfirmed(null),
       clearCompletedRide: () => setCompletedRide(null),
       clearActiveRide: () => { setActiveRide(null); setDriverLocation(null); },
+      setActiveRide: (ride) => setActiveRide(ride),
     }}>
       {children}
     </AppContext.Provider>

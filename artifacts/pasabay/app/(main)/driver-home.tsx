@@ -18,7 +18,7 @@ import { getRoute } from "@/lib/osrm";
 export default function DriverHomeScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { user, pendingMatchRequest, clearPendingMatch, activeRide, clearActiveRide } = useApp();
+  const { user, pendingMatchRequest, clearPendingMatch, activeRide, clearActiveRide, setActiveRide } = useApp();
   const { location: userLoc } = useLocation();
 
   const [isOnline, setIsOnline] = useState(false);
@@ -144,6 +144,7 @@ export default function DriverHomeScreen() {
     setAccepted(null);
     setRideId(null);
     clearActiveRide();
+    setActiveRide(null);
     setTimeout(() => setIsLoading(false), 300);
   };
 
@@ -164,6 +165,24 @@ export default function DriverHomeScreen() {
     setAccepted(req);
     setTimer(60);
     clearPendingMatch();
+    setActiveRide({
+      rideId: rideId ?? req.routeId,
+      driver: user ? {
+        id: user.id,
+        name: user.name,
+        rating: user.rating,
+        avatar: user.avatar,
+        vehicle: user.vehicle
+          ? { make: user.vehicle.make, model: user.vehicle.model, color: user.vehicle.color, plate: user.vehicle.plate }
+          : null,
+      } : { id: "", name: "", rating: 0, avatar: undefined, vehicle: null },
+      pickup: req.pickup,
+      dropoff: req.dropoff,
+      fare: req.fare,
+      matchingFee: req.matchingFee,
+      total: req.total,
+      distanceKm: req.distanceKm,
+    });
   };
 
   const handleDecline = (req: MatchRequestPayload) => {
@@ -178,6 +197,7 @@ export default function DriverHomeScreen() {
       setRideId(null);
       setTimer(60);
       clearActiveRide();
+      setActiveRide(null);
     } else {
       Alert.alert("Error", "Ride ID not available");
     }
@@ -199,6 +219,7 @@ export default function DriverHomeScreen() {
               setRideId(null);
               setTimer(60);
               clearActiveRide();
+              setActiveRide(null);
             }
           },
         },
