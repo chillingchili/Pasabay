@@ -30,20 +30,11 @@
       "dangerouslyDisableSSR": true
     },
     "plugins": [
-      [
-        "expo-router",
-        {
-          "origin": "https://replit.com/"
-        }
-      ],
       "expo-font",
       "expo-web-browser"
     ],
     "extra": {
       "apiUrl": "https://your-api-url.ngrok.io",
-      "router": {
-        "origin": "https://replit.com/"
-      },
       "eas": {
         "projectId": "e536caef-8f88-495e-8605-52d84d008b50"
       }

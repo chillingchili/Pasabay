@@ -1,18 +1,18 @@
 import { Feather } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
 import { Tabs } from "expo-router";
-import { SymbolView } from "expo-symbols";
 import React from "react";
 import { Platform, StyleSheet, View, useColorScheme } from "react-native";
 import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
+
+const isWeb = Platform.OS === "web";
+const isIOS = Platform.OS === "ios";
 
 export default function MainTabLayout() {
   const colors = useColors();
   const colorScheme = useColorScheme();
   const { activeRole } = useApp();
   const isDark = colorScheme === "dark";
-  const isIOS = Platform.OS === "ios";
 
   return (
     <Tabs
@@ -28,12 +28,8 @@ export default function MainTabLayout() {
           elevation: 0,
         },
         tabBarBackground: () =>
-          isIOS ? (
-            <BlurView
-              intensity={100}
-              tint={isDark ? "dark" : "light"}
-              style={StyleSheet.absoluteFill}
-            />
+          isIOS && !isWeb ? (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background }]} />
           ) : (
             <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background }]} />
           ),
@@ -44,12 +40,9 @@ export default function MainTabLayout() {
         options={{
           title: "Home",
           href: activeRole === "passenger" ? undefined : null,
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="house" tintColor={color} size={24} />
-            ) : (
-              <Feather name="home" size={22} color={color} />
-            ),
+          tabBarIcon: ({ color }) => (
+            <Feather name="home" size={22} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -57,36 +50,27 @@ export default function MainTabLayout() {
         options={{
           title: "Home",
           href: activeRole === "driver" ? undefined : null,
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="house" tintColor={color} size={24} />
-            ) : (
-              <Feather name="home" size={22} color={color} />
-            ),
+          tabBarIcon: ({ color }) => (
+            <Feather name="home" size={22} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
           title: "History",
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="clock" tintColor={color} size={24} />
-            ) : (
-              <Feather name="clock" size={22} color={color} />
-            ),
+          tabBarIcon: ({ color }) => (
+            <Feather name="clock" size={22} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="person" tintColor={color} size={24} />
-            ) : (
-              <Feather name="user" size={22} color={color} />
-            ),
+          tabBarIcon: ({ color }) => (
+            <Feather name="user" size={22} color={color} />
+          ),
         }}
       />
       <Tabs.Screen name="matching" options={{ href: null }} />

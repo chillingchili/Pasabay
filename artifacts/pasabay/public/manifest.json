@@ -1,0 +1,24 @@
+{
+  "name": "Pasabay — USC Campus Rideshare",
+  "short_name": "Pasabay",
+  "description": "Connect USC students heading the same direction for reliable rides and shared fuel costs",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0D9E75",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/assets/images/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/images/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

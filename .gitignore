@@ -52,6 +52,7 @@ Thumbs.db
 **/.env
 .env
 .env.*
+!.env.example
 
 # docs for app specs
 .docs

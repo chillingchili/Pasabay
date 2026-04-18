@@ -1,11 +1,15 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const DOMAIN = process.env.EXPO_PUBLIC_DOMAIN ?? "localhost";
-const IS_DEV = process.env.EXPO_PUBLIC_DOMAIN !== undefined && process.env.EXPO_PUBLIC_DOMAIN !== "localhost";
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
+const IS_DEV = API_URL.length > 0;
+const IS_WEB = typeof window !== "undefined";
 
 export const API_BASE = IS_DEV
-  ? `https://${DOMAIN}:8080/api`
-  : `http://192.168.254.187:3000/api`;
+  ? `${API_URL}/api`
+  : IS_WEB
+    ? `http://localhost:3000/api`
+    : `http://192.168.254.187:3000/api`;
 
 const ACCESS_KEY = "pasabay_access_token";
 const REFRESH_KEY = "pasabay_refresh_token";
