@@ -1,12 +1,13 @@
 import { io, Socket } from "socket.io-client";
 import { getTokens } from "./api";
 
-const DOMAIN = process.env.EXPO_PUBLIC_DOMAIN;
-const IS_DEV = DOMAIN !== undefined && DOMAIN !== "localhost";
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
 
-const SOCKET_URL = IS_DEV
-  ? `https://${DOMAIN}:8080`
-  : "http://192.168.254.187:3000";
+if (!API_URL) {
+  throw new Error("EXPO_PUBLIC_API_URL is not set. Configure your deployed API URL in .env");
+}
+
+const SOCKET_URL = API_URL.replace(/\/api$/, "");
 
 let socket: Socket | null = null;
 

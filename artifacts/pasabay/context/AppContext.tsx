@@ -1,7 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { router } from "expo-router";
 import type { GoogleUserInfo } from "@/hooks/useGoogleAuth";
-import { apiRequest, clearTokens, setTokens, getTokens, API_BASE } from "@/lib/api";
+import { apiRequest, clearTokens, setTokens, getTokens, API_BASE, type ApiError } from "@/lib/api";
 import {
   connectSocket, disconnectSocket, reconnectSocket,
   onMatchRequest, onMatchConfirmed, onMatchDeclined,
@@ -94,6 +95,7 @@ interface AppContextValue {
   clearCompletedRide: () => void;
   clearActiveRide: () => void;
   setActiveRide: (ride: ActiveRide | null) => void;
+  forceLogout: () => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -258,20 +260,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const data = await apiRequest<any>("/users/profile");
       const profile = mapApiUser(data);
       setUserState(profile);
-    } catch {
-      // ignore, keep existing state
+    } catch (err) {
+      const apiErr = err as ApiError;
+      if (apiErr?.status === 401) {
+        await forceLogout();
+      }
     }
-  }, []);
+  }, [forceLogout]);
 
   const loadRideHistory = useCallback(async () => {
     try {
       const data = await apiRequest<any>("/rides/history?limit=20");
       const rides = Array.isArray(data?.rides) ? data.rides.map(mapApiRide) : [];
       setRideHistory(rides);
-    } catch {
-      setRideHistory([]);
+    } catch (err) {
+      const apiErr = err as ApiError;
+      if (apiErr?.status === 401) {
+        await forceLogout();
+      } else {
+        setRideHistory([]);
+      }
     }
-  }, []);
+  }, [forceLogout]);
 
   useEffect(() => {
     const init = async () => {
@@ -404,28 +414,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return { isNew: data.isNew ?? false };
   }, [loadRideHistory, initSocket]);
 
+  const forceLogout = useCallback(async () => {
+    disconnectSocket();
+    setSocketConnected(false);
+    await clearTokens();
+    await AsyncStorage.removeItem("pasabay_driver_verified");
+    await AsyncStorage.removeItem("pasabay_school_id_verified");
+    await AsyncStorage.removeItem("pasabay_demo_mode");
+    setUser(null);
+    setActiveRole("passenger");
+    setRideHistory([]);
+    setPendingMatchRequest(null);
+    setMatchConfirmed(null);
+    setCompletedRide(null);
+    setActiveRide(null);
+    setDriverLocation(null);
+    router.replace("/login");
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await apiRequest("/auth/logout", { method: "POST" });
     } catch {
       // ignore
     } finally {
-      disconnectSocket();
-      setSocketConnected(false);
-      await clearTokens();
-      await AsyncStorage.removeItem("pasabay_driver_verified");
-      await AsyncStorage.removeItem("pasabay_school_id_verified");
-      await AsyncStorage.removeItem("pasabay_demo_mode");
-      setUser(null);
-      setActiveRole("passenger");
-      setRideHistory([]);
-      setPendingMatchRequest(null);
-      setMatchConfirmed(null);
-      setCompletedRide(null);
-      setActiveRide(null);
-      setDriverLocation(null);
+      await forceLogout();
     }
-  }, []);
+  }, [forceLogout]);
 
   const setSchoolIdVerified = useCallback(async () => {
     if (!user) return;
@@ -555,6 +570,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       clearCompletedRide: () => setCompletedRide(null),
       clearActiveRide: () => { setActiveRide(null); setDriverLocation(null); },
       setActiveRide: (ride) => setActiveRide(ride),
+      forceLogout,
     }}>
       {children}
     </AppContext.Provider>

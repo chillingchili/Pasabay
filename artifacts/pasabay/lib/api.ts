@@ -36,6 +36,31 @@ export async function clearTokens() {
   ]);
 }
 
+/**
+ * Validates tokens on app init. Clears them if they're stale from a previous session.
+ * Call this early in your app startup to prevent 401 errors.
+ */
+export async function validateAndClearStaleTokens(): Promise<boolean> {
+  const { access, refresh } = await getTokens();
+  if (!access && !refresh) return true; // No tokens, nothing to validate
+  try {
+    const res = await fetch(`${API_BASE}/auth/validate`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(access ? { Authorization: `Bearer ${access}` } : {}),
+      },
+    });
+    if (res.ok) return true; // Tokens are valid
+  } catch {
+    // Network error, don't clear tokens yet
+    return false;
+  }
+  // Tokens are invalid or expired
+  await clearTokens();
+  return false;
+}
+
 async function refreshAccessToken(): Promise<string | null> {
   const { refresh } = await getTokens();
   if (!refresh) return null;

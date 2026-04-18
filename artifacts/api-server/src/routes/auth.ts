@@ -177,4 +177,8 @@ router.post("/logout", requireAuth, async (req, res) => {
   res.json({ success: true });
 });
 
+router.get("/validate", requireAuth, async (_req, res) => {
+  res.json({ valid: true });
+});
+
 export default router;

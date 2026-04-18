@@ -20,12 +20,15 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
+  if (e.request.method !== "GET") return;
+  if (!e.request.url.startsWith("http://") && !e.request.url.startsWith("https://")) return;
+  if (e.request.url.startsWith("chrome-extension://")) return;
   e.respondWith(
     caches.match(e.request).then((r) => r || fetch(e.request).then((response) => {
       return caches.open(CACHE_NAME).then((cache) => {
         cache.put(e.request, response.clone());
         return response;
       });
-    }))
+    }).catch(() => caches.match(e.request)))
   );
 });
