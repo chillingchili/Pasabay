@@ -494,36 +494,41 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   const loginAsDemo = useCallback(async () => {
-    const demoUser: UserProfile = {
-      id: "demo-user-001",
-      name: "Maria Santos",
-      email: "maria.santos@usc.edu.ph",
-      role: "passenger",
-      rating: 4.8,
-      totalRides: 12,
-      verified: true,
-      driverVerified: true,
-      driverStatus: "verified",
-      vehicle: {
-        make: "Toyota",
-        model: "Vios",
-        year: "2022",
-        plate: "ABC 1234",
-        color: "White",
-        seats: 4,
-        fuelEfficiency: 18,
-      },
-    };
-    setUserState(demoUser);
-    await AsyncStorage.setItem("pasabay_demo_mode", "true");
-    await AsyncStorage.setItem("pasabay_school_id_verified", JSON.stringify({ verified: true }));
-    await AsyncStorage.setItem("pasabay_driver_verified", JSON.stringify({
-      driverVerified: true,
-      driverStatus: "verified",
-      vehicle: demoUser.vehicle,
-    }));
-    loadRideHistory();
-    initSocket();
+    try {
+      const data = await apiRequest<any>("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email: "testuser@usc.edu.ph", password: "testuser1" }),
+      });
+      await setTokens(data.accessToken, data.refreshToken);
+      const profile = mapApiUser(data.user);
+      setUserState(profile);
+      await AsyncStorage.setItem("pasabay_demo_mode", "true");
+      await AsyncStorage.setItem("pasabay_school_id_verified", JSON.stringify({ verified: true }));
+      await AsyncStorage.setItem("pasabay_driver_verified", JSON.stringify({
+        driverVerified: true,
+        driverStatus: "verified",
+        vehicle: profile.vehicle,
+      }));
+      loadRideHistory();
+      initSocket();
+    } catch {
+      const signupData = await apiRequest<any>("/auth/signup", {
+        method: "POST",
+        body: JSON.stringify({ email: "testuser@usc.edu.ph", password: "testuser1", name: "Test User" }),
+      });
+      await setTokens(signupData.accessToken, signupData.refreshToken);
+      const profile = mapApiUser(signupData.user);
+      setUserState(profile);
+      await AsyncStorage.setItem("pasabay_demo_mode", "true");
+      await AsyncStorage.setItem("pasabay_school_id_verified", JSON.stringify({ verified: true }));
+      await AsyncStorage.setItem("pasabay_driver_verified", JSON.stringify({
+        driverVerified: true,
+        driverStatus: "verified",
+        vehicle: profile.vehicle,
+      }));
+      loadRideHistory();
+      initSocket();
+    }
   }, [loadRideHistory, initSocket]);
 
   const switchRole = useCallback(async (role: UserRole) => {
