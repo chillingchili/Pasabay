@@ -10,7 +10,7 @@ import { useApp } from "@/context/AppContext";
 import {
   emitDriverOnline, emitDriverOffline, emitMatchAccept, emitMatchDecline,
   emitRideComplete, emitRideCancel, onDriverRouteSet, onDriverError,
-  onMatchAccepted,
+  onMatchAccepted, emitDriverLocation,
 } from "@/lib/socket";
 import type { MatchRequestPayload } from "@/lib/socket";
 import { getRoute } from "@/lib/osrm";
@@ -71,6 +71,14 @@ export default function DriverHomeScreen() {
     }, 1000);
     return () => clearInterval(interval);
   }, [accepted]);
+
+  useEffect(() => {
+    if (!accepted || !userLoc) return;
+    const interval = setInterval(() => {
+      emitDriverLocation(userLoc.lat, userLoc.lng);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [accepted, userLoc]);
 
   useEffect(() => {
     const off = onMatchAccepted((data) => {

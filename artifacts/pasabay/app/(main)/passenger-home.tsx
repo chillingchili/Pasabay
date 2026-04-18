@@ -26,7 +26,7 @@ const DEST_COORDS: Record<string, { lat: number; lng: number }> = {
 export default function PassengerHomeScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { user } = useApp();
+  const { user, driverLocation } = useApp();
   const { location: userLoc } = useLocation();
   const [destination, setDestination] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -128,6 +128,7 @@ export default function PassengerHomeScreen() {
         pickupPoint={pickupPoint ?? undefined}
         dropoffPoint={dropoffPoint ?? undefined}
         userLocation={userLoc ?? undefined}
+        driverLocation={driverLocation ?? undefined}
       />
       <LoadingOverlay visible={isLoading} message="Navigating..." />
 
