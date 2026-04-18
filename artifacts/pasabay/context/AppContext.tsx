@@ -255,23 +255,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [network.isOnline]);
 
-  const forceLogout = useCallback(async () => {
-    disconnectSocket();
-    setSocketConnected(false);
-    await clearTokens();
-    await AsyncStorage.removeItem("pasabay_driver_verified");
-    await AsyncStorage.removeItem("pasabay_school_id_verified");
-    await AsyncStorage.removeItem("pasabay_demo_mode");
-    setUser(null);
-    setActiveRole("passenger");
-    setRideHistory([]);
-    setPendingMatchRequest(null);
-    setMatchConfirmed(null);
-    setCompletedRide(null);
-    setActiveRide(null);
-    setDriverLocation(null);
-    router.replace("/login");
-  }, []);
+  const forceLogoutRef = useRef<() => Promise<void>>(async () => {});
 
   const refreshUser = useCallback(async () => {
     try {
@@ -281,10 +265,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const apiErr = err as ApiError;
       if (apiErr?.status === 401) {
-        await forceLogout();
+        await forceLogoutRef.current();
       }
     }
-  }, [forceLogout]);
+  }, []);
 
   const loadRideHistory = useCallback(async () => {
     try {
@@ -294,12 +278,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       const apiErr = err as ApiError;
       if (apiErr?.status === 401) {
-        await forceLogout();
+        await forceLogoutRef.current();
       } else {
         setRideHistory([]);
       }
     }
-  }, [forceLogout]);
+  }, []);
 
   useEffect(() => {
     const init = async () => {
@@ -431,6 +415,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     initSocket();
     return { isNew: data.isNew ?? false };
   }, [loadRideHistory, initSocket]);
+
+  const forceLogout = useCallback(async () => {
+    disconnectSocket();
+    setSocketConnected(false);
+    await clearTokens();
+    await AsyncStorage.removeItem("pasabay_driver_verified");
+    await AsyncStorage.removeItem("pasabay_school_id_verified");
+    await AsyncStorage.removeItem("pasabay_demo_mode");
+    setUser(null);
+    setActiveRole("passenger");
+    setRideHistory([]);
+    setPendingMatchRequest(null);
+    setMatchConfirmed(null);
+    setCompletedRide(null);
+    setActiveRide(null);
+    setDriverLocation(null);
+    router.replace("/login");
+  }, []);
+
+  forceLogoutRef.current = forceLogout;
 
   const logout = useCallback(async () => {
     try {

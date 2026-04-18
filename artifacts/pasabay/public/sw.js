@@ -7,8 +7,15 @@ const ASSETS = [
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.all(
+        ASSETS.map((url) =>
+          fetch(url).then((r) => r.ok ? cache.put(url, r) : Promise.resolve()).catch(() => {})
+        )
+      )
+    )
   );
+  self.skipWaiting();
 });
 
 self.addEventListener("activate", (e) => {

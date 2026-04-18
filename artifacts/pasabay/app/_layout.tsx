@@ -43,6 +43,7 @@ export default function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
+  const [timedOut, setTimedOut] = React.useState(false);
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
@@ -50,7 +51,14 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded && !fontError) return null;
+  useEffect(() => {
+    const timer = setTimeout(() => setTimedOut(true), 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const ready = fontsLoaded || fontError || timedOut;
+
+  if (!ready) return null;
 
   return (
     <SafeAreaProvider>
@@ -58,7 +66,7 @@ export default function RootLayout() {
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <AppProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
+            <GestureHandlerRootView style={{ flex: 1, minHeight: '100vh' }}>
               <KeyboardProvider>
                 <RootLayoutNav />
               </KeyboardProvider>
