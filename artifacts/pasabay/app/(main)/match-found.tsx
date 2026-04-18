@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
-import { emitRideCancel } from "@/lib/socket";
+import { emitRideCancel, onRideCanceled } from "@/lib/socket";
 
 function _calcEtaMin(
   driverLoc: { lat: number; lng: number },
@@ -65,16 +65,19 @@ export default function MatchFoundScreen() {
     }
   }, [completedRide]);
 
-  // Detect ride cancellation: matchConfirmed becomes null while activeRide still exists
+  // Detect ride cancellation via socket event (not state mismatch)
   const didCancelRef = useRef(false);
   useEffect(() => {
-    if (!matchConfirmed && activeRide && !didCancelRef.current && !completedRide) {
+    const off = onRideCanceled((data) => {
+      if (didCancelRef.current) return;
       didCancelRef.current = true;
-      Alert.alert("Ride Canceled", "The driver canceled this ride. Please request a new ride.");
+      Alert.alert("Ride Canceled", data.reason ?? "The driver canceled this ride. Please request a new ride.");
+      clearMatchConfirmed();
       clearActiveRide();
       router.replace("/(main)/passenger-home");
-    }
-  }, [matchConfirmed, activeRide, completedRide]);
+    });
+    return off;
+  }, []);
 
   const handleDecline = () => {
     if (matchConfirmed?.rideId) {
