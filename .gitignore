@@ -48,6 +48,11 @@ Thumbs.db
 .cache/
 .local/
 
+# Secrets
+**/.env
+.env
+.env.*
+
 # docs for app specs
 .docs
 
