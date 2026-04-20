@@ -44,7 +44,7 @@ export default function PassengerHomeScreen() {
   const sheetAnim = useRef(new Animated.Value(0)).current;
 
   const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
-  const bottomPad = Math.max(insets.bottom + (Platform.OS === "web" ? 80 : 100), 100);
+  const bottomPad = Platform.OS === "web" ? Math.max(insets.bottom + 80, 100) : Math.max(insets.bottom + 100, 100);
 
   const pickupPoint = userLoc ? { lat: userLoc.lat, lng: userLoc.lng, name: "Your location" } : null;
   const destCoords = destination ? DEST_COORDS[destination] ?? null : null;
@@ -187,6 +187,8 @@ export default function PassengerHomeScreen() {
           styles.bottomSheet,
           {
             backgroundColor: "rgba(255,255,255,0.97)",
+            paddingBottom: bottomPad,
+            maxHeight: Platform.OS === "web" ? dimensions.height * 0.55 : undefined,
             transform: [{ translateY: sheetAnim.interpolate({ inputRange: [0, 1], outputRange: [200, 0] }) }],
           },
         ]}
