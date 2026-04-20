@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Animated, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 
@@ -25,7 +25,7 @@ export function PreMatchModal({
   onCancel,
 }: PreMatchModalProps) {
   const colors = useColors();
-  const { width } = useWindowDimensions();
+  const { height } = useWindowDimensions();
   const slideAnim = useRef(new Animated.Value(300)).current;
 
   useEffect(() => {
@@ -52,6 +52,7 @@ export function PreMatchModal({
             styles.sheet,
             {
               backgroundColor: "rgba(255,255,255,0.97)",
+              maxHeight: height * 0.85,
               transform: [{ translateY: slideAnim }],
             },
           ]}
@@ -69,60 +70,63 @@ export function PreMatchModal({
             </Pressable>
           </View>
 
-          {/* Route Summary Card */}
-          <View style={[styles.routeCard, { backgroundColor: colors.card }]}>
-            <View style={styles.routeRow}>
-              <View style={[styles.routeDot, { backgroundColor: colors.primary }]} />
-              <View style={styles.routeText}>
-                <Text style={[styles.routeLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
-                  Destination
-                </Text>
-                <Text style={[styles.routeValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
-                  {destination}
-                </Text>
+          {/* Scrollable Content */}
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            {/* Route Summary Card */}
+            <View style={[styles.routeCard, { backgroundColor: colors.card }]}>
+              <View style={styles.routeRow}>
+                <View style={[styles.routeDot, { backgroundColor: colors.primary }]} />
+                <View style={styles.routeText}>
+                  <Text style={[styles.routeLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
+                    Destination
+                  </Text>
+                  <Text style={[styles.routeValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
+                    {destination}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.summaryRow}>
+                <SummaryItem label="Fare" value={`₱${fareEstimate.toFixed(0)}`} colors={colors} />
+                <View style={[styles.summaryDivider, { backgroundColor: colors.border }]} />
+                <SummaryItem label="Distance" value={`${distanceKm.toFixed(1)} km`} colors={colors} />
+                <View style={[styles.summaryDivider, { backgroundColor: colors.border }]} />
+                <SummaryItem label="ETA" value={`~${etaMin} min`} colors={colors} />
               </View>
             </View>
 
-            <View style={styles.summaryRow}>
-              <SummaryItem label="Fare" value={`₱${fareEstimate.toFixed(0)}`} colors={colors} />
-              <View style={[styles.summaryDivider, { backgroundColor: colors.border }]} />
-              <SummaryItem label="Distance" value={`${distanceKm.toFixed(1)} km`} colors={colors} />
-              <View style={[styles.summaryDivider, { backgroundColor: colors.border }]} />
-              <SummaryItem label="ETA" value={`~${etaMin} min`} colors={colors} />
-            </View>
-          </View>
+            {/* Walking Info */}
+            {walkingInfo && (
+              <View style={[styles.walkCard, { backgroundColor: colors.accentBg }]}>
+                <Feather name="navigation" size={16} color={colors.accentDark} />
+                <Text style={[styles.walkText, { color: colors.accentDark, fontFamily: "Inter_500Medium" }]}>
+                  {walkingInfo.toPickupM}m walk to pickup · {walkingInfo.fromDropoffM}m walk from dropoff
+                </Text>
+              </View>
+            )}
 
-          {/* Walking Info */}
-          {walkingInfo && (
-            <View style={[styles.walkCard, { backgroundColor: colors.accentBg }]}>
-              <Feather name="navigation" size={16} color={colors.accentDark} />
-              <Text style={[styles.walkText, { color: colors.accentDark, fontFamily: "Inter_500Medium" }]}>
-                {walkingInfo.toPickupM}m walk to pickup · {walkingInfo.fromDropoffM}m walk from dropoff
+            {/* Terms & Conditions */}
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
+                Terms & Conditions
               </Text>
+              <BulletPoint text="This is a cost-sharing rideshare, not a commercial service" colors={colors} />
+              <BulletPoint text="Fares comply with LTFRB guidelines" colors={colors} />
+              <BulletPoint text="Both parties agree to respectful conduct" colors={colors} />
             </View>
-          )}
 
-          {/* Terms & Conditions */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
-              Terms & Conditions
-            </Text>
-            <BulletPoint text="This is a cost-sharing rideshare, not a commercial service" colors={colors} />
-            <BulletPoint text="Fares comply with LTFRB guidelines" colors={colors} />
-            <BulletPoint text="Both parties agree to respectful conduct" colors={colors} />
-          </View>
+            {/* Expected Behavior */}
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
+                Expected behavior
+              </Text>
+              <BulletPoint text="Be at pickup point on time" colors={colors} />
+              <BulletPoint text="Respect the driver's vehicle" colors={colors} />
+              <BulletPoint text="Share fuel costs fairly" colors={colors} />
+            </View>
+          </ScrollView>
 
-          {/* Expected Behavior */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
-              Expected behavior
-            </Text>
-            <BulletPoint text="Be at pickup point on time" colors={colors} />
-            <BulletPoint text="Respect the driver's vehicle" colors={colors} />
-            <BulletPoint text="Share fuel costs fairly" colors={colors} />
-          </View>
-
-          {/* Action Buttons */}
+          {/* Sticky Action Buttons */}
           <View style={styles.actions}>
             <Pressable
               style={[styles.cancelActionBtn, { borderColor: colors.border }]}
@@ -181,12 +185,16 @@ const styles = StyleSheet.create({
   sheet: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    padding: 20,
     paddingBottom: 40,
-    maxHeight: "90%",
+    display: "flex",
+    flexDirection: "column",
   },
-  handle: { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 16 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 8,
+  },
+  handle: { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 16, marginTop: 12 },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, marginBottom: 12 },
   headerTitle: { fontSize: 18 },
   closeBtn: { padding: 4 },
   routeCard: { borderRadius: 14, padding: 14, marginBottom: 12 },
@@ -207,7 +215,7 @@ const styles = StyleSheet.create({
   bulletRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginBottom: 6 },
   bulletDot: { width: 5, height: 5, borderRadius: 2.5, marginTop: 5, flexShrink: 0 },
   bulletText: { fontSize: 12, flex: 1, lineHeight: 18 },
-  actions: { flexDirection: "row", gap: 10, marginTop: 8 },
+  actions: { flexDirection: "row", gap: 10, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 },
   cancelActionBtn: { flex: 1, height: 48, borderRadius: 14, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
   cancelActionText: { fontSize: 14 },
   confirmBtn: { flex: 2, flexDirection: "row", alignItems: "center", justifyContent: "center", height: 48, borderRadius: 14, gap: 8 },

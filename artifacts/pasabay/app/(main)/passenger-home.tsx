@@ -44,6 +44,7 @@ export default function PassengerHomeScreen() {
   const sheetAnim = useRef(new Animated.Value(0)).current;
 
   const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
+  const bottomPad = Math.max(insets.bottom + (Platform.OS === "web" ? 80 : 100), 100);
 
   const pickupPoint = userLoc ? { lat: userLoc.lat, lng: userLoc.lng, name: "Your location" } : null;
   const destCoords = destination ? DEST_COORDS[destination] ?? null : null;
@@ -267,7 +268,7 @@ const styles = StyleSheet.create({
   suggestions: { borderRadius: 12, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 5 },
   suggestionItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#f5f5f5" },
   suggestionText: { fontSize: 14 },
-  bottomSheet: { position: "absolute", bottom: 0, left: 0, right: 0, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 100, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 10 },
+  bottomSheet: { position: "absolute", bottom: 0, left: 0, right: 0, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 100, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 10, maxHeight: "65%" },
   handle: { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 16 },
   destRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
   destIcon: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
