@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useApp, RideHistory } from "@/context/AppContext";
+import { useScale } from "@/hooks/useScale";
 
 const TABS = ["All", "Completed", "Canceled"] as const;
 type FilterTab = typeof TABS[number];
@@ -11,11 +12,13 @@ type FilterTab = typeof TABS[number];
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { fs, isSmall } = useScale();
+  const dimensions = useWindowDimensions();
   const { rideHistory } = useApp();
   const [activeTab, setActiveTab] = useState<FilterTab>("All");
   const [selectedRide, setSelectedRide] = useState<RideHistory | null>(null);
 
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
 
   const filtered = rideHistory.filter(r => {
     if (activeTab === "All") return true;
@@ -26,7 +29,7 @@ export default function HistoryScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: topPad }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Ride history</Text>
+        <Text style={[styles.title, { fontSize: fs(26), color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Ride history</Text>
       </View>
 
       <View style={[styles.tabRow, { borderBottomColor: colors.borderLighter }]}>

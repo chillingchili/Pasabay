@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -9,6 +9,7 @@ import { useApp } from "@/context/AppContext";
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const dimensions = useWindowDimensions();
   const { user, logout, activeRole, switchRole, networkStatus } = useApp();
   const isRegisteredDriver = user?.driverVerified || user?.vehicle;
   const [confirmLogout, setConfirmLogout] = useState(false);
@@ -18,7 +19,7 @@ export default function ProfileScreen() {
   const [showHelp, setShowHelp] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
 
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
 
   const initials = user?.name
     ? user.name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()

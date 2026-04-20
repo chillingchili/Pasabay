@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Alert, Animated, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Animated, Platform, Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -8,6 +8,7 @@ import LoadingOverlay from "@/components/LoadingOverlay";
 import { useColors } from "@/hooks/useColors";
 import { useLocation } from "@/hooks/useLocation";
 import { useApp } from "@/context/AppContext";
+import { useScale } from "@/hooks/useScale";
 import {
   emitDriverOnline, emitDriverOffline, emitMatchAccept, emitMatchDecline,
   emitRideComplete, emitRideCancel, onDriverRouteSet, onDriverError,
@@ -19,6 +20,8 @@ import { getRoute } from "@/lib/osrm";
 export default function DriverHomeScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { fs, isSmall } = useScale();
+  const dimensions = useWindowDimensions();
   const { user, pendingMatchRequest, clearPendingMatch, activeRide, clearActiveRide, setActiveRide, switchRole } = useApp();
   const { location: userLoc } = useLocation();
 
@@ -37,7 +40,7 @@ export default function DriverHomeScreen() {
   const slideAnim = useRef(new Animated.Value(-160)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
 
   const DEST_OPTIONS = [
     { name: "IT Park, Lahug", lat: 10.3157, lng: 123.9030 },

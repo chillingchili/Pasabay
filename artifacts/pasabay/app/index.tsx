@@ -30,9 +30,9 @@ export default function SplashScreen() {
 
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
-        <PasabayLogo size={80} color="#fff" />
-        <Text style={styles.name}>Pasabay</Text>
+      <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }], gap: s(12) }]}>
+        <PasabayLogo size={s(80)} color="#fff" />
+        <Text style={[styles.name, { fontSize: fs(36) }]}>Pasabay</Text>
         <Text style={styles.tagline}>Campus Commute</Text>
         <View style={styles.dots}>
           <Dot delay={0} />

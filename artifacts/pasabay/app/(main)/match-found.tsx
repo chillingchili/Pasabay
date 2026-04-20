@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Alert, Animated, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Animated, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
+import { useScale } from "@/hooks/useScale";
 import { emitRideCancel, onRideCanceled } from "@/lib/socket";
 
 function _calcEtaMin(
@@ -20,13 +21,15 @@ function _calcEtaMin(
 export default function MatchFoundScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { fs, isSmall } = useScale();
+  const dimensions = useWindowDimensions();
   const { matchConfirmed, clearMatchConfirmed, completedRide, clearCompletedRide, addRideHistory, activeRide, driverLocation, clearActiveRide, networkStatus } = useApp();
   const slideAnim = useRef(new Animated.Value(60)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const badgeScale = useRef(new Animated.Value(0.6)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
 
   useEffect(() => {
     Animated.parallel([
@@ -103,7 +106,7 @@ export default function MatchFoundScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: topPad + 8, paddingBottom: Math.max(insets.bottom + 100, 120) }]}
+        contentContainerStyle={[styles.scroll, { paddingHorizontal: isSmall ? 16 : 20, paddingTop: topPad + 8, paddingBottom: Math.max(insets.bottom + 100, 120) }]}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>

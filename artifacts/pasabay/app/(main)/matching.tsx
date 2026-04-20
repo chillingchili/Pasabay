@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
+import { useScale } from "@/hooks/useScale";
 import { apiRequest, formatApiError } from "@/lib/api";
 import { onMatchDeclined } from "@/lib/socket";
 import LoadingOverlay from "@/components/LoadingOverlay";
@@ -13,6 +14,8 @@ import ErrorBanner from "@/components/ErrorBanner";
 export default function MatchingScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { fs, isSmall } = useScale();
+  const dimensions = useWindowDimensions();
   const { matchConfirmed, clearMatchConfirmed } = useApp();
   const params = useLocalSearchParams<{
     destination?: string;
@@ -149,7 +152,7 @@ export default function MatchingScreen() {
         visible={showError}
         onDismiss={() => setShowError(false)}
       />
-      <View style={[styles.content, { paddingTop: (Platform.OS === "web" ? 67 : insets.top) + 40 }]}>
+      <View style={[styles.content, { paddingTop: (Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top) + 40, paddingHorizontal: isSmall ? 16 : 24 }]}>
         <View style={styles.ringsContainer}>
           {[ring1, ring2, ring3].map((r, i) => (
             <Animated.View

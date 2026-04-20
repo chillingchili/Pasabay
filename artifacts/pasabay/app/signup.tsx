@@ -100,7 +100,7 @@ export default function SignupScreen() {
     >
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={[styles.container, { paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom + 20, 32) }]}
+        contentContainerStyle={[styles.container, { paddingHorizontal: isSmall ? 16 : 24, paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom + 20, 32) }]}
         keyboardShouldPersistTaps="handled"
       >
         <Pressable style={styles.back} onPress={() => router.back()}>
@@ -108,10 +108,10 @@ export default function SignupScreen() {
           <Text style={[styles.backText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Back</Text>
         </Pressable>
 
-        <Text style={[styles.title, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Create account</Text>
+        <Text style={[styles.title, { fontSize: fs(28), color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Create account</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Join the USC Pasabay community</Text>
 
-        <View style={styles.form}>
+        <View style={[styles.form, { gap: isSmall ? 12 : 14 }]}>
           <FormGroup label="Full name" colors={colors}>
             <TextInput
               style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card, fontFamily: "Inter_400Regular" }]}

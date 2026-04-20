@@ -1,9 +1,7 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Dimensions, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
-
-const { width: SCREEN_W } = Dimensions.get("window");
 
 interface PreMatchModalProps {
   visible: boolean;
@@ -27,6 +25,7 @@ export function PreMatchModal({
   onCancel,
 }: PreMatchModalProps) {
   const colors = useColors();
+  const { width } = useWindowDimensions();
   const slideAnim = useRef(new Animated.Value(300)).current;
 
   useEffect(() => {
@@ -184,7 +183,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     padding: 20,
     paddingBottom: 40,
-    maxHeight: SCREEN_W * 0.9,
+    maxHeight: "90%",
   },
   handle: { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 16 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
