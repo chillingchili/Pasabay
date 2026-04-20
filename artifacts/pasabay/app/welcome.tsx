@@ -7,6 +7,7 @@ import { useColors } from "@/hooks/useColors";
 import { Feather } from "@expo/vector-icons";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { useApp } from "@/context/AppContext";
+import { useScale } from "@/hooks/useScale";
 
 function GoogleIcon() {
   return (
@@ -22,6 +23,7 @@ function GoogleIcon() {
 export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { s, fs, isSmall } = useScale();
   const { loginWithGoogle, loginAsDemo } = useApp();
   const { signInWithGoogle, loading: googleLoading } = useGoogleAuth();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -66,8 +68,8 @@ export default function WelcomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Animated.View style={[styles.heroSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-        <View style={styles.illustration}>
+      <Animated.View style={[styles.heroSection, { paddingTop: s(60), paddingHorizontal: isSmall ? 16 : 24, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+        <View style={[styles.illustration, { marginBottom: s(20) }]}>
           <Svg width={200} height={200} viewBox="0 0 200 200" fill="none">
             <Circle cx={100} cy={100} r={90} fill={colors.primaryLight} />
             <Circle cx={100} cy={100} r={70} fill={colors.primaryLighter} />
@@ -81,7 +83,7 @@ export default function WelcomeScreen() {
           </Svg>
         </View>
 
-        <Text style={[styles.title, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Pasabay</Text>
+        <Text style={[styles.title, { fontSize: fs(36), color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Pasabay</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
           Share rides with fellow Carolinians.{"\n"}Safe, affordable campus commutes.
         </Text>
@@ -160,9 +162,9 @@ function FeatureItem({ icon, label, colors }: { icon: keyof typeof Feather.glyph
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  heroSection: { alignItems: "center", paddingTop: 60, paddingHorizontal: 24 },
-  illustration: { marginBottom: 20 },
-  title: { fontSize: 36, fontWeight: "700", letterSpacing: -0.5 },
+  heroSection: { alignItems: "center" },
+  illustration: {},
+  title: { fontWeight: "700", letterSpacing: -0.5 },
   subtitle: { fontSize: 15, textAlign: "center", lineHeight: 22, marginTop: 8 },
   features: { flexDirection: "row", paddingHorizontal: 24, paddingTop: 28, gap: 8 },
   featureItem: { flex: 1, alignItems: "center", gap: 8 },

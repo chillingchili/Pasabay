@@ -4,10 +4,12 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
+import { useScale } from "@/hooks/useScale";
 
 export default function VerifyDriverScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { fs, isSmall } = useScale();
   const [stage, setStage] = useState<"capture" | "analyzing" | "success">("capture");
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -41,7 +43,7 @@ export default function VerifyDriverScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { fontFamily: "Inter_700Bold" }]}>Verify your license</Text>
+        <Text style={[styles.title, { fontSize: fs(22), fontFamily: "Inter_700Bold" }]}>Verify your license</Text>
         <Text style={[styles.step, { fontFamily: "Inter_400Regular" }]}>Step 2 of 2</Text>
       </View>
 
@@ -59,7 +61,7 @@ export default function VerifyDriverScreen() {
 
       {stage === "capture" && (
         <View style={styles.cameraArea}>
-          <Animated.View style={[styles.frame, { transform: [{ scale: pulseAnim }] }]}>
+          <Animated.View style={[styles.frame, { width: '75%', maxWidth: 280, transform: [{ scale: pulseAnim }] }]}>
             <View style={styles.frameCorner1} />
             <View style={styles.frameCorner2} />
             <View style={styles.frameCorner3} />

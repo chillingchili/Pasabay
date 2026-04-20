@@ -11,6 +11,8 @@ import { useLocation } from "@/hooks/useLocation";
 import { useApp } from "@/context/AppContext";
 import { getRoute } from "@/lib/osrm";
 import { haversineKm } from "@/lib/osrm";
+import { useScale } from "@/hooks/useScale";
+import { useWindowDimensions } from "react-native";
 
 const QUICK_DESTINATIONS = ["USC Talamban", "IT Park, Lahug", "SM City Cebu", "Ayala Center", "JY Square", "Mango Square"];
 
@@ -26,6 +28,8 @@ const DEST_COORDS: Record<string, { lat: number; lng: number }> = {
 export default function PassengerHomeScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { fs, isSmall } = useScale();
+  const dimensions = useWindowDimensions();
   const { user, driverLocation, switchRole } = useApp();
   const { location: userLoc } = useLocation();
   const [destination, setDestination] = useState("");
@@ -39,7 +43,7 @@ export default function PassengerHomeScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const sheetAnim = useRef(new Animated.Value(0)).current;
 
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
 
   const pickupPoint = userLoc ? { lat: userLoc.lat, lng: userLoc.lng, name: "Your location" } : null;
   const destCoords = destination ? DEST_COORDS[destination] ?? null : null;

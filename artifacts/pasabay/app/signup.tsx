@@ -7,6 +7,7 @@ import Svg, { Path } from "react-native-svg";
 import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
+import { useScale } from "@/hooks/useScale";
 
 function GoogleIcon() {
   return (
@@ -22,6 +23,7 @@ function GoogleIcon() {
 export default function SignupScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { fs, isSmall } = useScale();
   const { signup, loginWithGoogle } = useApp();
   const { signInWithGoogle, loading: googleLoading } = useGoogleAuth();
 

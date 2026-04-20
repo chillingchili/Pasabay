@@ -7,6 +7,7 @@ import Svg, { Circle, Path } from "react-native-svg";
 import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
+import { useScale } from "@/hooks/useScale";
 
 function GoogleIcon() {
   return (
@@ -22,6 +23,7 @@ function GoogleIcon() {
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { fs, isSmall } = useScale();
   const { login, loginWithGoogle, loginAsDemo } = useApp();
   const { signInWithGoogle, loading: googleLoading } = useGoogleAuth();
 
@@ -70,16 +72,16 @@ export default function LoginScreen() {
       style={{ flex: 1, backgroundColor: colors.background }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={[styles.container, { paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom + 20, 32) }]}>
+      <View style={[styles.container, { paddingHorizontal: isSmall ? 16 : 24, paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom + 20, 32) }]}>
         <Pressable style={styles.back} onPress={() => router.back()}>
           <Feather name="arrow-left" size={20} color={colors.textSecondary} />
           <Text style={[styles.backText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Back</Text>
         </Pressable>
 
-        <Text style={[styles.title, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Welcome back</Text>
+        <Text style={[styles.title, { fontSize: fs(28), color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Welcome back</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Log in to your Pasabay account</Text>
 
-        <View style={styles.form}>
+        <View style={[styles.form, { gap: isSmall ? 12 : 14 }]}>
           <View style={styles.formGroup}>
             <Text style={[styles.label, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>School email</Text>
             <TextInput

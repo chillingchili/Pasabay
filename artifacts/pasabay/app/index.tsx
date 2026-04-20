@@ -3,9 +3,11 @@ import { Redirect } from "expo-router";
 import React, { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { PasabayLogo } from "@/components/PasabayLogo";
+import { useScale } from "@/hooks/useScale";
 
 export default function SplashScreen() {
   const { isLoading, isAuthenticated, user } = useApp();
+  const { s, fs } = useScale();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
 

@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
+import { useScale } from "@/hooks/useScale";
 import { apiRequest } from "@/lib/api";
 
 const CAR_MAKES = ["Toyota", "Honda", "Mitsubishi", "Nissan", "Hyundai", "Suzuki", "Ford", "Other"];
@@ -13,6 +14,7 @@ const SEAT_OPTIONS = ["2", "3", "4", "5", "6", "7"];
 export default function VehicleDetailsScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { fs, isSmall } = useScale();
   const { refreshUser } = useApp();
 
   const [plate, setPlate] = useState("");
@@ -103,7 +105,7 @@ export default function VehicleDetailsScreen() {
           <Text style={[styles.backText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Back</Text>
         </Pressable>
 
-        <Text style={[styles.title, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Vehicle details</Text>
+        <Text style={[styles.title, { fontSize: fs(26), color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Vehicle details</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Tell us about your car so passengers can find you</Text>
 
         <View style={[styles.carIllustration, { backgroundColor: colors.primaryLight }]}>

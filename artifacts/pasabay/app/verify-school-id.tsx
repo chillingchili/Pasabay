@@ -5,10 +5,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
+import { useScale } from "@/hooks/useScale";
 
 export default function VerifySchoolIdScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { fs, isSmall } = useScale();
   const { setSchoolIdVerified } = useApp();
   const [stage, setStage] = useState<"capture" | "analyzing" | "success">("capture");
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -38,9 +40,9 @@ export default function VerifySchoolIdScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: "#0a7d5c", paddingTop: insets.top }]}>
+    <View style={[styles.container, { backgroundColor: "#0a7d5c", paddingTop: insets.top, paddingHorizontal: isSmall ? 16 : 24 }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { fontFamily: "Inter_700Bold" }]}>Verify your school ID</Text>
+        <Text style={[styles.title, { fontSize: fs(22), fontFamily: "Inter_700Bold" }]}>Verify your school ID</Text>
         <Text style={[styles.step, { fontFamily: "Inter_400Regular" }]}>Step 1 of 2</Text>
       </View>
 
@@ -51,7 +53,7 @@ export default function VerifySchoolIdScreen() {
 
       {stage === "capture" && (
         <View style={styles.cameraArea}>
-          <Animated.View style={[styles.frame, { transform: [{ scale: pulseAnim }] }]}>
+          <Animated.View style={[styles.frame, { width: '75%', maxWidth: 280, transform: [{ scale: pulseAnim }] }]}>
             <View style={styles.frameCorner1} />
             <View style={styles.frameCorner2} />
             <View style={styles.frameCorner3} />
@@ -145,7 +147,7 @@ const styles = StyleSheet.create({
   stepBar: { flex: 1, height: 4, backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 2 },
   stepBarActive: { backgroundColor: "#fff" },
   cameraArea: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 },
-  frame: { width: 280, height: 200, borderRadius: 14, backgroundColor: "rgba(0,0,0,0.3)", alignItems: "center", justifyContent: "center", marginBottom: 32, position: "relative" },
+  frame: { height: 200, borderRadius: 14, backgroundColor: "rgba(0,0,0,0.3)", alignItems: "center", justifyContent: "center", marginBottom: 32, position: "relative" },
   frameCorner1: { position: "absolute", top: -2, left: -2, width: 24, height: 24, borderTopWidth: 3, borderLeftWidth: 3, borderColor: "#fff", borderRadius: 4 },
   frameCorner2: { position: "absolute", top: -2, right: -2, width: 24, height: 24, borderTopWidth: 3, borderRightWidth: 3, borderColor: "#fff", borderRadius: 4 },
   frameCorner3: { position: "absolute", bottom: -2, left: -2, width: 24, height: 24, borderBottomWidth: 3, borderLeftWidth: 3, borderColor: "#fff", borderRadius: 4 },
