@@ -32,6 +32,8 @@ export default function MatchingScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [retryCount, setRetryCount] = useState(0);
+  const [showRetry, setShowRetry] = useState(false);
   const didNavigate = useRef(false);
 
   const ring1 = useRef(new Animated.Value(1)).current;
@@ -85,9 +87,12 @@ export default function MatchingScreen() {
         const pickupName = params.pickupName ?? "USC Main Gate";
         const dropoffName = params.dropoffName ?? params.destination ?? "IT Park, Lahug";
 
+        const radiiToTry = [0.3, 0.5, 1.0, 2.0];
+        const radius = radiiToTry[Math.min(retryCount, radiiToTry.length - 1)];
+
         const result = await apiRequest<any>("/rides/request", {
           method: "POST",
-          body: JSON.stringify({ pickupLat, pickupLng, dropoffLat, dropoffLng, pickupName, dropoffName }),
+          body: JSON.stringify({ pickupLat, pickupLng, dropoffLat, dropoffLng, pickupName, dropoffName, radiusKm: radius }),
         });
 
         setIsLoading(false);
@@ -95,9 +100,7 @@ export default function MatchingScreen() {
         if (!result.matched) {
           setStatus(result.message ?? "No drivers found. Try again in a moment.");
           setSearching(false);
-          setTimeout(() => {
-            if (!didNavigate.current) router.back();
-          }, 3000);
+          setShowRetry(true);
           return;
         }
 
@@ -111,13 +114,11 @@ export default function MatchingScreen() {
         setShowError(true);
         setStatus("Connection error. Please try again.");
         setSearching(false);
-        setTimeout(() => {
-          if (!didNavigate.current) router.back();
-        }, 2500);
+        setShowRetry(true);
       }
     };
     searchForDriver();
-  }, []);
+  }, [retryCount]);
 
   useEffect(() => {
     if (matchConfirmed && !didNavigate.current) {
@@ -140,6 +141,13 @@ export default function MatchingScreen() {
     didNavigate.current = true;
     clearMatchConfirmed();
     router.back();
+  };
+
+  const handleRetry = () => {
+    setShowRetry(false);
+    setSearching(true);
+    setIsLoading(true);
+    setRetryCount(prev => prev + 1);
   };
 
   const destination = params.dropoffName ?? params.destination ?? "your destination";
@@ -204,12 +212,22 @@ export default function MatchingScreen() {
       </View>
 
       <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom + 16, 32) }]}>
-        <Pressable
-          style={[styles.cancelBtn, { borderColor: colors.destructiveLight }]}
-          onPress={handleCancel}
-        >
-          <Text style={[styles.cancelText, { color: colors.destructive, fontFamily: "Inter_500Medium" }]}>Cancel search</Text>
-        </Pressable>
+        {showRetry ? (
+          <Pressable
+            style={[styles.retryBtn, { backgroundColor: colors.primary }]}
+            onPress={handleRetry}
+          >
+            <Feather name="refresh-cw" size={16} color="#fff" />
+            <Text style={[styles.retryText, { fontFamily: "Inter_600SemiBold" }]}>Try Again</Text>
+          </Pressable>
+        ) : (
+          <Pressable
+            style={[styles.cancelBtn, { borderColor: colors.destructiveLight }]}
+            onPress={handleCancel}
+          >
+            <Text style={[styles.cancelText, { color: colors.destructive, fontFamily: "Inter_500Medium" }]}>Cancel search</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -248,4 +266,6 @@ const styles = StyleSheet.create({
   bottom: { paddingHorizontal: 24 },
   cancelBtn: { height: 50, borderRadius: 14, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
   cancelText: { fontSize: 15 },
+  retryBtn: { height: 50, borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+  retryText: { color: "#fff", fontSize: 15 },
 });

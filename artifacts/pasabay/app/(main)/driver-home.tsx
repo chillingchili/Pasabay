@@ -9,11 +9,11 @@ import { useColors } from "@/hooks/useColors";
 import { useLocation } from "@/hooks/useLocation";
 import { useApp } from "@/context/AppContext";
 import { useScale } from "@/hooks/useScale";
-import {
-  emitDriverOnline, emitDriverOffline, emitMatchAccept, emitMatchDecline,
+import { emitDriverOnline, emitDriverOffline, emitMatchAccept, emitMatchDecline,
   emitRideComplete, emitRideCancel, onDriverRouteSet, onDriverError,
   onMatchAccepted, emitDriverLocation,
 } from "@/lib/socket";
+import { ChatSheet } from "@/components/ChatSheet";
 import type { MatchRequestPayload } from "@/lib/socket";
 import { getRoute } from "@/lib/osrm";
 
@@ -36,6 +36,7 @@ export default function DriverHomeScreen() {
   const [selectedDest, setSelectedDest] = useState<{ lat: number; lng: number; name: string } | null>(null);
   const [routePolyline, setRoutePolyline] = useState<{ lat: number; lng: number }[] | null>(null);
   const [isDriverView, setIsDriverView] = useState(true);
+  const [showChat, setShowChat] = useState(false);
 
   const slideAnim = useRef(new Animated.Value(-160)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -43,7 +44,7 @@ export default function DriverHomeScreen() {
   const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
 
   const DEST_OPTIONS = [
-    { name: "IT Park, Lahug", lat: 10.3157, lng: 123.9030 },
+    { name: "IT Park, Lahug", lat: 10.3296, lng: 123.9077 },
     { name: "SM City Cebu", lat: 10.3278, lng: 123.9028 },
     { name: "Ayala Center", lat: 10.3080, lng: 123.8980 },
     { name: "JY Square", lat: 10.3200, lng: 123.9050 },
@@ -362,6 +363,9 @@ export default function DriverHomeScreen() {
                 {accepted.pickup.name} · {accepted.passengerName}
               </Text>
             </View>
+            <Pressable style={[styles.chatBtn, { backgroundColor: colors.primaryLight }]} onPress={() => setShowChat(true)}>
+              <Feather name="message-circle" size={16} color={colors.primary} />
+            </Pressable>
             {timer > 0 ? (
               <View style={[styles.timerBadge, { backgroundColor: timer < 20 ? colors.destructiveLight : colors.primaryLight }]}>
                 <Text style={[styles.timerText, { color: timer < 20 ? colors.destructive : colors.primary, fontFamily: "Inter_700Bold" }]}>{timer}s</Text>
@@ -374,6 +378,12 @@ export default function DriverHomeScreen() {
           </View>
         </View>
       )}
+
+      <ChatSheet
+        visible={showChat}
+        onClose={() => setShowChat(false)}
+        driverName={accepted?.passengerName ?? "Passenger"}
+      />
 
       <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 80, 100) }]}>
         <View style={styles.infoBlock}>
@@ -393,7 +403,7 @@ export default function DriverHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+container: { flex: 1 },
   topBar: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10 },
   destBar: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 12, paddingLeft: 14, gap: 8, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   destDot: { width: 8, height: 8, borderRadius: 4 },
@@ -402,10 +412,10 @@ const styles = StyleSheet.create({
   switchBtnText: { fontSize: 13 },
   statusTag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   statusTagText: { fontSize: 12 },
-  suggestions: { position: "absolute", top: 58, left: 0, right: 0, borderRadius: 12, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
+  suggestions: { position: "absolute", top: 58, left: 0, right: 0, borderRadius: 12, overflow: "hidden", zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   suggestionItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#f5f5f5" },
   suggestionText: { fontSize: 14 },
-  requestPopup: { position: "absolute", left: 16, right: 16, borderRadius: 16, padding: 14, gap: 10, zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20, elevation: 8 },
+  requestPopup: { position: "absolute", left: 16, right: 16, borderRadius: 16, padding: 14, gap: 10, zIndex: 30, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20, elevation: 8 },
   requestHeader: { flexDirection: "row", alignItems: "center", gap: 5 },
   requestHeaderText: { fontSize: 13 },
   requestBody: { flexDirection: "row", alignItems: "center", gap: 10 },
@@ -420,16 +430,17 @@ const styles = StyleSheet.create({
   declineBtnText: { fontSize: 14 },
   acceptBtn: { flex: 2, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   acceptBtnText: { color: "#fff", fontSize: 14 },
-  acceptedInfo: { position: "absolute", left: 16, right: 16, borderRadius: 16, padding: 14, zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 5 },
+  acceptedInfo: { position: "absolute", left: 16, right: 16, borderRadius: 16, padding: 14, zIndex: 40, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 5 },
   acceptedHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
   acceptedIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   acceptedTitle: { fontSize: 14 },
   acceptedSubtitle: { fontSize: 12, marginTop: 2 },
+  chatBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   timerBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   timerText: { fontSize: 16 },
   noShowBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   noShowText: { fontSize: 12 },
-  infoBar: { position: "absolute", bottom: 0, left: 0, right: 0, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 24, paddingTop: 16 },
+  infoBar: { position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 5, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 24, paddingTop: 16, paddingBottom: Math.max(insets.bottom + 80, 100) },
   infoBlock: { gap: 3 },
   infoLabel: { fontSize: 11 },
   infoValue: { fontSize: 18 },

@@ -18,6 +18,7 @@ const requestSchema = z.object({
   dropoffName: z.string().min(1),
   dropoffLat: z.number(),
   dropoffLng: z.number(),
+  radiusKm: z.number().optional(),
 });
 
 const rateSchema = z.object({
@@ -114,7 +115,7 @@ router.post("/request", requireAuth, async (req, res) => {
   }
 
   const passengerId = req.user!.sub;
-  const { pickupLat, pickupLng, dropoffLat, dropoffLng, pickupName, dropoffName } = parsed.data;
+  const { pickupLat, pickupLng, dropoffLat, dropoffLng, pickupName, dropoffName, radiusKm } = parsed.data;
 
   const pickup: RoutePoint = { lat: pickupLat, lng: pickupLng };
   const dropoff: RoutePoint = { lat: dropoffLat, lng: dropoffLng };
@@ -122,7 +123,7 @@ router.post("/request", requireAuth, async (req, res) => {
   const activeRoutes = await db.select().from(activeRoutesTable)
     .where(eq(activeRoutesTable.status, "active"));
 
-  const MATCH_RADIUS_KM = 0.3;
+  const MATCH_RADIUS_KM = radiusKm ?? 0.3;
   const matches: { routeId: string; driverId: string; pickupSnapped: RoutePoint; dropoffSnapped: RoutePoint; passengerDistKm: number; fare: number; matchingFee: number; pickupEtaMin: number }[] = [];
 
   for (const route of activeRoutes) {

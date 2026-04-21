@@ -10,6 +10,7 @@ import { useColors } from "@/hooks/useColors";
 import { useLocation } from "@/hooks/useLocation";
 import { useApp } from "@/context/AppContext";
 import { getRoute } from "@/lib/osrm";
+import { getWalkingRoute } from "@/lib/osrm";
 import { haversineKm } from "@/lib/osrm";
 import { useScale } from "@/hooks/useScale";
 import { useWindowDimensions } from "react-native";
@@ -18,7 +19,7 @@ const QUICK_DESTINATIONS = ["USC Talamban", "IT Park, Lahug", "SM City Cebu", "A
 
 const DEST_COORDS: Record<string, { lat: number; lng: number }> = {
   "USC Talamban": { lat: 10.3157, lng: 123.9030 },
-  "IT Park, Lahug": { lat: 10.3157, lng: 123.9030 },
+  "IT Park, Lahug": { lat: 10.3296, lng: 123.9077 },
   "SM City Cebu": { lat: 10.3278, lng: 123.9028 },
   "Ayala Center": { lat: 10.3080, lng: 123.8980 },
   "JY Square": { lat: 10.3200, lng: 123.9050 },
@@ -30,16 +31,18 @@ export default function PassengerHomeScreen() {
   const colors = useColors();
   const { fs, isSmall } = useScale();
   const dimensions = useWindowDimensions();
-  const { user, driverLocation, switchRole } = useApp();
+  const { user, driverLocation, switchRole, activeRide } = useApp();
   const { location: userLoc } = useLocation();
   const [destination, setDestination] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showPreMatch, setShowPreMatch] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [routePolyline, setRoutePolyline] = useState<{ lat: number; lng: number }[] | null>(null);
+  const [walkingPolyline, setWalkingPolyline] = useState<{ lat: number; lng: number }[] | null>(null);
   const [fareEstimate, setFareEstimate] = useState(0);
   const [distanceKm, setDistanceKm] = useState(0);
   const [etaMin, setEtaMin] = useState(0);
+  const [walkToPickupM, setWalkToPickupM] = useState(0);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const sheetAnim = useRef(new Animated.Value(0)).current;
 
@@ -93,6 +96,28 @@ export default function PassengerHomeScreen() {
     fetchRoute();
     return () => { cancelled = true; };
   }, [destination, pickupPoint, dropoffPoint]);
+
+  useEffect(() => {
+    if (!userLoc || !activeRide?.pickup) {
+      setWalkingPolyline(null);
+      setWalkToPickupM(0);
+      return;
+    }
+    let cancelled = false;
+    const fetch = async () => {
+      const walk = await getWalkingRoute(userLoc, activeRide.pickup);
+      if (cancelled) return;
+      if (walk) {
+        setWalkingPolyline(walk.polyline);
+        setWalkToPickupM(Math.round(walk.distanceKm * 1000));
+      } else {
+        const dist = haversineKm(userLoc, activeRide.pickup);
+        setWalkToPickupM(Math.round(dist * 1000));
+      }
+    };
+    fetch();
+    return () => { cancelled = true; };
+  }, [userLoc, activeRide?.pickup]);
 
   const handleFindRide = () => {
     if (!destination) return;
@@ -195,7 +220,32 @@ export default function PassengerHomeScreen() {
       >
         <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
-        {destination ? (
+        {activeRide ? (
+          <>
+            <View style={styles.destRow}>
+              <View style={[styles.destIcon, { backgroundColor: colors.primaryLight }]}>
+                <Feather name="map-pin" size={16} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.destLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Your driver is coming</Text>
+                <Text style={[styles.destValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{activeRide.driver.name}</Text>
+              </View>
+            </View>
+
+            <View style={[styles.walkCard, { backgroundColor: colors.accentBg, marginBottom: 14 }]}>
+              <Feather name="navigation" size={16} color={colors.accentDark} />
+              <Text style={[styles.walkText, { color: colors.accentDark, fontFamily: "Inter_500Medium" }]}>
+                {walkToPickupM > 0 ? `${walkToPickupM}m walk to pickup point` : "Calculating walking distance..."}
+              </Text>
+            </View>
+
+            <View style={styles.statChips}>
+              <StatChip label="Vehicle" value={activeRide.driver.vehicle ? `${activeRide.driver.vehicle.make} ${activeRide.driver.vehicle.model}` : "Not specified"} colors={colors} />
+              <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+              <StatChip label="Fare" value={`₱${activeRide.total.toFixed(0)}`} colors={colors} />
+            </View>
+          </>
+        ) : destination ? (
           <>
             <View style={styles.destRow}>
               <View style={[styles.destIcon, { backgroundColor: colors.primaryLight }]}>
@@ -286,6 +336,8 @@ const styles = StyleSheet.create({
   statDivider: { width: 1, height: 28 },
   findBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", height: 52, borderRadius: 14, gap: 8 },
   findBtnText: { color: "#fff", fontSize: 16 },
+  walkCard: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, padding: 10 },
+  walkText: { fontSize: 13, flex: 1 },
   emptyState: { paddingVertical: 20, alignItems: "center" },
   emptyText: { fontSize: 14 },
 });
