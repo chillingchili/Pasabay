@@ -385,7 +385,7 @@ export default function DriverHomeScreen() {
         driverName={accepted?.passengerName ?? "Passenger"}
       />
 
-      <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 80, 100) }]}>
+      <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 16, 24) + 60 }]}>
         <View style={styles.infoBlock}>
           <Text style={[styles.infoLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>To destination</Text>
           <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{selectedDest?.name ?? "Not set"}</Text>
@@ -440,7 +440,7 @@ container: { flex: 1 },
   timerText: { fontSize: 16 },
   noShowBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   noShowText: { fontSize: 12 },
-  infoBar: { position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 5, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 24, paddingTop: 16, paddingBottom: Math.max(insets.bottom + 80, 100) },
+  infoBar: { position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 5, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 24, paddingTop: 16 },
   infoBlock: { gap: 3 },
   infoLabel: { fontSize: 11 },
   infoValue: { fontSize: 18 },

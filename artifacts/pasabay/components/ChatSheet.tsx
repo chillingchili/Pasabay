@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Animated, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
@@ -38,8 +38,6 @@ export function ChatSheet({ visible, onClose, driverName }: ChatSheetProps) {
     }
   }, [visible, slideAnim]);
 
-  if (!visible) return null;
-
   const handleSend = () => {
     if (!inputText.trim()) return;
     const newMsg: Message = {
@@ -53,99 +51,101 @@ export function ChatSheet({ visible, onClose, driverName }: ChatSheetProps) {
   };
 
   return (
-    <View style={styles.overlay}>
-      <Pressable style={styles.backdrop} onPress={onClose} />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.keyboardView}
-      >
-        <Animated.View
-          style={[
-            styles.sheet,
-            {
-              backgroundColor: colors.background,
-              paddingBottom: Math.max(insets.bottom, 16),
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
+    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+      <View style={styles.overlay}>
+        <Pressable style={styles.backdrop} onPress={onClose} />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={styles.keyboardView}
         >
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-              <Text style={styles.avatarText}>{driverName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}</Text>
+          <Animated.View
+            style={[
+              styles.sheet,
+              {
+                backgroundColor: colors.background,
+                paddingBottom: Math.max(insets.bottom, 16),
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
+                <Text style={styles.avatarText}>{driverName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.headerName, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{driverName}</Text>
+                <Text style={[styles.headerStatus, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Active ride</Text>
+              </View>
+              <Pressable onPress={onClose} style={styles.closeBtn}>
+                <Feather name="x" size={20} color={colors.textSecondary} />
+              </Pressable>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.headerName, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{driverName}</Text>
-              <Text style={[styles.headerStatus, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Active ride</Text>
-            </View>
-            <Pressable onPress={onClose} style={styles.closeBtn}>
-              <Feather name="x" size={20} color={colors.textSecondary} />
-            </Pressable>
-          </View>
 
-          <View style={styles.messages}>
-            {messages.map(msg => (
-              <View
-                key={msg.id}
-                style={[
-                  styles.messageRow,
-                  msg.sender === "passenger" ? styles.messageRowRight : styles.messageRowLeft,
-                ]}
-              >
+            <ScrollView style={styles.messages} contentContainerStyle={styles.messagesContent}>
+              {messages.map(msg => (
                 <View
+                  key={msg.id}
                   style={[
-                    styles.messageBubble,
-                    msg.sender === "passenger"
-                      ? { backgroundColor: colors.primary }
-                      : { backgroundColor: colors.card },
+                    styles.messageRow,
+                    msg.sender === "passenger" ? styles.messageRowRight : styles.messageRowLeft,
                   ]}
                 >
-                  <Text
+                  <View
                     style={[
-                      styles.messageText,
-                      {
-                        color: msg.sender === "passenger" ? "#fff" : colors.foreground,
-                        fontFamily: "Inter_400Regular",
-                      },
+                      styles.messageBubble,
+                      msg.sender === "passenger"
+                        ? { backgroundColor: colors.primary }
+                        : { backgroundColor: colors.card },
                     ]}
                   >
-                    {msg.text}
-                  </Text>
+                    <Text
+                      style={[
+                        styles.messageText,
+                        {
+                          color: msg.sender === "passenger" ? "#fff" : colors.foreground,
+                          fontFamily: "Inter_400Regular",
+                        },
+                      ]}
+                    >
+                      {msg.text}
+                    </Text>
+                  </View>
+                  <Text style={[styles.messageTime, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>{msg.time}</Text>
                 </View>
-                <Text style={[styles.messageTime, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>{msg.time}</Text>
-              </View>
-            ))}
-          </View>
+              ))}
+            </ScrollView>
 
-          <View style={[styles.inputRow, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.card, color: colors.foreground, fontFamily: "Inter_400Regular" }]}
-              value={inputText}
-              onChangeText={setInputText}
-              placeholder="Type a message..."
-              placeholderTextColor={colors.textMuted}
-              multiline
-            />
-            <Pressable
-              style={[styles.sendBtn, { backgroundColor: colors.primary }]}
-              onPress={handleSend}
-            >
-              <Feather name="send" size={18} color="#fff" />
-            </Pressable>
-          </View>
-        </Animated.View>
-      </KeyboardAvoidingView>
-    </View>
+            <View style={[styles.inputRow, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.card, color: colors.foreground, fontFamily: "Inter_400Regular" }]}
+                value={inputText}
+                onChangeText={setInputText}
+                placeholder="Type a message..."
+                placeholderTextColor={colors.textMuted}
+                multiline
+              />
+              <Pressable
+                style={[styles.sendBtn, { backgroundColor: colors.primary }]}
+                onPress={handleSend}
+              >
+                <Feather name="send" size={18} color="#fff" />
+              </Pressable>
+            </View>
+          </Animated.View>
+        </KeyboardAvoidingView>
+      </View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFillObject, justifyContent: "flex-end" },
+  overlay: { flex: 1, justifyContent: "flex-end" },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.4)" },
   keyboardView: { justifyContent: "flex-end" },
   sheet: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: "70%",
+    maxHeight: "80%",
     display: "flex",
     flexDirection: "column",
   },
@@ -155,7 +155,8 @@ const styles = StyleSheet.create({
   headerName: { fontSize: 15 },
   headerStatus: { fontSize: 12 },
   closeBtn: { padding: 8 },
-  messages: { flex: 1, padding: 16, gap: 12 },
+  messages: { flex: 1 },
+  messagesContent: { padding: 16, gap: 12 },
   messageRow: { maxWidth: "80%" },
   messageRowLeft: { alignSelf: "flex-start" },
   messageRowRight: { alignSelf: "flex-end", alignItems: "flex-end" },

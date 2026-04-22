@@ -105,12 +105,18 @@ export default function PassengerHomeScreen() {
     }
     let cancelled = false;
     const fetch = async () => {
-      const walk = await getWalkingRoute(userLoc, activeRide.pickup);
-      if (cancelled) return;
-      if (walk) {
-        setWalkingPolyline(walk.polyline);
-        setWalkToPickupM(Math.round(walk.distanceKm * 1000));
-      } else {
+      try {
+        const walk = await getWalkingRoute(userLoc, activeRide.pickup);
+        if (cancelled) return;
+        if (walk) {
+          setWalkingPolyline(walk.polyline);
+          setWalkToPickupM(Math.round(walk.distanceKm * 1000));
+        } else {
+          const dist = haversineKm(userLoc, activeRide.pickup);
+          setWalkToPickupM(Math.round(dist * 1000));
+        }
+      } catch {
+        if (cancelled) return;
         const dist = haversineKm(userLoc, activeRide.pickup);
         setWalkToPickupM(Math.round(dist * 1000));
       }
@@ -220,6 +226,7 @@ export default function PassengerHomeScreen() {
       >
         <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
+        <ScrollView style={styles.sheetScroll} contentContainerStyle={styles.sheetScrollContent} showsVerticalScrollIndicator={false} bounces={false}>
         {activeRide ? (
           <>
             <View style={styles.destRow}>
@@ -235,7 +242,11 @@ export default function PassengerHomeScreen() {
             <View style={[styles.walkCard, { backgroundColor: colors.accentBg, marginBottom: 14 }]}>
               <Feather name="navigation" size={16} color={colors.accentDark} />
               <Text style={[styles.walkText, { color: colors.accentDark, fontFamily: "Inter_500Medium" }]}>
-                {walkToPickupM > 0 ? `${walkToPickupM}m walk to pickup point` : "Calculating walking distance..."}
+                {walkToPickupM > 0
+                  ? `${walkToPickupM < 1000 ? `${walkToPickupM}m` : `${(walkToPickupM / 1000).toFixed(1)}km`} walk to pickup point`
+                  : activeRide.distanceKm > 0
+                    ? `${activeRide.distanceKm.toFixed(1)}km ride`
+                    : "Calculating walking distance..."}
               </Text>
             </View>
 
@@ -282,6 +293,7 @@ export default function PassengerHomeScreen() {
             <Text style={[styles.emptyText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Enter a destination to find a ride</Text>
           </View>
         )}
+        </ScrollView>
       </Animated.View>
 
       <PreMatchModal
@@ -320,8 +332,10 @@ const styles = StyleSheet.create({
   suggestions: { borderRadius: 12, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 5 },
   suggestionItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#f5f5f5" },
   suggestionText: { fontSize: 14 },
-  bottomSheet: { position: "absolute", bottom: 0, left: 0, right: 0, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 100, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 10, maxHeight: "65%" },
-  handle: { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 16 },
+  bottomSheet: { position: "absolute", bottom: 0, left: 0, right: 0, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingTop: 0, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 10, maxHeight: "65%" },
+  handle: { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 16 },
+  sheetScroll: { flex: 1 },
+  sheetScrollContent: { paddingBottom: 20 },
   destRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
   destIcon: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
   destLabel: { fontSize: 11, marginBottom: 2 },
