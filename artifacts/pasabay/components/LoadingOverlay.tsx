@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 5000,
+    zIndex: 50,
   },
   card: {
     borderRadius: 16,

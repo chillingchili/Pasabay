@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 16,
     right: 16,
-    zIndex: 9999,
+    zIndex: 300,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,

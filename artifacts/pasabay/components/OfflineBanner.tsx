@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    zIndex: 9999,
+    zIndex: 300,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
