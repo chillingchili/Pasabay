@@ -106,7 +106,7 @@ export default function MatchFoundScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingHorizontal: isSmall ? 16 : 20, paddingTop: topPad + 8, paddingBottom: Math.max(insets.bottom + 100, 120) }]}
+        contentContainerStyle={[styles.scroll, { paddingHorizontal: isSmall ? 16 : 20, paddingTop: topPad + 8, paddingBottom: Math.max(insets.bottom + 120, 140) }]}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
@@ -212,7 +212,7 @@ export default function MatchFoundScreen() {
         </Animated.View>
       </ScrollView>
 
-      <View style={[styles.actionBar, { backgroundColor: colors.background, borderTopColor: colors.borderLighter, paddingBottom: Math.max(insets.bottom + 8, 24) }]}>
+      <View style={[styles.actionBar, { backgroundColor: colors.background, borderTopColor: colors.borderLighter, paddingBottom: Math.max(insets.bottom + 24, 40) }]}>
         <Pressable
           style={[styles.btnDecline, { borderColor: `${colors.destructive}40` }]}
           onPress={handleDecline}

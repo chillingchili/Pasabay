@@ -73,8 +73,8 @@ export default function MainTabLayout() {
           ),
         }}
       />
-      <Tabs.Screen name="matching" options={{ href: null }} />
-      <Tabs.Screen name="match-found" options={{ href: null }} />
+      <Tabs.Screen name="matching" options={{ href: null, tabBarStyle: { display: "none" } }} />
+      <Tabs.Screen name="match-found" options={{ href: null, tabBarStyle: { display: "none" } }} />
     </Tabs>
   );
 }

@@ -211,7 +211,7 @@ export default function MatchingScreen() {
         )}
       </View>
 
-      <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom + 16, 32) }]}>
+      <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom + 16, 32), backgroundColor: colors.background }]}>
         {showRetry ? (
           <Pressable
             style={[styles.retryBtn, { backgroundColor: colors.primary }]}
