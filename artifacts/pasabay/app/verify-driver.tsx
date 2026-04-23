@@ -36,10 +36,6 @@ export default function VerifyDriverScreen() {
     router.replace("/vehicle-details");
   };
 
-  const handleSkip = () => {
-    router.replace("/(main)/passenger-home");
-  };
-
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
@@ -121,9 +117,6 @@ export default function VerifyDriverScreen() {
             </Pressable>
             <Pressable style={styles.btnGhost} onPress={handleContinue}>
               <Text style={[styles.btnGhostText, { fontFamily: "Inter_400Regular" }]}>Enter manually instead</Text>
-            </Pressable>
-            <Pressable style={styles.btnGhost} onPress={handleSkip}>
-              <Text style={[styles.btnGhostText, { fontFamily: "Inter_400Regular" }]}>Skip — I'm a passenger only</Text>
             </Pressable>
           </>
         )}
