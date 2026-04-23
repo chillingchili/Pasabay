@@ -31,23 +31,25 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
-    if (!email) { Alert.alert("Required", "Please enter your email."); return; }
-    if (!password) { Alert.alert("Required", "Please enter your password."); return; }
+    if (!email) { setError("Please enter your email."); return; }
+    if (!password) { setError("Please enter your password."); return; }
+    setError(null);
     setLoading(true);
     try {
       await login(email, password);
       router.replace("/(main)/passenger-home");
     } catch (err: any) {
-      const status = err?.status || err?.statusCode;
+      const status = err?.status;
       const message = err?.message ?? "";
       if (status === 401) {
-        Alert.alert("Login Failed", "Incorrect email or password. Please try again.");
+        setError("Incorrect email or password. Please try again.");
       } else if (!message && !status) {
-        Alert.alert("Connection Error", "Could not connect to the server. Check your internet connection and try again.");
+        setError("Could not connect to the server. Check your internet connection and try again.");
       } else {
-        Alert.alert("Login Failed", message || "Something went wrong. Please try again.");
+        setError(message || "Something went wrong. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -90,6 +92,12 @@ export default function LoginScreen() {
         <Text style={[styles.subtitle, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Log in to your Pasabay account</Text>
 
         <View style={[styles.form, { gap: isSmall ? 12 : 14 }]}>
+          {error && (
+            <View style={styles.errorBox}>
+              <Feather name="alert-circle" size={16} color={colors.destructive} />
+              <Text style={[styles.errorText, { color: colors.destructive, fontFamily: "Inter_400Regular" }]}>{error}</Text>
+            </View>
+          )}
           <View style={styles.formGroup}>
             <Text style={[styles.label, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>School email</Text>
             <TextInput
@@ -178,6 +186,8 @@ const styles = StyleSheet.create({
   backText: { fontSize: 14 },
   title: { fontSize: 28, fontWeight: "700", marginBottom: 6 },
   subtitle: { fontSize: 14, marginBottom: 32 },
+  errorBox: { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, borderRadius: 10, backgroundColor: "#fef2f2", borderWidth: 1, borderColor: "#fecaca" },
+  errorText: { flex: 1, fontSize: 13, lineHeight: 18 },
   form: { gap: 14 },
   formGroup: { gap: 6 },
   label: { fontSize: 13, fontWeight: "500" },
