@@ -53,9 +53,20 @@ export function RealMap({
   const [followUser, setFollowUser] = useState(true);
   const isAnimating = useRef(false);
 
-  // Recenter map when points change (but NOT on every GPS update)
+  // Track initial centering to avoid recentering on every GPS update
+  const hasCenteredRef = useRef(false);
+
+  // Track destination coordinate changes (not object reference, since these are recreated each render)
+  const prevCenterCoords = useRef<string | null>(centerOn ? `${centerOn.lat},${centerOn.lng}` : null);
+
+  // Center map on initial load, then only on explicit destination changes
   useEffect(() => {
-    if (!followUser) return;
+    const currentCoords = centerOn ? `${centerOn.lat},${centerOn.lng}` : null;
+    const destinationChanged = currentCoords !== prevCenterCoords.current;
+    prevCenterCoords.current = currentCoords;
+
+    // Skip auto-centering if user has manually dragged and no destination change
+    if (!followUser && !destinationChanged && hasCenteredRef.current) return;
 
     if (centerOn) {
       const newRegion: Region = {
@@ -68,18 +79,34 @@ export function RealMap({
       isAnimating.current = true;
       mapRef.current?.animateToRegion(newRegion, 500);
       setTimeout(() => { isAnimating.current = false; }, 600);
+      hasCenteredRef.current = true;
+      return;
+    }
+
+    // On initial load, center on user location (only once)
+    if (!hasCenteredRef.current && userLocation) {
+      const newRegion: Region = {
+        latitude: userLocation.lat,
+        longitude: userLocation.lng,
+        latitudeDelta: 0.015,
+        longitudeDelta: 0.015,
+      };
+      setRegion(newRegion);
+      isAnimating.current = true;
+      mapRef.current?.animateToRegion(newRegion, 500);
+      setTimeout(() => { isAnimating.current = false; }, 600);
+      hasCenteredRef.current = true;
       return;
     }
 
     const points: MapPoint[] = [];
-    if (pickupPoint) points.push(pickupPoint);
     if (dropoffPoint) points.push(dropoffPoint);
     if (driverLocation) points.push(driverLocation);
     if (routePolyline?.length) {
       routePolyline.forEach((p) => points.push(p));
     }
 
-    if (points.length > 0) {
+    if (points.length > 0 && destinationChanged) {
       const lats = points.map((p) => p.lat);
       const lngs = points.map((p) => p.lng);
       const minLat = Math.min(...lats);
@@ -100,8 +127,9 @@ export function RealMap({
       isAnimating.current = true;
       mapRef.current?.animateToRegion(newRegion, 500);
       setTimeout(() => { isAnimating.current = false; }, 600);
+      hasCenteredRef.current = true;
     }
-  }, [centerOn, pickupPoint, dropoffPoint, driverLocation, routePolyline, followUser]);
+  }, [centerOn, dropoffPoint, driverLocation, routePolyline, userLocation]);
 
   // Recenter on user location when recenterKey changes (manual recenter button)
   useEffect(() => {

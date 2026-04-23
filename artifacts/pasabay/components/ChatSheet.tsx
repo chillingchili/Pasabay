@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   sheet: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: "80%",
+    height: "92%",
     display: "flex",
     flexDirection: "column",
   },
