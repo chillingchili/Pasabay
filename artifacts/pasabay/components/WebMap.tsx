@@ -15,9 +15,11 @@ interface WebMapProps {
   dropoffPoint?: MapPoint;
   userLocation?: MapPoint;
   driverLocation?: MapPoint;
-  centerOn?: MapPoint;
+  fitRouteKey?: number;
+  recenterKey?: number;
   initialRegion?: { latitude: number; longitude: number; latitudeDelta: number; longitudeDelta: number };
   onMapPress?: (event: any) => void;
+  onUserDrag?: () => void;
   style?: object;
 }
 
@@ -60,8 +62,10 @@ export function WebMap({
   dropoffPoint,
   userLocation,
   driverLocation,
-  centerOn,
+  fitRouteKey,
+  recenterKey,
   initialRegion,
+  onUserDrag,
 }: WebMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -69,6 +73,8 @@ export function WebMap({
   const polylineRef = useRef<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const userDraggedRef = useRef(false);
+  const lastFittedKeyRef = useRef(0);
 
   useEffect(() => {
     loadLeaflet()
@@ -90,6 +96,12 @@ export function WebMap({
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map);
+
+    // Detect user drag on the web map
+    map.on("dragstart", () => {
+      userDraggedRef.current = true;
+      onUserDrag?.();
+    });
 
     mapRef.current = map;
 
@@ -120,23 +132,12 @@ export function WebMap({
     const L = (window as any).L;
     clearMarkers();
 
-    if (centerOn) {
-      mapRef.current.setView([centerOn.lat, centerOn.lng], 16);
-    } else {
-      const points: MapPoint[] = [];
-      if (userLocation) points.push(userLocation);
-      if (pickupPoint) points.push(pickupPoint);
-      if (dropoffPoint) points.push(dropoffPoint);
-      if (driverLocation) points.push(driverLocation);
-      if (routePolyline?.length) routePolyline.forEach((p) => points.push(p));
-
-      if (points.length > 0) {
-        const lats = points.map((p) => p.lat);
-        const lngs = points.map((p) => p.lng);
-        const bounds = L.latLngBounds(lats.map((lat, i) => [lat, lngs[i]]));
-        mapRef.current.fitBounds(bounds, { padding: [50, 50] });
-      }
-    }
+    // If user has manually dragged, don't auto-center unless explicit action
+    // (fitRouteKey or recenterKey change resets userDragged)
+    if (pickupPoint) addMarker(L, pickupPoint.lat, pickupPoint.lng, "#3B82F6", 30, 14, pickupPoint.name);
+    if (dropoffPoint) addMarker(L, dropoffPoint.lat, dropoffPoint.lng, "#EF4444", 30, 14, dropoffPoint.name);
+    if (driverLocation) addMarker(L, driverLocation.lat, driverLocation.lng, "#0D9E75", 36, 16, "Driver");
+    if (userLocation) addMarker(L, userLocation.lat, userLocation.lng, "#6B7280", 24, 10, "You");
 
     if (showRoute && routePolyline && routePolyline.length > 1) {
       polylineRef.current = L.polyline(
@@ -144,12 +145,75 @@ export function WebMap({
         { color: "#0D9E75", weight: 4 }
       ).addTo(mapRef.current);
     }
+  }, [loaded, userLocation, pickupPoint, dropoffPoint, driverLocation, routePolyline, showRoute]);
 
-    if (pickupPoint) addMarker(L, pickupPoint.lat, pickupPoint.lng, "#3B82F6", 30, 14, pickupPoint.name);
-    if (dropoffPoint) addMarker(L, dropoffPoint.lat, dropoffPoint.lng, "#EF4444", 30, 14, dropoffPoint.name);
-    if (driverLocation) addMarker(L, driverLocation.lat, driverLocation.lng, "#0D9E75", 36, 16, "Driver");
-    if (userLocation) addMarker(L, userLocation.lat, userLocation.lng, "#6B7280", 24, 10, "You");
-  }, [loaded, centerOn, userLocation, pickupPoint, dropoffPoint, driverLocation, routePolyline, showRoute]);
+  // Fit map to show the full route when fitRouteKey changes (destination selected).
+  // Reset lastFittedKeyRef so the polyline-arrival effect can refit with full route data.
+  useEffect(() => {
+    if (!mapRef.current || !loaded || !fitRouteKey) return;
+    const L = (window as any).L;
+    userDraggedRef.current = false;
+    lastFittedKeyRef.current = 0;
+
+    const points: MapPoint[] = [];
+    if (pickupPoint) points.push(pickupPoint);
+    if (dropoffPoint) points.push(dropoffPoint);
+    if (routePolyline && routePolyline.length > 0) {
+      routePolyline.forEach((p) => points.push(p));
+    }
+
+    if (points.length >= 2) {
+      const lats = points.map((p) => p.lat);
+      const lngs = points.map((p) => p.lng);
+      const bounds = L.latLngBounds(lats.map((lat, i) => [lat, lngs[i]]));
+      mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+    } else if (points.length === 1) {
+      mapRef.current.setView([points[0].lat, points[0].lng], 16);
+    }
+  }, [loaded, fitRouteKey]);
+
+  // When route polyline data arrives asynchronously, refit map to show the full road path.
+  // Only refit ONCE per destination change (guarded by lastFittedKeyRef, reset by fitRouteKey).
+  useEffect(() => {
+    if (!mapRef.current || !loaded) return;
+    if (!routePolyline || routePolyline.length < 2) return;
+    if (lastFittedKeyRef.current >= (fitRouteKey ?? 0)) return;
+    lastFittedKeyRef.current = fitRouteKey ?? 0;
+    const L = (window as any).L;
+    userDraggedRef.current = false;
+
+    const allPoints: MapPoint[] = [...routePolyline];
+    if (pickupPoint) allPoints.push(pickupPoint);
+    if (dropoffPoint) allPoints.push(dropoffPoint);
+
+    const lats = allPoints.map((p) => p.lat);
+    const lngs = allPoints.map((p) => p.lng);
+    const bounds = L.latLngBounds(lats.map((lat, i) => [lat, lngs[i]]));
+    mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+  }, [loaded, routePolyline, pickupPoint, dropoffPoint, fitRouteKey]);
+
+  // Recenter when recenterKey changes (manual recenter button)
+  useEffect(() => {
+    if (!mapRef.current || !loaded || !recenterKey || recenterKey <= 0) return;
+    const L = (window as any).L;
+    userDraggedRef.current = false;
+
+    const points: MapPoint[] = [];
+    if (pickupPoint) points.push(pickupPoint);
+    if (dropoffPoint) points.push(dropoffPoint);
+    if (routePolyline && routePolyline.length > 0) {
+      routePolyline.forEach((p) => points.push(p));
+    }
+
+    if (points.length >= 2) {
+      const lats = points.map((p) => p.lat);
+      const lngs = points.map((p) => p.lng);
+      const bounds = L.latLngBounds(lats.map((lat, i) => [lat, lngs[i]]));
+      mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+    } else if (userLocation) {
+      mapRef.current.setView([userLocation.lat, userLocation.lng], 16);
+    }
+  }, [loaded, recenterKey]);
 
   if (error) {
     return (

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT, type Region } from "react-native-maps";
 import { useColors } from "@/hooks/useColors";
@@ -16,8 +16,7 @@ interface RealMapProps {
   dropoffPoint?: MapPoint;
   userLocation?: MapPoint;
   driverLocation?: MapPoint;
-  centerOn?: MapPoint;
-  initialRegion?: Region;
+  fitRouteKey?: number;
   recenterKey?: number;
   onRegionChangeComplete?: (region: Region) => void;
   onUserDrag?: () => void;
@@ -32,6 +31,36 @@ const DEFAULT_REGION: Region = {
   longitudeDelta: 0.02,
 };
 
+/** Fit map to show all given points with padding */
+function fitMapToPoints(mapRef: React.MutableRefObject<any>, points: MapPoint[]) {
+  if (points.length === 0) return;
+  if (points.length === 1) {
+    mapRef.current?.animateToRegion(
+      { latitude: points[0].lat, longitude: points[0].lng, latitudeDelta: 0.015, longitudeDelta: 0.015 },
+      500,
+    );
+    return;
+  }
+  const lats = points.map((p) => p.lat);
+  const lngs = points.map((p) => p.lng);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+  const latDelta = (maxLat - minLat) * 1.5 + 0.005;
+  const lngDelta = (maxLng - minLng) * 1.5 + 0.005;
+
+  mapRef.current?.animateToRegion(
+    {
+      latitude: (minLat + maxLat) / 2,
+      longitude: (minLng + maxLng) / 2,
+      latitudeDelta: Math.max(latDelta, 0.01),
+      longitudeDelta: Math.max(lngDelta, 0.01),
+    },
+    500,
+  );
+}
+
 export function RealMap({
   showRoute = false,
   routePolyline,
@@ -39,8 +68,7 @@ export function RealMap({
   dropoffPoint,
   userLocation,
   driverLocation,
-  centerOn,
-  initialRegion,
+  fitRouteKey,
   recenterKey,
   onRegionChangeComplete,
   onUserDrag,
@@ -49,113 +77,81 @@ export function RealMap({
 }: RealMapProps) {
   const colors = useColors();
   const mapRef = useRef<any>(null);
-  const [region, setRegion] = useState<Region>(initialRegion ?? DEFAULT_REGION);
-  const [followUser, setFollowUser] = useState(true);
   const isAnimating = useRef(false);
-
-  // Track initial centering to avoid recentering on every GPS update
   const hasCenteredRef = useRef(false);
+  const lastFittedKeyRef = useRef(0);
 
-  // Track destination coordinate changes (not object reference, since these are recreated each render)
-  const prevCenterCoords = useRef<string | null>(centerOn ? `${centerOn.lat},${centerOn.lng}` : null);
-
-  // Center map on initial load, then only on explicit destination changes
+  // Center on user location once on first GPS fix (uncontrolled map)
   useEffect(() => {
-    const currentCoords = centerOn ? `${centerOn.lat},${centerOn.lng}` : null;
-    const destinationChanged = currentCoords !== prevCenterCoords.current;
-    prevCenterCoords.current = currentCoords;
+    if (!userLocation || hasCenteredRef.current) return;
+    hasCenteredRef.current = true;
+    isAnimating.current = true;
+    mapRef.current?.animateToRegion(
+      { latitude: userLocation.lat, longitude: userLocation.lng, latitudeDelta: 0.015, longitudeDelta: 0.015 },
+      500,
+    );
+    setTimeout(() => { isAnimating.current = false; }, 600);
+  }, [userLocation]);
 
-    // Skip auto-centering if user has manually dragged and no destination change
-    if (!followUser && !destinationChanged && hasCenteredRef.current) return;
-
-    if (centerOn) {
-      const newRegion: Region = {
-        latitude: centerOn.lat,
-        longitude: centerOn.lng,
-        latitudeDelta: 0.015,
-        longitudeDelta: 0.015,
-      };
-      setRegion(newRegion);
-      isAnimating.current = true;
-      mapRef.current?.animateToRegion(newRegion, 500);
-      setTimeout(() => { isAnimating.current = false; }, 600);
-      hasCenteredRef.current = true;
-      return;
-    }
-
-    // On initial load, center on user location (only once)
-    if (!hasCenteredRef.current && userLocation) {
-      const newRegion: Region = {
-        latitude: userLocation.lat,
-        longitude: userLocation.lng,
-        latitudeDelta: 0.015,
-        longitudeDelta: 0.015,
-      };
-      setRegion(newRegion);
-      isAnimating.current = true;
-      mapRef.current?.animateToRegion(newRegion, 500);
-      setTimeout(() => { isAnimating.current = false; }, 600);
-      hasCenteredRef.current = true;
-      return;
-    }
-
+  // When a route becomes available (destination selected), fit to endpoint markers.
+  // Reset lastFittedKeyRef so the polyline-arrival effect can refit once with full route data.
+  useEffect(() => {
+    if (!fitRouteKey) return;
+    lastFittedKeyRef.current = 0;
     const points: MapPoint[] = [];
+    if (pickupPoint) points.push(pickupPoint);
     if (dropoffPoint) points.push(dropoffPoint);
-    if (driverLocation) points.push(driverLocation);
-    if (routePolyline?.length) {
+    if (routePolyline && routePolyline.length > 0) {
       routePolyline.forEach((p) => points.push(p));
     }
+    if (points.length === 0) return;
 
-    if (points.length > 0 && destinationChanged) {
-      const lats = points.map((p) => p.lat);
-      const lngs = points.map((p) => p.lng);
-      const minLat = Math.min(...lats);
-      const maxLat = Math.max(...lats);
-      const minLng = Math.min(...lngs);
-      const maxLng = Math.max(...lngs);
-      const latDelta = (maxLat - minLat) * 1.5 + 0.005;
-      const lngDelta = (maxLng - minLng) * 1.5 + 0.005;
+    isAnimating.current = true;
+    fitMapToPoints(mapRef, points);
+    setTimeout(() => { isAnimating.current = false; }, 600);
+  }, [fitRouteKey]);
 
-      const newRegion: Region = {
-        latitude: (minLat + maxLat) / 2,
-        longitude: (minLng + maxLng) / 2,
-        latitudeDelta: Math.max(latDelta, 0.01),
-        longitudeDelta: Math.max(lngDelta, 0.01),
-      };
-
-      setRegion(newRegion);
-      isAnimating.current = true;
-      mapRef.current?.animateToRegion(newRegion, 500);
-      setTimeout(() => { isAnimating.current = false; }, 600);
-      hasCenteredRef.current = true;
-    }
-  }, [centerOn, dropoffPoint, driverLocation, routePolyline, userLocation]);
-
-  // Recenter on user location when recenterKey changes (manual recenter button)
+  // When route polyline data arrives asynchronously, refit map to show the full road path.
+  // Only refit ONCE per destination change (guarded by lastFittedKeyRef, reset by fitRouteKey).
   useEffect(() => {
-    if (recenterKey !== undefined && recenterKey > 0) {
-      setFollowUser(true);
-      const target = userLocation ?? centerOn;
-      if (target) {
-        const newRegion: Region = {
-          latitude: target.lat,
-          longitude: target.lng,
-          latitudeDelta: 0.015,
-          longitudeDelta: 0.015,
-        };
-        setRegion(newRegion);
-        isAnimating.current = true;
-        mapRef.current?.animateToRegion(newRegion, 500);
-        setTimeout(() => { isAnimating.current = false; }, 600);
-      }
+    if (!routePolyline || routePolyline.length < 2) return;
+    if (lastFittedKeyRef.current >= (fitRouteKey ?? 0)) return;
+    lastFittedKeyRef.current = fitRouteKey ?? 0;
+
+    const allPoints: MapPoint[] = [...routePolyline];
+    if (pickupPoint) allPoints.push(pickupPoint);
+    if (dropoffPoint) allPoints.push(dropoffPoint);
+
+    isAnimating.current = true;
+    fitMapToPoints(mapRef, allPoints);
+    setTimeout(() => { isAnimating.current = false; }, 600);
+  }, [routePolyline, pickupPoint, dropoffPoint, fitRouteKey]);
+
+  // Manual recenter button: show the full route (or user location if no route)
+  useEffect(() => {
+    if (recenterKey === undefined || recenterKey <= 0) return;
+    const routePoints: MapPoint[] = [];
+    if (pickupPoint) routePoints.push(pickupPoint);
+    if (dropoffPoint) routePoints.push(dropoffPoint);
+    if (routePolyline && routePolyline.length > 0) {
+      routePolyline.forEach((p) => routePoints.push(p));
     }
+
+    isAnimating.current = true;
+    if (routePoints.length >= 2) {
+      fitMapToPoints(mapRef, routePoints);
+    } else if (userLocation) {
+      mapRef.current?.animateToRegion(
+        { latitude: userLocation.lat, longitude: userLocation.lng, latitudeDelta: 0.015, longitudeDelta: 0.015 },
+        500,
+      );
+    }
+    setTimeout(() => { isAnimating.current = false; }, 600);
   }, [recenterKey]);
 
-  // Detect user drag — stop following
+  // Detect user drag — notify parent (map is uncontrolled, so no state fight)
   const handleRegionChangeComplete = (newRegion: Region) => {
-    setRegion(newRegion);
     if (!isAnimating.current) {
-      setFollowUser(false);
       onUserDrag?.();
     }
     onRegionChangeComplete?.(newRegion);
@@ -167,7 +163,7 @@ export function RealMap({
         ref={mapRef}
         provider={Platform.OS === "ios" ? undefined : PROVIDER_DEFAULT}
         style={StyleSheet.absoluteFill}
-        region={region}
+        initialRegion={DEFAULT_REGION}
         onRegionChangeComplete={handleRegionChangeComplete}
         onPress={onMapPress}
         showsUserLocation={!!userLocation}

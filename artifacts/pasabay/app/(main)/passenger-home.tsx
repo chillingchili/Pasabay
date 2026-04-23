@@ -44,7 +44,9 @@ export default function PassengerHomeScreen() {
   const [etaMin, setEtaMin] = useState(0);
   const [walkToPickupM, setWalkToPickupM] = useState(0);
   const [recenterKey, setRecenterKey] = useState(0);
+  const [fitRouteKey, setFitRouteKey] = useState(0);
   const [showRecenter, setShowRecenter] = useState(false);
+  const [sheetContentHeight, setSheetContentHeight] = useState(0);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const sheetAnim = useRef(new Animated.Value(0)).current;
 
@@ -66,6 +68,13 @@ export default function PassengerHomeScreen() {
     Animated.spring(sheetAnim, { toValue: 1, tension: 50, friction: 10, useNativeDriver: true }).start();
     return () => pulse.stop();
   }, [pulseAnim, sheetAnim]);
+
+  // Fit the map to show the full route ONCE when destination changes
+  // (NOT when pickup changes, which happens on every GPS update)
+  useEffect(() => {
+    if (!destination) return;
+    setFitRouteKey((k) => k + 1);
+  }, [destination]);
 
   useEffect(() => {
     if (!pickupPoint || !dropoffPoint) {
@@ -167,7 +176,7 @@ export default function PassengerHomeScreen() {
         dropoffPoint={dropoffPoint ?? undefined}
         userLocation={userLoc ?? undefined}
         driverLocation={driverLocation ?? undefined}
-        centerOn={dropoffPoint ?? undefined}
+        fitRouteKey={fitRouteKey}
         recenterKey={recenterKey}
         onUserDrag={() => setShowRecenter(true)}
       />
@@ -175,7 +184,7 @@ export default function PassengerHomeScreen() {
 
       {showRecenter && (
         <Pressable
-          style={[styles.recenterBtn, { backgroundColor: colors.primary, bottom: Math.max(bottomPad - 20, 180) }]}
+          style={[styles.recenterBtn, { backgroundColor: colors.primary, bottom: Math.max(sheetContentHeight + 12, 180) }]}
           onPress={() => { setShowRecenter(false); setRecenterKey(k => k + 1); }}
         >
           <Feather name="navigation" size={20} color="#fff" />
@@ -227,6 +236,7 @@ export default function PassengerHomeScreen() {
       </View>
 
       <Animated.View
+        onLayout={(e) => setSheetContentHeight(e.nativeEvent.layout.height)}
         style={[
           styles.bottomSheet,
           {
@@ -379,6 +389,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 15,
+    zIndex: 15,
   },
 });

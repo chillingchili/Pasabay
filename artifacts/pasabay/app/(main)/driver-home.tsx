@@ -38,7 +38,9 @@ export default function DriverHomeScreen() {
   const [isDriverView, setIsDriverView] = useState(true);
   const [showChat, setShowChat] = useState(false);
   const [recenterKey, setRecenterKey] = useState(0);
+  const [fitRouteKey, setFitRouteKey] = useState(0);
   const [showRecenter, setShowRecenter] = useState(false);
+  const [infoBarHeight, setInfoBarHeight] = useState(0);
 
   const slideAnim = useRef(new Animated.Value(-160)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -109,6 +111,13 @@ export default function DriverHomeScreen() {
       offError();
     };
   }, []);
+
+  // Fit the map to show the full route ONCE when destination changes
+  // (NOT when user location changes, which happens on every GPS update)
+  useEffect(() => {
+    if (!selectedDest) return;
+    setFitRouteKey((k) => k + 1);
+  }, [selectedDest]);
 
   useEffect(() => {
     if (!userLoc || !selectedDest) return;
@@ -252,7 +261,7 @@ export default function DriverHomeScreen() {
         routePolyline={routePolyline ?? undefined}
         userLocation={userLoc ?? undefined}
         pickupPoint={selectedDest ?? undefined}
-        centerOn={selectedDest ?? undefined}
+        fitRouteKey={fitRouteKey}
         recenterKey={recenterKey}
         onUserDrag={() => setShowRecenter(true)}
       />
@@ -260,7 +269,7 @@ export default function DriverHomeScreen() {
 
       {showRecenter && (
         <Pressable
-          style={[styles.recenterBtn, { backgroundColor: colors.primary, bottom: Math.max(insets.bottom + 100, 120) }]}
+          style={[styles.recenterBtn, { backgroundColor: colors.primary, bottom: Math.max(infoBarHeight + 12, 120) }]}
           onPress={() => { setShowRecenter(false); setRecenterKey(k => k + 1); }}
         >
           <Feather name="navigation" size={20} color="#fff" />
@@ -398,7 +407,7 @@ export default function DriverHomeScreen() {
         driverName={accepted?.passengerName ?? "Passenger"}
       />
 
-      <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 16, 24) + 60 }]}>
+      <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 16, 24) + 60 }]} onLayout={(e) => setInfoBarHeight(e.nativeEvent.layout.height)}>
         <View style={styles.infoBlock}>
           <Text style={[styles.infoLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>To destination</Text>
           <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{selectedDest?.name ?? "Not set"}</Text>
@@ -470,6 +479,7 @@ container: { flex: 1 },
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 15,
+    zIndex: 15,
   },
 });

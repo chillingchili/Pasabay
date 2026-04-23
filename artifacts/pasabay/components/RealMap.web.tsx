@@ -10,9 +10,11 @@ interface RealMapProps {
   dropoffPoint?: MapPoint;
   userLocation?: MapPoint;
   driverLocation?: MapPoint;
-  centerOn?: MapPoint;
+  fitRouteKey?: number;
+  recenterKey?: number;
   initialRegion?: Region;
   onRegionChangeComplete?: (region: Region) => void;
+  onUserDrag?: () => void;
   onMapPress?: (event: any) => void;
   style?: object;
 }
