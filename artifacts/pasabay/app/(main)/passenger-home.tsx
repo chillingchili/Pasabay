@@ -43,6 +43,8 @@ export default function PassengerHomeScreen() {
   const [distanceKm, setDistanceKm] = useState(0);
   const [etaMin, setEtaMin] = useState(0);
   const [walkToPickupM, setWalkToPickupM] = useState(0);
+  const [recenterKey, setRecenterKey] = useState(0);
+  const [showRecenter, setShowRecenter] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const sheetAnim = useRef(new Animated.Value(0)).current;
 
@@ -166,8 +168,19 @@ export default function PassengerHomeScreen() {
         userLocation={userLoc ?? undefined}
         driverLocation={driverLocation ?? undefined}
         centerOn={dropoffPoint ?? undefined}
+        recenterKey={recenterKey}
+        onUserDrag={() => setShowRecenter(true)}
       />
       <LoadingOverlay visible={isLoading} message="Navigating..." />
+
+      {showRecenter && (
+        <Pressable
+          style={[styles.recenterBtn, { backgroundColor: colors.primary, bottom: Math.max(bottomPad - 20, 180) }]}
+          onPress={() => { setShowRecenter(false); setRecenterKey(k => k + 1); }}
+        >
+          <Feather name="navigation" size={20} color="#fff" />
+        </Pressable>
+      )}
 
       <View style={[styles.topArea, { paddingTop: topPad + 8 }]}>
         <View style={styles.greetingRow}>
@@ -354,4 +367,18 @@ const styles = StyleSheet.create({
   walkText: { fontSize: 13, flex: 1 },
   emptyState: { paddingVertical: 20, alignItems: "center" },
   emptyText: { fontSize: 14 },
+  recenterBtn: {
+    position: "absolute",
+    right: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
 });

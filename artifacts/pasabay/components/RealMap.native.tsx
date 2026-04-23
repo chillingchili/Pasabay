@@ -18,7 +18,9 @@ interface RealMapProps {
   driverLocation?: MapPoint;
   centerOn?: MapPoint;
   initialRegion?: Region;
+  recenterKey?: number;
   onRegionChangeComplete?: (region: Region) => void;
+  onUserDrag?: () => void;
   onMapPress?: (event: any) => void;
   style?: object;
 }
@@ -39,15 +41,22 @@ export function RealMap({
   driverLocation,
   centerOn,
   initialRegion,
+  recenterKey,
   onRegionChangeComplete,
+  onUserDrag,
   onMapPress,
   style,
 }: RealMapProps) {
   const colors = useColors();
   const mapRef = useRef<any>(null);
   const [region, setRegion] = useState<Region>(initialRegion ?? DEFAULT_REGION);
+  const [followUser, setFollowUser] = useState(true);
+  const isAnimating = useRef(false);
 
+  // Recenter map when points change (but NOT on every GPS update)
   useEffect(() => {
+    if (!followUser) return;
+
     if (centerOn) {
       const newRegion: Region = {
         latitude: centerOn.lat,
@@ -56,12 +65,13 @@ export function RealMap({
         longitudeDelta: 0.015,
       };
       setRegion(newRegion);
+      isAnimating.current = true;
       mapRef.current?.animateToRegion(newRegion, 500);
+      setTimeout(() => { isAnimating.current = false; }, 600);
       return;
     }
 
     const points: MapPoint[] = [];
-    if (userLocation) points.push(userLocation);
     if (pickupPoint) points.push(pickupPoint);
     if (dropoffPoint) points.push(dropoffPoint);
     if (driverLocation) points.push(driverLocation);
@@ -87,9 +97,41 @@ export function RealMap({
       };
 
       setRegion(newRegion);
+      isAnimating.current = true;
       mapRef.current?.animateToRegion(newRegion, 500);
+      setTimeout(() => { isAnimating.current = false; }, 600);
     }
-  }, [centerOn, userLocation, pickupPoint, dropoffPoint, driverLocation, routePolyline]);
+  }, [centerOn, pickupPoint, dropoffPoint, driverLocation, routePolyline, followUser]);
+
+  // Recenter on user location when recenterKey changes (manual recenter button)
+  useEffect(() => {
+    if (recenterKey !== undefined && recenterKey > 0) {
+      setFollowUser(true);
+      const target = userLocation ?? centerOn;
+      if (target) {
+        const newRegion: Region = {
+          latitude: target.lat,
+          longitude: target.lng,
+          latitudeDelta: 0.015,
+          longitudeDelta: 0.015,
+        };
+        setRegion(newRegion);
+        isAnimating.current = true;
+        mapRef.current?.animateToRegion(newRegion, 500);
+        setTimeout(() => { isAnimating.current = false; }, 600);
+      }
+    }
+  }, [recenterKey]);
+
+  // Detect user drag — stop following
+  const handleRegionChangeComplete = (newRegion: Region) => {
+    setRegion(newRegion);
+    if (!isAnimating.current) {
+      setFollowUser(false);
+      onUserDrag?.();
+    }
+    onRegionChangeComplete?.(newRegion);
+  };
 
   return (
     <View style={[StyleSheet.absoluteFill, style]}>
@@ -98,7 +140,7 @@ export function RealMap({
         provider={Platform.OS === "ios" ? undefined : PROVIDER_DEFAULT}
         style={StyleSheet.absoluteFill}
         region={region}
-        onRegionChangeComplete={onRegionChangeComplete}
+        onRegionChangeComplete={handleRegionChangeComplete}
         onPress={onMapPress}
         showsUserLocation={!!userLocation}
         showsMyLocationButton={false}

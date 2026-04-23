@@ -37,6 +37,8 @@ export default function DriverHomeScreen() {
   const [routePolyline, setRoutePolyline] = useState<{ lat: number; lng: number }[] | null>(null);
   const [isDriverView, setIsDriverView] = useState(true);
   const [showChat, setShowChat] = useState(false);
+  const [recenterKey, setRecenterKey] = useState(0);
+  const [showRecenter, setShowRecenter] = useState(false);
 
   const slideAnim = useRef(new Animated.Value(-160)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -251,8 +253,19 @@ export default function DriverHomeScreen() {
         userLocation={userLoc ?? undefined}
         pickupPoint={selectedDest ?? undefined}
         centerOn={selectedDest ?? undefined}
+        recenterKey={recenterKey}
+        onUserDrag={() => setShowRecenter(true)}
       />
       <LoadingOverlay visible={isLoading} message={isOnline ? "Going offline..." : "Going online..."} />
+
+      {showRecenter && (
+        <Pressable
+          style={[styles.recenterBtn, { backgroundColor: colors.primary, bottom: Math.max(insets.bottom + 100, 120) }]}
+          onPress={() => { setShowRecenter(false); setRecenterKey(k => k + 1); }}
+        >
+          <Feather name="navigation" size={20} color="#fff" />
+        </Pressable>
+      )}
 
       <View style={[styles.topBar, { paddingTop: topPad, paddingHorizontal: 16 }]}>
         <View style={[styles.destBar, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
@@ -445,4 +458,18 @@ container: { flex: 1 },
   infoLabel: { fontSize: 11 },
   infoValue: { fontSize: 18 },
   infoUnit: { fontSize: 14 },
+  recenterBtn: {
+    position: "absolute",
+    right: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
 });
