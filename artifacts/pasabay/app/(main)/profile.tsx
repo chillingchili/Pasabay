@@ -28,7 +28,7 @@ export default function ProfileScreen() {
   const handleLogout = () => {
     setConfirmLogout(false);
     logout();
-    router.replace("/welcome");
+    // Redirect handled by forceLogout in AppContext
   };
 
   return (
@@ -216,7 +216,7 @@ export default function ProfileScreen() {
                 onPress={() => {
                   setConfirmDelete(false);
                   logout();
-                  router.replace("/welcome");
+                  // Redirect handled by forceLogout in AppContext
                 }}
               >
                 <Text style={[styles.alertBtnConfirmText, { fontFamily: "Inter_600SemiBold" }]}>Delete</Text>
