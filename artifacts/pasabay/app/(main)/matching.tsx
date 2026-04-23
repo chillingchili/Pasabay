@@ -36,6 +36,8 @@ export default function MatchingScreen() {
   const [showRetry, setShowRetry] = useState(false);
   const didNavigate = useRef(false);
 
+  const MIN_SEARCH_MS = 60000; // 60 seconds minimum search duration
+
   const ring1 = useRef(new Animated.Value(1)).current;
   const ring2 = useRef(new Animated.Value(1)).current;
   const ring3 = useRef(new Animated.Value(1)).current;
@@ -79,6 +81,7 @@ export default function MatchingScreen() {
 
   useEffect(() => {
     const searchForDriver = async () => {
+      const startTime = Date.now();
       try {
         const pickupLat = parseFloat(params.pickupLat ?? "10.2969");
         const pickupLng = parseFloat(params.pickupLng ?? "123.9008");
@@ -98,6 +101,10 @@ export default function MatchingScreen() {
         setIsLoading(false);
 
         if (!result.matched) {
+          const elapsed = Date.now() - startTime;
+          if (elapsed < MIN_SEARCH_MS) {
+            await new Promise(resolve => setTimeout(resolve, MIN_SEARCH_MS - elapsed));
+          }
           setStatus(result.message ?? "No drivers found. Try again in a moment.");
           setSearching(false);
           setShowRetry(true);
@@ -109,6 +116,10 @@ export default function MatchingScreen() {
         setEtaEst(result.pickupEtaMin);
         setStatus("Driver found! Waiting for confirmation…");
       } catch (err: any) {
+        const elapsed = Date.now() - startTime;
+        if (elapsed < MIN_SEARCH_MS) {
+          await new Promise(resolve => setTimeout(resolve, MIN_SEARCH_MS - elapsed));
+        }
         setIsLoading(false);
         setErrorMessage(formatApiError(err));
         setShowError(true);

@@ -96,6 +96,9 @@ export function PreMatchModal({
                 <View style={[styles.summaryDivider, { backgroundColor: colors.border }]} />
                 <SummaryItem label="ETA" value={`~${etaMin} min`} colors={colors} />
               </View>
+              <Text style={[styles.fareBreakdown, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>
+                ₱8 base fare + ₱5.50/km × {distanceKm.toFixed(1)} km = ₱{fareEstimate.toFixed(0)}
+              </Text>
             </View>
 
             {/* Walking Info */}
@@ -211,6 +214,7 @@ const styles = StyleSheet.create({
   summaryLabel: { fontSize: 10, marginBottom: 3 },
   summaryValue: { fontSize: 14 },
   summaryDivider: { width: 1, height: 24 },
+  fareBreakdown: { fontSize: 11, marginTop: 8 },
   walkCard: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, padding: 10, marginBottom: 16 },
   walkText: { fontSize: 12, flex: 1 },
   section: { marginBottom: 14 },

@@ -319,7 +319,7 @@ export default function DriverHomeScreen() {
         <Animated.View
           style={[
             styles.requestPopup,
-            { backgroundColor: "rgba(255,255,255,0.97)", top: topPad + (showDestSuggestions ? 180 : 76) },
+            { backgroundColor: "rgba(255,255,255,0.97)", top: topPad + (showDestSuggestions ? 200 : 130) },
             { transform: [{ translateY: slideAnim }] },
           ]}
         >
@@ -365,7 +365,7 @@ export default function DriverHomeScreen() {
       )}
 
       {accepted && (
-        <View style={[styles.acceptedInfo, { backgroundColor: "rgba(255,255,255,0.97)", top: topPad + 76 }]}>
+        <View style={[styles.acceptedInfo, { backgroundColor: "rgba(255,255,255,0.97)", top: topPad + 130 }]}>
           <View style={styles.acceptedHeader}>
             <View style={[styles.acceptedIcon, { backgroundColor: colors.primaryLight }]}>
               <Feather name="user" size={16} color={colors.primary} />
@@ -428,14 +428,14 @@ container: { flex: 1 },
   suggestions: { position: "absolute", top: 58, left: 0, right: 0, borderRadius: 12, overflow: "hidden", zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   suggestionItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#f5f5f5" },
   suggestionText: { fontSize: 14 },
-  requestPopup: { position: "absolute", left: 16, right: 16, borderRadius: 16, padding: 14, gap: 10, zIndex: 200, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20, elevation: 8 },
+  requestPopup: { position: "absolute", left: 12, right: 12, borderRadius: 16, padding: 16, gap: 12, zIndex: 200, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20, elevation: 8 },
   requestHeader: { flexDirection: "row", alignItems: "center", gap: 5 },
-  requestHeaderText: { fontSize: 13 },
+  requestHeaderText: { fontSize: 15 },
   requestBody: { flexDirection: "row", alignItems: "center", gap: 10 },
   passengerAvatar: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   passengerAvatarText: { color: "#fff", fontSize: 14 },
-  passengerName: { fontSize: 14, marginBottom: 2 },
-  passengerRoute: { fontSize: 12 },
+  passengerName: { fontSize: 16, marginBottom: 2 },
+  passengerRoute: { fontSize: 13 },
   fareAdd: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
   fareAddText: { fontSize: 13 },
   requestActions: { flexDirection: "row", gap: 8 },
