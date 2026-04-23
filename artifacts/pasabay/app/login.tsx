@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -40,7 +40,15 @@ export default function LoginScreen() {
       await login(email, password);
       router.replace("/(main)/passenger-home");
     } catch (err: any) {
-      Alert.alert("Login Failed", err?.message ?? "Incorrect email or password. Please try again.");
+      const status = err?.status || err?.statusCode;
+      const message = err?.message ?? "";
+      if (status === 401) {
+        Alert.alert("Login Failed", "Incorrect email or password. Please try again.");
+      } else if (!message && !status) {
+        Alert.alert("Connection Error", "Could not connect to the server. Check your internet connection and try again.");
+      } else {
+        Alert.alert("Login Failed", message || "Something went wrong. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -121,6 +129,7 @@ export default function LoginScreen() {
             onPress={handleLogin}
             disabled={loading}
           >
+            {loading && <ActivityIndicator size="small" color="#fff" />}
             <Text style={[styles.btnPrimaryText, { fontFamily: "Inter_600SemiBold" }]}>{loading ? "Logging in..." : "Log in"}</Text>
           </Pressable>
 
@@ -178,7 +187,7 @@ const styles = StyleSheet.create({
   eyeBtn: { padding: 8 },
   forgotRow: { alignSelf: "flex-end" },
   forgotText: { fontSize: 13 },
-  btnPrimary: { height: 52, borderRadius: 14, alignItems: "center", justifyContent: "center", marginTop: 4 },
+  btnPrimary: { height: 52, borderRadius: 14, alignItems: "center", justifyContent: "center", marginTop: 4, flexDirection: "row", gap: 8 },
   btnPrimaryText: { color: "#fff", fontSize: 16 },
   divider: { flexDirection: "row", alignItems: "center", gap: 12, marginVertical: 4 },
   dividerLine: { flex: 1, height: 1 },

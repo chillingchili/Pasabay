@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -62,7 +62,15 @@ export default function SignupScreen() {
       await signup(name.trim(), email, password);
       router.replace("/verify-school-id");
     } catch (err: any) {
-      Alert.alert("Sign Up Failed", err?.message ?? "Something went wrong. Please try again.");
+      const status = err?.status || err?.statusCode;
+      const message = err?.message ?? "";
+      if (status === 409) {
+        Alert.alert("Account Exists", "An account with this email already exists. Try logging in instead.");
+      } else if (!message && !status) {
+        Alert.alert("Connection Error", "Could not connect to the server. Check your internet connection and try again.");
+      } else {
+        Alert.alert("Sign Up Failed", message || "Something went wrong. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -186,6 +194,7 @@ export default function SignupScreen() {
             onPress={handleSignup}
             disabled={loading}
           >
+            {loading && <ActivityIndicator size="small" color="#fff" />}
             <Text style={[styles.btnPrimaryText, { fontFamily: "Inter_600SemiBold" }]}>{loading ? "Creating account..." : "Sign up"}</Text>
           </Pressable>
 
@@ -245,7 +254,7 @@ const styles = StyleSheet.create({
   checkRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginVertical: 4 },
   checkbox: { width: 20, height: 20, borderRadius: 6, borderWidth: 1.5, alignItems: "center", justifyContent: "center", marginTop: 1 },
   checkText: { flex: 1, fontSize: 13, lineHeight: 18 },
-  btnPrimary: { height: 52, borderRadius: 14, alignItems: "center", justifyContent: "center", marginTop: 4 },
+  btnPrimary: { height: 52, borderRadius: 14, alignItems: "center", justifyContent: "center", marginTop: 4, flexDirection: "row", gap: 8 },
   btnPrimaryText: { color: "#fff", fontSize: 16 },
   divider: { flexDirection: "row", alignItems: "center", gap: 12, marginVertical: 4 },
   dividerLine: { flex: 1, height: 1 },
