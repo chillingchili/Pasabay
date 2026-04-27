@@ -25,8 +25,8 @@ interface RealMapProps {
 }
 
 const DEFAULT_REGION: Region = {
-  latitude: 10.3157,
-  longitude: 123.9030,
+  latitude: 10.3535,
+  longitude: 123.9135,
   latitudeDelta: 0.02,
   longitudeDelta: 0.02,
 };

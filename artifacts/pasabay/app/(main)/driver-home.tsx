@@ -48,11 +48,11 @@ export default function DriverHomeScreen() {
   const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
 
   const DEST_OPTIONS = [
-    { name: "IT Park, Lahug", lat: 10.3296, lng: 123.9077 },
-    { name: "SM City Cebu", lat: 10.3278, lng: 123.9028 },
-    { name: "Ayala Center", lat: 10.3080, lng: 123.8980 },
-    { name: "JY Square", lat: 10.3200, lng: 123.9050 },
-    { name: "Mango Square", lat: 10.3100, lng: 123.9000 },
+    { name: "IT Park, Lahug", lat: 10.3308, lng: 123.9068 },
+    { name: "SM City Cebu", lat: 10.3112, lng: 123.9172 },
+    { name: "Ayala Center", lat: 10.3173, lng: 123.9046 },
+    { name: "JY Square", lat: 10.3188, lng: 123.9078 },
+    { name: "Mango Square", lat: 10.3090, lng: 123.8993 },
   ];
 
   const filteredDests = destQuery

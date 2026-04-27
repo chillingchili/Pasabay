@@ -18,12 +18,12 @@ import { useWindowDimensions } from "react-native";
 const QUICK_DESTINATIONS = ["USC Talamban", "IT Park, Lahug", "SM City Cebu", "Ayala Center", "JY Square", "Mango Square"];
 
 const DEST_COORDS: Record<string, { lat: number; lng: number }> = {
-  "USC Talamban": { lat: 10.3157, lng: 123.9030 },
-  "IT Park, Lahug": { lat: 10.3296, lng: 123.9077 },
-  "SM City Cebu": { lat: 10.3278, lng: 123.9028 },
-  "Ayala Center": { lat: 10.3080, lng: 123.8980 },
-  "JY Square": { lat: 10.3200, lng: 123.9050 },
-  "Mango Square": { lat: 10.3100, lng: 123.9000 },
+  "USC Talamban": { lat: 10.3535, lng: 123.9135 },
+  "IT Park, Lahug": { lat: 10.3308, lng: 123.9068 },
+  "SM City Cebu": { lat: 10.3112, lng: 123.9172 },
+  "Ayala Center": { lat: 10.3173, lng: 123.9046 },
+  "JY Square": { lat: 10.3188, lng: 123.9078 },
+  "Mango Square": { lat: 10.3090, lng: 123.8993 },
 };
 
 export default function PassengerHomeScreen() {
@@ -145,7 +145,7 @@ export default function PassengerHomeScreen() {
     setShowPreMatch(false);
     setIsLoading(true);
     const pickup = pickupPoint ?? { lat: 10.2969, lng: 123.9008 };
-    const dropoff = dropoffPoint ?? { lat: 10.3157, lng: 123.9030 };
+    const dropoff = dropoffPoint ?? { lat: 10.3535, lng: 123.9135 };
     router.push({
       pathname: "/(main)/matching",
       params: {

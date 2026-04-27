@@ -6,11 +6,11 @@ export interface RoutePoint {
   lng: number;
 }
 
-// Bounding box for USC Cebu area
-const LAT_MIN = 10.29;
-const LAT_MAX = 10.325;
+// Bounding box covering Cebu City landmarks (USC Talamban in north → SM City Cebu in southeast)
+const LAT_MIN = 10.30;
+const LAT_MAX = 10.37;
 const LNG_MIN = 123.89;
-const LNG_MAX = 123.915;
+const LNG_MAX = 123.93;
 const SVG_WIDTH = 390;
 const SVG_HEIGHT = 844;
 

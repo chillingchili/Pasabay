@@ -18,7 +18,7 @@ export function useLocation() {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
           setPermissionGranted(false);
-          setLocation({ lat: 10.3157, lng: 123.9030, accuracy: null });
+          setLocation({ lat: 10.3535, lng: 123.9135, accuracy: null });
           setLoading(false);
           return;
         }
@@ -46,7 +46,7 @@ export function useLocation() {
 
         return () => subscription.remove();
       } catch {
-        setLocation({ lat: 10.3157, lng: 123.9030, accuracy: null });
+        setLocation({ lat: 10.3535, lng: 123.9135, accuracy: null });
       } finally {
         setLoading(false);
       }

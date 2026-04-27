@@ -59,14 +59,14 @@ export const MOCK_PASSENGERS: MockPassenger[] = [
 export const SIMULATED_ROUTES: Record<string, SimulatedRoute> = {
   "USC-Talamban": {
     name: "USC Talamban",
-    distanceKm: 3.2,
-    durationMin: 8,
+    distanceKm: 6.5,
+    durationMin: 15,
     polyline: [
-      { lat: 10.2969, lng: 123.9008 },
-      { lat: 10.3000, lng: 123.9015 },
-      { lat: 10.3050, lng: 123.9020 },
-      { lat: 10.3100, lng: 123.9025 },
-      { lat: 10.3157, lng: 123.9030 },
+      { lat: 10.2969, lng: 123.8980 },
+      { lat: 10.3100, lng: 123.9050 },
+      { lat: 10.3300, lng: 123.9080 },
+      { lat: 10.3450, lng: 123.9090 },
+      { lat: 10.3535, lng: 123.9135 },
     ],
   },
   "ITPark-Ayala": {
@@ -74,11 +74,11 @@ export const SIMULATED_ROUTES: Record<string, SimulatedRoute> = {
     distanceKm: 4.1,
     durationMin: 12,
     polyline: [
-      { lat: 10.3296, lng: 123.9077 },
-      { lat: 10.3250, lng: 123.9050 },
-      { lat: 10.3200, lng: 123.9020 },
-      { lat: 10.3150, lng: 123.8990 },
-      { lat: 10.3080, lng: 123.8980 },
+      { lat: 10.3308, lng: 123.9068 },
+      { lat: 10.3260, lng: 123.9120 },
+      { lat: 10.3220, lng: 123.9080 },
+      { lat: 10.3190, lng: 123.9060 },
+      { lat: 10.3173, lng: 123.9046 },
     ],
   },
   "SM-Mango": {
@@ -86,10 +86,11 @@ export const SIMULATED_ROUTES: Record<string, SimulatedRoute> = {
     distanceKm: 1.5,
     durationMin: 5,
     polyline: [
-      { lat: 10.3278, lng: 123.9028 },
-      { lat: 10.3220, lng: 123.9015 },
-      { lat: 10.3180, lng: 123.9008 },
-      { lat: 10.3100, lng: 123.9000 },
+      { lat: 10.3112, lng: 123.9172 },
+      { lat: 10.3105, lng: 123.9130 },
+      { lat: 10.3100, lng: 123.9080 },
+      { lat: 10.3095, lng: 123.9010 },
+      { lat: 10.3090, lng: 123.8993 },
     ],
   },
 };

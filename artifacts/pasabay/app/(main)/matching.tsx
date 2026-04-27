@@ -85,8 +85,8 @@ export default function MatchingScreen() {
       try {
         const pickupLat = parseFloat(params.pickupLat ?? "10.2969");
         const pickupLng = parseFloat(params.pickupLng ?? "123.9008");
-        const dropoffLat = parseFloat(params.dropoffLat ?? "10.3157");
-        const dropoffLng = parseFloat(params.dropoffLng ?? "123.9030");
+        const dropoffLat = parseFloat(params.dropoffLat ?? "10.3535");
+        const dropoffLng = parseFloat(params.dropoffLng ?? "123.9135");
         const pickupName = params.pickupName ?? "USC Main Gate";
         const dropoffName = params.dropoffName ?? params.destination ?? "IT Park, Lahug";
 

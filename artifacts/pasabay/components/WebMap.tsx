@@ -23,7 +23,7 @@ interface WebMapProps {
   style?: object;
 }
 
-const DEFAULT_CENTER: [number, number] = [10.3157, 123.9030];
+const DEFAULT_CENTER: [number, number] = [10.3535, 123.9135];
 const DEFAULT_ZOOM = 15;
 let leafletLoaded = false;
 let leafletLoading = false;
