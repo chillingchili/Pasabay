@@ -276,11 +276,11 @@ export default function DriverHomeScreen() {
         </Pressable>
       )}
 
-      <View style={[styles.topBar, { paddingTop: topPad, paddingHorizontal: 16 }]}>
+      <View style={[styles.topBar, { paddingTop: topPad + 8 }]}>
         <View style={[styles.destBar, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
           <View style={[styles.destDot, { backgroundColor: isOnline ? colors.primary : colors.textMuted }]} />
           <TextInput
-            style={[styles.destInput, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}
+            style={[styles.destInput, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}
             value={destQuery}
             onChangeText={(t) => { setDestQuery(t); setShowDestSuggestions(true); }}
             onFocus={() => setShowDestSuggestions(true)}
@@ -299,15 +299,6 @@ export default function DriverHomeScreen() {
           </Pressable>
         </View>
 
-        <Pressable
-          style={[styles.switchBtn, { backgroundColor: "rgba(255,255,255,0.97)" }]}
-          onPress={() => { switchRole("passenger"); router.replace("/(main)/passenger-home"); }}
-        >
-          <Feather name="user" size={16} color={colors.primary} />
-          <Text style={[styles.switchBtnText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>Switch to Passenger</Text>
-          <Feather name="arrow-right" size={16} color={colors.primary} />
-        </Pressable>
-
         {showDestSuggestions && !isOnline && filteredDests.length > 0 && (
           <View style={[styles.suggestions, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
             {filteredDests.map(d => (
@@ -322,6 +313,15 @@ export default function DriverHomeScreen() {
             ))}
           </View>
         )}
+
+        <Pressable
+          style={[styles.switchBtn, { backgroundColor: "rgba(255,255,255,0.97)" }]}
+          onPress={() => { switchRole("passenger"); router.replace("/(main)/passenger-home"); }}
+        >
+          <Feather name="user" size={16} color={colors.primary} />
+          <Text style={[styles.switchBtnText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>Switch to Passenger</Text>
+          <Feather name="arrow-right" size={16} color={colors.primary} />
+        </Pressable>
       </View>
 
       {pendingMatchRequest && !accepted && (
@@ -426,15 +426,15 @@ export default function DriverHomeScreen() {
 
 const styles = StyleSheet.create({
 container: { flex: 1 },
-  topBar: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10 },
-  destBar: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 12, paddingLeft: 14, gap: 8, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
+  topBar: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, paddingHorizontal: 16, gap: 8 },
+  destBar: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 10, paddingLeft: 16, gap: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   destDot: { width: 8, height: 8, borderRadius: 4 },
-  destInput: { flex: 1, fontSize: 14 },
-  switchBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 12, padding: 10, marginTop: 6, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 },
+  destInput: { flex: 1, fontSize: 14, minHeight: 34 },
+  switchBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 12, padding: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 },
   switchBtnText: { fontSize: 13 },
   statusTag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   statusTagText: { fontSize: 12 },
-  suggestions: { position: "absolute", top: 58, left: 0, right: 0, borderRadius: 12, overflow: "hidden", zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
+  suggestions: { borderRadius: 12, overflow: "hidden", zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   suggestionItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#f5f5f5" },
   suggestionText: { fontSize: 14 },
   requestPopup: { position: "absolute", left: 12, right: 12, borderRadius: 16, padding: 16, gap: 12, zIndex: 200, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20, elevation: 8 },
