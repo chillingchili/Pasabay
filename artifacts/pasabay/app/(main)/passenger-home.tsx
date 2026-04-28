@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -53,9 +53,18 @@ export default function PassengerHomeScreen() {
   const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
   const bottomPad = Platform.OS === "web" ? Math.max(insets.bottom + 80, 100) : Math.max(insets.bottom + 100, 100);
 
-  const pickupPoint = userLoc ? { lat: userLoc.lat, lng: userLoc.lng, name: "Your location" } : null;
-  const destCoords = destination ? DEST_COORDS[destination] ?? null : null;
-  const dropoffPoint = destCoords ? { lat: destCoords.lat, lng: destCoords.lng, name: destination } : null;
+  const pickupPoint = useMemo(() =>
+    userLoc ? { lat: userLoc.lat, lng: userLoc.lng, name: "Your location" } : null,
+    [userLoc?.lat, userLoc?.lng]
+  );
+  const destCoords = useMemo(() =>
+    destination ? DEST_COORDS[destination] ?? null : null,
+    [destination]
+  );
+  const dropoffPoint = useMemo(() =>
+    destCoords ? { lat: destCoords.lat, lng: destCoords.lng, name: destination } : null,
+    [destCoords?.lat, destCoords?.lng, destination]
+  );
 
   useEffect(() => {
     const pulse = Animated.loop(
