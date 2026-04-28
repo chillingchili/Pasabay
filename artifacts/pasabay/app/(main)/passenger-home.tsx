@@ -196,7 +196,7 @@ export default function PassengerHomeScreen() {
           <Text style={[styles.greeting, { fontFamily: "Inter_600SemiBold" }]}>{greeting} 👋</Text>
           {(user?.driverVerified || user?.driverStatus || user?.vehicle) && (
             <Pressable
-              style={[styles.roleSwitchBtn, { backgroundColor: "rgba(255,255,255,0.25)" }]}
+              style={[styles.roleSwitchBtn, { backgroundColor: colors.primary }]}
               onPress={() => { switchRole("driver"); router.replace("/(main)/driver-home"); }}
             >
               <Feather name="truck" size={13} color="#fff" />

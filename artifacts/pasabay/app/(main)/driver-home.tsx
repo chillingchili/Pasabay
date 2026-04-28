@@ -280,7 +280,7 @@ export default function DriverHomeScreen() {
         <View style={styles.greetingRow}>
           <Text style={[styles.greeting, { fontFamily: "Inter_600SemiBold" }]}>Driver</Text>
           <Pressable
-            style={[styles.roleSwitchBtn, { backgroundColor: "rgba(255,255,255,0.25)" }]}
+            style={[styles.roleSwitchBtn, { backgroundColor: colors.primary }]}
             onPress={() => { switchRole("passenger"); router.replace("/(main)/passenger-home"); }}
           >
             <Feather name="user" size={13} color="#fff" />
