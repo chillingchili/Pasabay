@@ -277,6 +277,17 @@ export default function DriverHomeScreen() {
       )}
 
       <View style={[styles.topBar, { paddingTop: topPad + 8 }]}>
+        <View style={styles.greetingRow}>
+          <Text style={[styles.greeting, { fontFamily: "Inter_600SemiBold" }]}>Driver</Text>
+          <Pressable
+            style={[styles.roleSwitchBtn, { backgroundColor: "rgba(255,255,255,0.25)" }]}
+            onPress={() => { switchRole("passenger"); router.replace("/(main)/passenger-home"); }}
+          >
+            <Feather name="user" size={13} color="#fff" />
+            <Text style={[styles.roleSwitchText, { fontFamily: "Inter_500Medium" }]}>Ride</Text>
+          </Pressable>
+        </View>
+
         <View style={[styles.destBar, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
           <View style={[styles.destDot, { backgroundColor: isOnline ? colors.primary : colors.textMuted }]} />
           <TextInput
@@ -313,15 +324,6 @@ export default function DriverHomeScreen() {
             ))}
           </View>
         )}
-
-        <Pressable
-          style={[styles.switchBtn, { backgroundColor: "rgba(255,255,255,0.97)" }]}
-          onPress={() => { switchRole("passenger"); router.replace("/(main)/passenger-home"); }}
-        >
-          <Feather name="user" size={16} color={colors.primary} />
-          <Text style={[styles.switchBtnText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>Switch to Passenger</Text>
-          <Feather name="arrow-right" size={16} color={colors.primary} />
-        </Pressable>
       </View>
 
       {pendingMatchRequest && !accepted && (
@@ -427,11 +429,13 @@ export default function DriverHomeScreen() {
 const styles = StyleSheet.create({
 container: { flex: 1 },
   topBar: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, paddingHorizontal: 16, gap: 8 },
+  greetingRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 2 },
+  greeting: { fontSize: 15, color: "#fff" },
+  roleSwitchBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+  roleSwitchText: { fontSize: 12, color: "#fff" },
   destBar: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 10, paddingLeft: 16, gap: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   destDot: { width: 8, height: 8, borderRadius: 4 },
   destInput: { flex: 1, fontSize: 14, minHeight: 34 },
-  switchBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 12, padding: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 },
-  switchBtnText: { fontSize: 13 },
   statusTag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   statusTagText: { fontSize: 12 },
   suggestions: { borderRadius: 12, overflow: "hidden", zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },

@@ -194,13 +194,15 @@ export default function PassengerHomeScreen() {
       <View style={[styles.topArea, { paddingTop: topPad + 8 }]}>
         <View style={styles.greetingRow}>
           <Text style={[styles.greeting, { fontFamily: "Inter_600SemiBold" }]}>{greeting} 👋</Text>
-          <Pressable
-            style={[styles.switchToDriverBtn, { backgroundColor: "rgba(255,255,255,0.2)" }]}
-            onPress={() => { switchRole("driver"); router.replace("/(main)/driver-home"); }}
-          >
-            <Feather name="truck" size={14} color="#fff" />
-            <Text style={[styles.switchToDriverText, { fontFamily: "Inter_500Medium" }]}>Driver</Text>
-          </Pressable>
+          {(user?.driverVerified || user?.driverStatus || user?.vehicle) && (
+            <Pressable
+              style={[styles.roleSwitchBtn, { backgroundColor: "rgba(255,255,255,0.25)" }]}
+              onPress={() => { switchRole("driver"); router.replace("/(main)/driver-home"); }}
+            >
+              <Feather name="truck" size={13} color="#fff" />
+              <Text style={[styles.roleSwitchText, { fontFamily: "Inter_500Medium" }]}>Drive</Text>
+            </Pressable>
+          )}
         </View>
 
         <View style={[styles.searchContainer, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
@@ -346,8 +348,8 @@ const styles = StyleSheet.create({
   topArea: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, paddingHorizontal: 16, gap: 8 },
   greetingRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 2 },
   greeting: { fontSize: 15, color: "#fff" },
-  switchToDriverBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  switchToDriverText: { fontSize: 12, color: "#fff" },
+  roleSwitchBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+  roleSwitchText: { fontSize: 12, color: "#fff" },
   searchContainer: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 10, paddingLeft: 16, gap: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   searchDot: { width: 8, height: 8, borderRadius: 4 },
   searchInput: { flex: 1, fontSize: 14, minHeight: 34 },
