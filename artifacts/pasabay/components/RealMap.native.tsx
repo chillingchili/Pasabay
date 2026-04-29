@@ -32,8 +32,12 @@ const DEFAULT_REGION: Region = {
   longitudeDelta: 0.02,
 };
 
-/** Fit map to show all given points with padding */
-function fitMapToPoints(mapRef: React.MutableRefObject<any>, points: MapPoint[]) {
+/** Fit map to show all given points, accounting for bottom sheet overlay */
+function fitMapToPoints(
+  mapRef: React.MutableRefObject<any>,
+  points: MapPoint[],
+  bottomInset: number = 0,
+) {
   if (points.length === 0) return;
   if (points.length === 1) {
     mapRef.current?.animateToRegion(
@@ -42,24 +46,14 @@ function fitMapToPoints(mapRef: React.MutableRefObject<any>, points: MapPoint[])
     );
     return;
   }
-  const lats = points.map((p) => p.lat);
-  const lngs = points.map((p) => p.lng);
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs);
-  const maxLng = Math.max(...lngs);
-  const latDelta = (maxLat - minLat) * 1.5 + 0.005;
-  const lngDelta = (maxLng - minLng) * 1.5 + 0.005;
-
-  mapRef.current?.animateToRegion(
-    {
-      latitude: (minLat + maxLat) / 2,
-      longitude: (minLng + maxLng) / 2,
-      latitudeDelta: Math.max(latDelta, 0.01),
-      longitudeDelta: Math.max(lngDelta, 0.01),
-    },
-    500,
-  );
+  const coords = points.map((p) => ({ latitude: p.lat, longitude: p.lng }));
+  const edgePadding = {
+    top: 50,
+    right: 50,
+    bottom: bottomInset + 50,
+    left: 50,
+  };
+  mapRef.current?.fitToCoordinates(coords, { edgePadding, animated: true });
 }
 
 export function RealMap({
@@ -109,7 +103,7 @@ export function RealMap({
     if (points.length === 0) return;
 
     isAnimating.current = true;
-    fitMapToPoints(mapRef, points);
+    fitMapToPoints(mapRef, points, bottomInset ?? 0);
     setTimeout(() => { isAnimating.current = false; }, 600);
   }, [fitRouteKey]);
 
@@ -125,7 +119,7 @@ export function RealMap({
     if (dropoffPoint) allPoints.push(dropoffPoint);
 
     isAnimating.current = true;
-    fitMapToPoints(mapRef, allPoints);
+    fitMapToPoints(mapRef, allPoints, bottomInset ?? 0);
     setTimeout(() => { isAnimating.current = false; }, 600);
   }, [routePolyline, pickupPoint, dropoffPoint, fitRouteKey]);
 
@@ -141,7 +135,7 @@ export function RealMap({
 
     isAnimating.current = true;
     if (routePoints.length >= 2) {
-      fitMapToPoints(mapRef, routePoints);
+      fitMapToPoints(mapRef, routePoints, bottomInset ?? 0);
     } else if (userLocation) {
       mapRef.current?.animateToRegion(
         { latitude: userLocation.lat, longitude: userLocation.lng, latitudeDelta: 0.015, longitudeDelta: 0.015 },
