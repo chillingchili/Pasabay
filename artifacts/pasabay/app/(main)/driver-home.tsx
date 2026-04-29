@@ -41,6 +41,7 @@ export default function DriverHomeScreen() {
   const [fitRouteKey, setFitRouteKey] = useState(0);
   const [showRecenter, setShowRecenter] = useState(false);
   const [infoBarHeight, setInfoBarHeight] = useState(0);
+  const [driverError, setDriverError] = useState<string | null>(null);
 
   const slideAnim = useRef(new Animated.Value(-160)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -103,7 +104,7 @@ export default function DriverHomeScreen() {
       setIsOnline(true);
     });
     const offError = onDriverError((data) => {
-      Alert.alert("Driver Error", data.message);
+      setDriverError(data.message);
       setIsOnline(false);
     });
     return () => {
@@ -142,11 +143,11 @@ export default function DriverHomeScreen() {
 
   const handleGoOnline = () => {
     if (!selectedDest) {
-      Alert.alert("Set Destination", "Please select your destination before going online.");
+      setDriverError("Please select your destination before going online.");
       return;
     }
     if (!userLoc) {
-      Alert.alert("Location Required", "Please enable location services to go online.");
+      setDriverError("Please enable location services to go online.");
       return;
     }
     setIsLoading(true);
@@ -224,7 +225,7 @@ export default function DriverHomeScreen() {
       clearActiveRide();
       setActiveRide(null);
     } else {
-      Alert.alert("Error", "Ride ID not available");
+      setDriverError("Ride ID not available");
     }
   };
 
@@ -324,6 +325,16 @@ export default function DriverHomeScreen() {
             ))}
           </View>
         )}
+
+        {driverError && (
+          <View style={[styles.errorBanner, { backgroundColor: colors.destructiveLight }]}>
+            <Feather name="alert-circle" size={14} color={colors.destructive} />
+            <Text style={[styles.errorBannerText, { color: colors.destructive, fontFamily: "Inter_500Medium" }]}>{driverError}</Text>
+            <Pressable onPress={() => setDriverError(null)} hitSlop={8}>
+              <Feather name="x" size={14} color={colors.destructive} />
+            </Pressable>
+          </View>
+        )}
       </View>
 
       {pendingMatchRequest && !accepted && (
@@ -340,7 +351,7 @@ export default function DriverHomeScreen() {
           </View>
           <View style={styles.requestBody}>
             <View style={[styles.passengerAvatar, { backgroundColor: "#e0885a" }]}>
-              <Text style={[styles.passengerAvatarText, { fontFamily: "Inter_700Bold" }]}>
+              <Text style={[styles.passengerAvatarText, { fontFamily: "Sora_800ExtraBold" }]}>
                 {pendingMatchRequest.passengerName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
               </Text>
             </View>
@@ -353,7 +364,7 @@ export default function DriverHomeScreen() {
               </Text>
             </View>
             <View style={[styles.fareAdd, { backgroundColor: colors.accentBg }]}>
-              <Text style={[styles.fareAddText, { color: colors.accentDark, fontFamily: "Inter_700Bold" }]}>
+              <Text style={[styles.fareAddText, { color: colors.accentDark, fontFamily: "Sora_800ExtraBold" }]}>
                 + ₱{pendingMatchRequest.total.toFixed(0)}
               </Text>
             </View>
@@ -392,7 +403,7 @@ export default function DriverHomeScreen() {
             </Pressable>
             {timer > 0 ? (
               <View style={[styles.timerBadge, { backgroundColor: timer < 20 ? colors.destructiveLight : colors.primaryLight }]}>
-                <Text style={[styles.timerText, { color: timer < 20 ? colors.destructive : colors.primary, fontFamily: "Inter_700Bold" }]}>{timer}s</Text>
+                <Text style={[styles.timerText, { color: timer < 20 ? colors.destructive : colors.primary, fontFamily: "Sora_800ExtraBold" }]}>{timer}s</Text>
               </View>
             ) : (
               <Pressable style={[styles.noShowBtn, { backgroundColor: colors.destructive }]} onPress={handleNoShow}>
@@ -416,7 +427,7 @@ export default function DriverHomeScreen() {
         </View>
         <View style={styles.infoBlock}>
           <Text style={[styles.infoLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>ETA</Text>
-          <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
+          <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>
             {etaMin != null ? `${etaMin} ` : "— "}
             <Text style={[styles.infoUnit, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>{etaMin != null ? "min" : ""}</Text>
           </Text>
@@ -430,9 +441,9 @@ const styles = StyleSheet.create({
 container: { flex: 1 },
   topBar: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, paddingHorizontal: 16, gap: 8 },
   greetingRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 2 },
-  greeting: { fontSize: 15, color: "#fff" },
+  greeting: { fontSize: 15, color: "#fff", textShadowColor: "rgba(0,0,0,0.75)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
   roleSwitchBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  roleSwitchText: { fontSize: 12, color: "#fff" },
+  roleSwitchText: { fontSize: 12, color: "#fff", textShadowColor: "rgba(0,0,0,0.75)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
   destBar: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 10, paddingLeft: 16, gap: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   destDot: { width: 8, height: 8, borderRadius: 4 },
   destInput: { flex: 1, fontSize: 14, minHeight: 34 },
@@ -471,6 +482,8 @@ container: { flex: 1 },
   infoLabel: { fontSize: 11 },
   infoValue: { fontSize: 18 },
   infoUnit: { fontSize: 14 },
+  errorBanner: { flexDirection: "row", alignItems: "center", gap: 8, padding: 10, borderRadius: 12 },
+  errorBannerText: { flex: 1, fontSize: 13 },
   recenterBtn: {
     position: "absolute",
     right: 16,

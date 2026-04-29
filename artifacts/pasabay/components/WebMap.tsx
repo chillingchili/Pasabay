@@ -168,7 +168,10 @@ export function WebMap({
       const lats = points.map((p) => p.lat);
       const lngs = points.map((p) => p.lng);
       const bounds = L.latLngBounds(lats.map((lat, i) => [lat, lngs[i]]));
-      mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+      mapRef.current.fitBounds(bounds, {
+        paddingTopLeft: [50, 50],
+        paddingBottomRight: [50, 50 + (bottomInset ?? 0)],
+      });
     } else if (points.length === 1) {
       mapRef.current.setView([points[0].lat, points[0].lng], 16);
     }
@@ -191,7 +194,10 @@ export function WebMap({
     const lats = allPoints.map((p) => p.lat);
     const lngs = allPoints.map((p) => p.lng);
     const bounds = L.latLngBounds(lats.map((lat, i) => [lat, lngs[i]]));
-    mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+    mapRef.current.fitBounds(bounds, {
+      paddingTopLeft: [50, 50],
+      paddingBottomRight: [50, 50 + (bottomInset ?? 0)],
+    });
   }, [loaded, routePolyline, pickupPoint, dropoffPoint, fitRouteKey]);
 
   // Recenter when recenterKey changes (manual recenter button)
@@ -211,7 +217,10 @@ export function WebMap({
       const lats = points.map((p) => p.lat);
       const lngs = points.map((p) => p.lng);
       const bounds = L.latLngBounds(lats.map((lat, i) => [lat, lngs[i]]));
-      mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+      mapRef.current.fitBounds(bounds, {
+        paddingTopLeft: [50, 50],
+        paddingBottomRight: [50, 50 + (bottomInset ?? 0)],
+      });
     } else if (userLocation) {
       mapRef.current.setView([userLocation.lat, userLocation.lng], 16);
     }
