@@ -21,6 +21,7 @@ interface WebMapProps {
   onMapPress?: (event: any) => void;
   onUserDrag?: () => void;
   style?: object;
+  bottomInset?: number;
 }
 
 const DEFAULT_CENTER: [number, number] = [10.3535, 123.9135];
@@ -66,6 +67,7 @@ export function WebMap({
   recenterKey,
   initialRegion,
   onUserDrag,
+  bottomInset,
 }: WebMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);

@@ -17,6 +17,7 @@ interface RealMapProps {
   onUserDrag?: () => void;
   onMapPress?: (event: any) => void;
   style?: object;
+  bottomInset?: number;
 }
 
 export function RealMap(props: RealMapProps) {

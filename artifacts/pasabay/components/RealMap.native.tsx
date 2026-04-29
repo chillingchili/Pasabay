@@ -22,6 +22,7 @@ interface RealMapProps {
   onUserDrag?: () => void;
   onMapPress?: (event: any) => void;
   style?: object;
+  bottomInset?: number;
 }
 
 const DEFAULT_REGION: Region = {
@@ -74,6 +75,7 @@ export function RealMap({
   onUserDrag,
   onMapPress,
   style,
+  bottomInset,
 }: RealMapProps) {
   const colors = useColors();
   const mapRef = useRef<any>(null);

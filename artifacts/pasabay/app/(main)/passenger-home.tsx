@@ -188,6 +188,7 @@ export default function PassengerHomeScreen() {
         fitRouteKey={fitRouteKey}
         recenterKey={recenterKey}
         onUserDrag={() => setShowRecenter(true)}
+        bottomInset={sheetContentHeight}
       />
       <LoadingOverlay visible={isLoading} message="Navigating..." />
 
@@ -302,7 +303,7 @@ export default function PassengerHomeScreen() {
               </View>
               <View style={[styles.fareChip, { backgroundColor: colors.accentBg }]}>
                 <Text style={[styles.fareLabel, { color: colors.accentDark, fontFamily: "Inter_400Regular" }]}>fare</Text>
-                <Text style={[styles.fareAmount, { color: colors.accentDark, fontFamily: "Inter_700Bold" }]}>₱{fareEstimate}</Text>
+                <Text style={[styles.fareAmount, { color: colors.accentDark, fontFamily: "Sora_800ExtraBold" }]}>₱{fareEstimate}</Text>
               </View>
             </View>
 
@@ -356,9 +357,9 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   topArea: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, paddingHorizontal: 16, gap: 8 },
   greetingRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 2 },
-  greeting: { fontSize: 15, color: "#fff" },
+  greeting: { fontSize: 15, color: "#fff", textShadowColor: "rgba(0,0,0,0.75)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
   roleSwitchBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  roleSwitchText: { fontSize: 12, color: "#fff" },
+  roleSwitchText: { fontSize: 12, color: "#fff", textShadowColor: "rgba(0,0,0,0.75)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
   searchContainer: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 10, paddingLeft: 16, gap: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   searchDot: { width: 8, height: 8, borderRadius: 4 },
   searchInput: { flex: 1, fontSize: 14, minHeight: 34 },
