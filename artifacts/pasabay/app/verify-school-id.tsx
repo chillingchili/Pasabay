@@ -34,10 +34,14 @@ export default function VerifySchoolIdScreen() {
     });
   };
 
-  const handleContinue = () => {
-    setSchoolIdVerified();
+const handleContinue = (skipDriver?: boolean) => {
+  setSchoolIdVerified();
+  if (skipDriver) {
+    router.replace("/(main)/passenger-home");
+  } else {
     router.replace("/verify-driver");
-  };
+  }
+};
 
   return (
     <View style={[styles.container, { backgroundColor: "#0a7d5c", paddingTop: insets.top, paddingHorizontal: isSmall ? 16 : 24 }]}>
@@ -117,10 +121,15 @@ export default function VerifySchoolIdScreen() {
           </>
         )}
         {stage === "success" && (
-          <Pressable style={[styles.btnCapture]} onPress={handleContinue}>
-            <Text style={[styles.btnCaptureText, { fontFamily: "Inter_600SemiBold" }]}>Continue</Text>
-            <Feather name="arrow-right" size={20} color="#fff" />
-          </Pressable>
+          <>
+            <Pressable style={[styles.btnCapture, { backgroundColor: "rgba(255,255,255,0.3)" }]} onPress={() => handleContinue(true)}>
+              <Text style={[styles.btnCaptureText, { fontFamily: "Inter_600SemiBold" }]}>Skip for now (Continue as Passenger)</Text>
+            </Pressable>
+            <Pressable style={[styles.btnCapture]} onPress={() => handleContinue(false)}>
+              <Text style={[styles.btnCaptureText, { fontFamily: "Inter_600SemiBold" }]}>Continue</Text>
+              <Feather name="arrow-right" size={20} color="#fff" />
+            </Pressable>
+          </>
         )}
       </View>
     </View>
