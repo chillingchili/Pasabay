@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -27,6 +27,14 @@ export default function VehicleDetailsScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [success, setSuccess] = useState(false);
+  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    };
+  }, []);
 
   const currentYear = new Date().getFullYear();
 
@@ -55,12 +63,7 @@ export default function VehicleDetailsScreen() {
     if (!validate()) return;
     setLoading(true);
     try {
-      const response = await apiRequest<{
-        vehicle: { plate: string; make: string; model: string; year: number; color: string; seats: number; fuelEfficiency: number };
-        fuelEfficiencyApproved: boolean;
-        fuelEfficiency: number;
-        message: string;
-      }>("/users/driver", {
+      const response = await apiRequest("/users/driver", {
         method: "POST",
         body: JSON.stringify({
           plate: plate.trim(),
@@ -72,17 +75,15 @@ export default function VehicleDetailsScreen() {
           fuelEfficiency: fuelEff ? parseFloat(fuelEff) : undefined,
         }),
       });
-      const serverFuelEff = response.fuelEfficiency;
-      if (!response.fuelEfficiencyApproved && fuelEff) {
-        Alert.alert("Fuel Efficiency Adjusted", `Fuel efficiency adjusted to ${serverFuelEff.toFixed(1)} km/L based on vehicle specs.`);
+      if (fuelEff && response?.fuelEfficiencyApproved === false && response?.fuelEfficiency != null) {
+        Alert.alert("Fuel Efficiency Adjusted", `Adjusted to ${Number(response.fuelEfficiency).toFixed(1)} km/L based on vehicle specs.`);
       }
       await refreshUser();
       setLoading(false);
-      Alert.alert(
-        "Pending Admin Approval",
-        "Your vehicle details have been submitted. An admin will review and certify you as a driver. For now, you can continue as a passenger.",
-        [{ text: "OK", onPress: () => router.back() }]
-      );
+      setSuccess(true);
+      redirectTimer.current = setTimeout(() => {
+        router.replace("/(main)/profile");
+      }, 1200);
     } catch (err: unknown) {
       const message = (err as { message?: string })?.message ?? "Failed to submit vehicle details. Please try again.";
       setError(message);
@@ -221,6 +222,13 @@ export default function VehicleDetailsScreen() {
             </Text>
           </View>
 
+          {success && (
+            <View style={[styles.successBanner, { backgroundColor: "#f0fdf4", borderColor: "#bbf7d0" }]}>
+              <Feather name="check-circle" size={16} color="#22c55e" />
+              <Text style={[styles.successText, { color: "#22c55e", fontFamily: "Inter_500Medium" }]}>Vehicle saved! Redirecting...</Text>
+            </View>
+          )}
+
           {error && (
             <View style={[styles.errorBanner, { backgroundColor: "#fef2f2", borderColor: "#fecaca" }]}>
               <Feather name="alert-circle" size={16} color="#ef4444" />
@@ -232,11 +240,13 @@ export default function VehicleDetailsScreen() {
           )}
 
           <Pressable
-            style={[styles.btnPrimary, { backgroundColor: loading ? colors.mutedForeground : colors.primary }]}
+            style={[styles.btnPrimary, { backgroundColor: loading ? colors.mutedForeground : success ? colors.success : colors.primary }]}
             onPress={handleSave}
-            disabled={loading}
+            disabled={loading || success}
           >
-            {loading ? (
+            {success ? (
+              <Text style={[styles.btnPrimaryText, { fontFamily: "Inter_600SemiBold" }]}>Saved!</Text>
+            ) : loading ? (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <ActivityIndicator color="#fff" size="small" />
                 <Text style={[styles.btnPrimaryText, { fontFamily: "Inter_600SemiBold" }]}>Submitting...</Text>
@@ -287,4 +297,6 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 13, flex: 1, fontFamily: "Inter_400Regular" },
   retryBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 },
   retryText: { fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  successBanner: { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, borderRadius: 10, borderWidth: 1, marginTop: 4 },
+  successText: { fontSize: 13, flex: 1 },
 });
