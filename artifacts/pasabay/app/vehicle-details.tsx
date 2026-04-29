@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -77,15 +77,15 @@ export default function VehicleDetailsScreen() {
         Alert.alert("Fuel Efficiency Adjusted", `Fuel efficiency adjusted to ${serverFuelEff.toFixed(1)} km/L based on vehicle specs.`);
       }
       await refreshUser();
+      setLoading(false);
       Alert.alert(
         "Pending Admin Approval",
         "Your vehicle details have been submitted. An admin will review and certify you as a driver. For now, you can continue as a passenger.",
-        [{ text: "OK", onPress: () => router.replace("/(main)/passenger-home") }]
+        [{ text: "OK", onPress: () => router.replace("/(main)/profile") }]
       );
     } catch (err: unknown) {
       const message = (err as { message?: string })?.message ?? "Failed to submit vehicle details. Please try again.";
       setError(message);
-    } finally {
       setLoading(false);
     }
   };
@@ -237,7 +237,10 @@ export default function VehicleDetailsScreen() {
             disabled={loading}
           >
             {loading ? (
-              <Text style={[styles.btnPrimaryText, { fontFamily: "Inter_600SemiBold" }]}>Submitting...</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <ActivityIndicator color="#fff" size="small" />
+                <Text style={[styles.btnPrimaryText, { fontFamily: "Inter_600SemiBold" }]}>Submitting...</Text>
+              </View>
             ) : (
               <Text style={[styles.btnPrimaryText, { fontFamily: "Inter_600SemiBold" }]}>Save vehicle</Text>
             )}
