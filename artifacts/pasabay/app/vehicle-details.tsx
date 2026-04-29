@@ -81,7 +81,7 @@ export default function VehicleDetailsScreen() {
       Alert.alert(
         "Pending Admin Approval",
         "Your vehicle details have been submitted. An admin will review and certify you as a driver. For now, you can continue as a passenger.",
-        [{ text: "OK", onPress: () => router.replace("/(main)/profile") }]
+        [{ text: "OK", onPress: () => router.back() }]
       );
     } catch (err: unknown) {
       const message = (err as { message?: string })?.message ?? "Failed to submit vehicle details. Please try again.";
