@@ -203,7 +203,7 @@ export default function PassengerHomeScreen() {
       <View style={[styles.topArea, { paddingTop: topPad + 8 }]}>
         <View style={styles.greetingRow}>
           <Text style={[styles.greeting, { fontFamily: "Inter_600SemiBold" }]}>{greeting} 👋</Text>
-          {(user?.driverVerified || user?.driverStatus || user?.vehicle) && (
+          {user?.role === "driver" && (
             <Pressable
               style={[styles.roleSwitchBtn, { backgroundColor: colors.primary }]}
               onPress={() => { switchRole("driver"); router.replace("/(main)/driver-home"); }}

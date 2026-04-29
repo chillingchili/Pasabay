@@ -542,7 +542,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch {
         // ignore
       }
-      setUser({ ...user, role });
     }
   }, [user]);
 
