@@ -431,7 +431,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCompletedRide(null);
     setActiveRide(null);
     setDriverLocation(null);
-    router.replace("/login");
+    router.replace("/welcome");
   }, []);
 
   forceLogoutRef.current = forceLogout;
