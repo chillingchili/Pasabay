@@ -118,6 +118,9 @@ export default function VerifyDriverScreen() {
             <Pressable style={styles.btnGhost} onPress={handleContinue}>
               <Text style={[styles.btnGhostText, { fontFamily: "Inter_400Regular" }]}>Enter manually instead</Text>
             </Pressable>
+            <Pressable style={[styles.btnGhost, { opacity: 0.8 }]} onPress={() => router.replace("/(main)/passenger-home")}>
+              <Text style={[styles.btnGhostText, { fontFamily: "Inter_400Regular" }]}>Skip for now</Text>
+            </Pressable>
           </>
         )}
         {stage === "success" && (
