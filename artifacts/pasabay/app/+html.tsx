@@ -37,22 +37,24 @@ export default function Root({ children }: PropsWithChildren) {
             display: flex;
             flex-direction: column;
           }
-          body > div:first-of-type {
+          #app-root {
             flex: 1;
             display: flex;
             flex-direction: column;
           }
           @media (min-width: 480px) {
             body {
-              position: relative;
               width: 360px;
               margin: 24px 0;
+            }
+            #app-root {
+              position: relative;
               border-radius: 44px;
               box-shadow: 0 16px 48px rgba(0,0,0,0.15);
               transform: translateZ(0);
               overflow: hidden;
             }
-            body::after {
+            #app-root::after {
               content: '';
               position: absolute;
               top: 0;
@@ -78,7 +80,9 @@ export default function Root({ children }: PropsWithChildren) {
           }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <div id="app-root">{children}</div>
+      </body>
     </html>
   );
 }

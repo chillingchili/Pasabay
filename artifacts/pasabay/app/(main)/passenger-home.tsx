@@ -34,6 +34,7 @@ export default function PassengerHomeScreen() {
   const dimensions = useWindowDimensions();
   const { user, driverLocation, switchRole, activeRide } = useApp();
   const { location: userLoc, locationError } = useLocation();
+  const isRegisteredDriver = user?.driverVerified || user?.vehicle || !!user?.driverStatus;
   const [destination, setDestination] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showPreMatch, setShowPreMatch] = useState(false);
@@ -210,7 +211,7 @@ export default function PassengerHomeScreen() {
       <View style={[styles.topArea, { paddingTop: topPad - 4 }]}>
         <View style={styles.greetingRow}>
           {locationError && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#e53935" }} />}
-          {user?.role === "driver" ? (
+          {user?.role === "driver" || isRegisteredDriver ? (
             <Pressable
               style={[styles.roleSwitchBtn, { backgroundColor: colors.primary }]}
               onPress={() => { switchRole("driver"); router.replace("/(main)/driver-home"); }}
