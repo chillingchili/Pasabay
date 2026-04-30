@@ -100,6 +100,10 @@ export default function VerifySchoolIdScreen() {
               <Feather name="user" size={14} color="#fff" />
               <Text variant="labelLarge" style={{ color: "#fff" }}>USC Student · Verified</Text>
             </Surface>
+            <Surface style={[styles.notifBanner, { backgroundColor: "rgba(255,255,255,0.1)" }]}>
+              <Feather name="info" size={14} color="rgba(255,255,255,0.8)" />
+              <Text variant="bodyLarge" style={styles.notifText}>Your details have been sent for verification</Text>
+            </Surface>
           </View>
         </View>
       )}
@@ -157,6 +161,8 @@ const styles = StyleSheet.create({
   tipText: { flex: 1, color: "rgba(255,255,255,0.7)", fontSize: 13, lineHeight: 18 },
   analyzingContainer: { alignItems: "center", gap: 16 },
   analyzeIcon: { width: 80, height: 80, borderRadius: 24, alignItems: "center", justifyContent: "center", elevation: 2 },
+  notifBanner: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, marginTop: 4 },
+  notifText: { flex: 1, color: "rgba(255,255,255,0.8)", fontSize: 12, lineHeight: 17 },
   progressBarBg: { width: 240, height: 6, backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 3, overflow: "hidden" },
   progressBarFill: { height: 6, backgroundColor: "#fff", borderRadius: 3 },
   successTag: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, elevation: 1 },

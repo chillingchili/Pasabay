@@ -228,7 +228,7 @@ export default function VehicleDetailsScreen() {
           {success && (
             <View style={[styles.successBanner, { backgroundColor: "#f0fdf4", borderColor: "#bbf7d0" }]}>
               <Feather name="check-circle" size={16} color="#22c55e" />
-              <RNText style={[styles.successText, { color: "#22c55e" }]}>Vehicle saved! Redirecting...</RNText>
+              <RNText style={[styles.successText, { color: "#22c55e" }]}>Details submitted for verification. Redirecting...</RNText>
             </View>
           )}
 
