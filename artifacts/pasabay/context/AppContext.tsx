@@ -638,12 +638,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       case 4: // Match request appears for driver
         if (role === 'driver') {
           router.replace('/(main)' as any);
+          // Seed a demo match request so the driver popup appears and stage 5 can accept it
+          setTimeout(() => {
+            setPendingMatchRequest({
+              passengerId: 'demo-passenger',
+              passengerName: 'Maria Passenger',
+              passengerRating: 4.8,
+              passengerAvatar: null,
+              routeId: 'demo-route-id',
+              pickup: { lat: 10.2992, lng: 123.8938, name: 'USC Main Gate' },
+              dropoff: { lat: 10.3105, lng: 123.9179, name: 'SM City Cebu' },
+              distanceKm: 3.2,
+              fare: 35,
+              matchingFee: 8,
+              total: 43,
+              pickupEtaMin: 2,
+            });
+          }, 800);
         }
         break;
 
       case 5: // Driver accepts + passenger transitions
         if (role === 'driver') {
-          // Driver accepts the pending match
+          emitMatchAccept({
+            routeId: 'demo-route-id',
+            passengerId: 'demo-passenger',
+            pickupLat: 10.2992, pickupLng: 123.8938,
+            dropoffLat: 10.3105, dropoffLng: 123.9179,
+            pickupName: 'USC Main Gate', dropoffName: 'SM City Cebu',
+            fare: 35, matchingFee: 8, distanceKm: 3.2,
+          });
+          clearPendingMatch();
         }
         if (role === 'passenger') {
           router.replace('/(main)/match-found' as any);
