@@ -65,7 +65,7 @@ export function PreMatchModal({
 
           {/* Header */}
           <View style={styles.header}>
-            <Text style={[styles.headerTitle, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
+            <Text style={[styles.headerTitle, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>
               Before you ride
             </Text>
             <Pressable onPress={onCancel} style={styles.closeBtn}>
@@ -97,7 +97,7 @@ export function PreMatchModal({
                 <SummaryItem label="ETA" value={`~${etaMin} min`} colors={colors} />
               </View>
               <Text style={[styles.fareBreakdown, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>
-                ₱8 base fare + ₱5.50/km × {distanceKm.toFixed(1)} km = ₱{fareEstimate.toFixed(0)}
+                Est. fuel (₱65/L ÷ 20km/L × {distanceKm.toFixed(1)}km) + ₱8 fee = ₱{fareEstimate.toFixed(0)}
               </Text>
             </View>
 
@@ -167,7 +167,7 @@ function SummaryItem({ label, value, colors }: { label: string; value: string; c
       <Text style={[styles.summaryLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
         {label}
       </Text>
-      <Text style={[styles.summaryValue, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
+      <Text style={[styles.summaryValue, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>
         {value}
       </Text>
     </View>
