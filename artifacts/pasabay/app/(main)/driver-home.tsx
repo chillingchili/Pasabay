@@ -530,50 +530,54 @@ export default function DriverHomeScreen() {
               Drive to Destination
             </Button>
           )}
-          {(!isOnline || accepted || showRouteInfo) && (
-            <>
-              <View style={styles.routeRow}>
-                <View style={[styles.routeIcon, { backgroundColor: colors.primaryContainer }]}>
-                  <Feather name="map-pin" size={16} color={colors.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>To</Text>
-                  <Text style={[styles.infoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>{selectedDest.name}</Text>
-                </View>
-              </View>
-              <View style={styles.routeMeta}>
-                <View style={styles.metaBlock}>
-                  <Feather name="clock" size={12} color={colors.onSurfaceVariant} />
-                  <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>
-                    {etaMin != null ? `${etaMin} min` : "—"}
-                  </Text>
-                </View>
-                <View style={styles.metaBlock}>
-                  <Feather name="droplet" size={12} color={colors.onSurfaceVariant} />
-                  <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>
-                    {fuelEst ?? "—"}
-                  </Text>
-                </View>
-                <View style={styles.metaBlock}>
-                  <Feather name="maximize" size={12} color={colors.onSurfaceVariant} />
-                  <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>
-                    {routeInfo ? `${routeInfo.distanceKm.toFixed(1)} km` : "—"}
-                  </Text>
-                </View>
-              </View>
-              {isOnline && accepted && !arrived && !showCancelConfirm && (
+              {(!isOnline || accepted || showRouteInfo) && (
+                <>
+                  <View style={styles.routeRow}>
+                    <View style={[styles.routeIcon, { backgroundColor: colors.primaryContainer }]}>
+                      <Feather name="map-pin" size={16} color={colors.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>To</Text>
+                      <Text style={[styles.infoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>{selectedDest.name}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.routeMeta}>
+                    <View style={styles.metaBlock}>
+                      <Feather name="clock" size={12} color={colors.onSurfaceVariant} />
+                      <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>
+                        {etaMin != null ? `${etaMin} min` : "—"}
+                      </Text>
+                    </View>
+                    <View style={styles.metaBlock}>
+                      <Feather name="droplet" size={12} color={colors.onSurfaceVariant} />
+                      <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>
+                        {fuelEst ?? "—"}
+                      </Text>
+                    </View>
+                    <View style={styles.metaBlock}>
+                      <Feather name="maximize" size={12} color={colors.onSurfaceVariant} />
+                      <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>
+                        {routeInfo ? `${routeInfo.distanceKm.toFixed(1)} km` : "—"}
+                      </Text>
+                    </View>
+                  </View>
+                </>
+              )}
+              {isOnline && !arrived && !showCancelConfirm && (
                 <View style={styles.actionRow}>
                   <Pressable style={[styles.cancelBtn, { borderColor: colors.outlineVariant }]} onPress={handleCancelTrip}>
                     <Feather name="x" size={14} color={colors.onSurfaceVariant} />
                     <Text style={[styles.cancelBtnText, { color: colors.onSurfaceVariant }]}>Cancel</Text>
                   </Pressable>
-                  <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.primary }]} onPress={handleArrived}>
-                    <Feather name="check" size={14} color="#fff" />
-                    <Text style={styles.arrivedBtnText}>Arrived</Text>
-                  </Pressable>
+                  {accepted && (
+                    <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.primary }]} onPress={handleArrived}>
+                      <Feather name="check" size={14} color="#fff" />
+                      <Text style={styles.arrivedBtnText}>Arrived</Text>
+                    </Pressable>
+                  )}
                 </View>
               )}
-              {isOnline && !accepted && showCancelConfirm && (
+              {isOnline && showCancelConfirm && (
                 <View style={styles.actionRow}>
                   <Pressable style={[styles.cancelBtn, { borderColor: colors.outlineVariant }]} onPress={handleDismissCancel}>
                     <Feather name="arrow-left" size={14} color={colors.onSurfaceVariant} />
@@ -585,8 +589,6 @@ export default function DriverHomeScreen() {
                   </Pressable>
                 </View>
               )}
-            </>
-          )}
         </View>
       )}
     </View>
