@@ -57,7 +57,7 @@ export default function PassengerHomeScreen() {
   const MATCHING_FEE = 8;
   const eff = activeRide?.driver.vehicle?.fuelEfficiency ?? DEF_FUEL_EFF;
   const fuelCost = distanceKm * FUEL_PRICE / eff;
-  const totalFare = Math.max(15, fuelCost + MATCHING_FEE);
+  const totalFare = Math.max(15, Math.round((fuelCost + MATCHING_FEE) * 100) / 100);
 
   const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
 
@@ -110,13 +110,13 @@ export default function PassengerHomeScreen() {
         const dist = route.distanceKm;
         setDistanceKm(dist);
         setEtaMin(Math.round(route.durationSec / 60));
-        const fare = Math.max(15, dist * 65 / 20 + 8);
+        const fare = Math.max(15, Math.round((dist * 65 / 20 + 8) * 100) / 100);
         setFareEstimate(fare);
       } else {
         const dist = haversineKm(pickupPoint, dropoffPoint);
         setDistanceKm(dist);
         setEtaMin(Math.round(dist * 3));
-        const fare = Math.max(15, dist * 65 / 20 + 8);
+        const fare = Math.max(15, Math.round((dist * 65 / 20 + 8) * 100) / 100);
         setFareEstimate(fare);
       }
     };
