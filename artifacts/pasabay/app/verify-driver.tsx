@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Pressable, StyleSheet, View } from "react-native";
+import { Animated, Alert, Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -33,7 +33,7 @@ export default function VerifyDriverScreen() {
   };
 
   const handleContinue = () => {
-    router.replace("/vehicle-details");
+    Alert.alert("", "Your details have been sent for verification", [{ text: "OK", onPress: () => router.replace("/vehicle-details") }]);
   };
 
   return (
