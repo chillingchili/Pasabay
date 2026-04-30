@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT, type Region } from "react-native-maps";
 import { useColors } from "@/hooks/useColors";
 
@@ -191,8 +191,11 @@ export function RealMap({
             coordinate={{ latitude: pickupPoint.lat, longitude: pickupPoint.lng }}
             title={pickupPoint.name ?? "Pickup"}
           >
-            <View style={styles.pickupMarker}>
-              <View style={styles.pickupMarkerInner} />
+            <View style={styles.markerWithLabel}>
+              <Text style={styles.markerLabel}>{pickupPoint.name ?? "PICKUP"}</Text>
+              <View style={styles.pickupMarker}>
+                <View style={styles.pickupMarkerInner} />
+              </View>
             </View>
           </Marker>
         )}
@@ -202,8 +205,11 @@ export function RealMap({
             coordinate={{ latitude: dropoffPoint.lat, longitude: dropoffPoint.lng }}
             title={dropoffPoint.name ?? "Dropoff"}
           >
-            <View style={styles.dropoffMarker}>
-              <View style={styles.dropoffMarkerInner} />
+            <View style={styles.markerWithLabel}>
+              <Text style={styles.markerLabel}>{dropoffPoint.name ?? "DROPOFF"}</Text>
+              <View style={styles.dropoffMarker}>
+                <View style={styles.dropoffMarkerInner} />
+              </View>
             </View>
           </Marker>
         )}
@@ -271,5 +277,23 @@ const styles = StyleSheet.create({
     backgroundColor: "#0D9E75",
     borderWidth: 2,
     borderColor: "#fff",
+  },
+  markerWithLabel: {
+    alignItems: "center",
+  },
+  markerLabel: {
+    backgroundColor: "#fff",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    fontSize: 11,
+    fontWeight: "600",
+    marginBottom: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+    overflow: "hidden",
   },
 });

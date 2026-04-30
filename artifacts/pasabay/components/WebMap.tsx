@@ -117,15 +117,15 @@ export function WebMap({
     if (polylineRef.current) { polylineRef.current.remove(); polylineRef.current = null; }
   }
 
-  function addMarker(L: any, lat: number, lng: number, color: string, size: number, inner: number, popup?: string) {
+  function addMarker(L: any, lat: number, lng: number, color: string, size: number, inner: number, label?: string) {
     const icon = L.divIcon({
-      html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color}33;display:flex;align-items:center;justify-content:center"><div style="width:${inner}px;height:${inner}px;border-radius:50%;background:${color};border:2px solid #fff"></div></div>`,
+      html: `<div style="display:flex;flex-direction:column;align-items:center"><div style="background:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.2);margin-bottom:2px">${label ?? ""}</div><div style="width:${size}px;height:${size}px;border-radius:50%;background:${color}33;display:flex;align-items:center;justify-content:center"><div style="width:${inner}px;height:${inner}px;border-radius:50%;background:${color};border:2px solid #fff"></div></div></div>`,
       className: "",
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2],
+      iconSize: [size, size + 24],
+      iconAnchor: [size / 2, size / 2 + 24],
     });
     const marker = L.marker([lat, lng], { icon }).addTo(mapRef.current);
-    if (popup) marker.bindPopup(popup);
+    if (label) marker.bindPopup(label);
     markersRef.current.push(marker);
   }
 

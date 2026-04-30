@@ -23,7 +23,7 @@ export default function DriverHomeScreen() {
   const { colors } = useTheme();
   const { fs, isSmall } = useScale();
   const dimensions = useWindowDimensions();
-  const { user, pendingMatchRequest, clearPendingMatch, activeRide, clearActiveRide, setActiveRide, switchRole, socketConnected, clearMatchConfirmed } = useApp();
+  const { user, pendingMatchRequest, clearPendingMatch, activeRide, clearActiveRide, setActiveRide, switchRole, socketConnected, clearMatchConfirmed, demoDriverDest } = useApp();
   const { location: userLoc } = useLocation();
 
   const [isOnline, setIsOnline] = useState(false);
@@ -156,6 +156,13 @@ export default function DriverHomeScreen() {
     fetch();
     return () => { cancelled = true; };
   }, [selectedDest, userLoc]);
+
+  useEffect(() => {
+    if (!demoDriverDest || selectedDest) return;
+    console.log('[DEMO] Setting driver destination:', demoDriverDest.name);
+    setDestQuery(demoDriverDest.name);
+    setSelectedDest(demoDriverDest);
+  }, [demoDriverDest, selectedDest]);
 
   const handleSelectDest = (d: { name: string; lat: number; lng: number }) => {
     setSelectedDest(d);
@@ -327,12 +334,19 @@ export default function DriverHomeScreen() {
         showRoute={!!routePolyline}
         routePolyline={routePolyline ?? undefined}
         userLocation={userLoc ?? undefined}
-        pickupPoint={selectedDest ?? undefined}
+        pickupPoint={accepted ? accepted.pickup : (selectedDest ?? undefined)}
+        dropoffPoint={accepted ? accepted.dropoff : undefined}
         fitRouteKey={fitRouteKey}
         recenterKey={recenterKey}
         onUserDrag={() => setShowRecenter(true)}
       />
       <LoadingOverlay visible={isLoading} message="Preparing route..." />
+
+      {demoDriverDest && (
+        <View style={{ position: 'absolute', top: 4, left: 0, right: 0, zIndex: 999, backgroundColor: 'rgba(13,158,117,0.9)', padding: 6, alignItems: 'center' }}>
+          <Text style={{ color: '#fff', fontSize: 12, fontFamily: 'Inter_600SemiBold' }}>DEMO: {demoDriverDest.name}</Text>
+        </View>
+      )}
 
       {showRecenter && (
         <Pressable
