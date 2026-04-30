@@ -82,8 +82,12 @@ router.post("/login", async (req, res) => {
   }
 
   const tokens = await issueTokens(user.id, user.email, user.role);
+
+  const [loginVehicle] = await db.select().from(vehiclesTable)
+    .where(eq(vehiclesTable.userId, user.id)).limit(1);
+
   res.json({
-    user: { id: user.id, email: user.email, name: user.name, role: user.role, activeRole: user.activeRole, schoolIdStatus: user.schoolIdStatus, driverStatus: user.driverStatus, rating: user.rating, totalRides: user.totalRides, avatar: user.avatar },
+    user: { id: user.id, email: user.email, name: user.name, role: user.role, activeRole: user.activeRole, schoolIdStatus: user.schoolIdStatus, driverStatus: user.driverStatus, rating: user.rating, totalRides: user.totalRides, avatar: user.avatar, vehicle: loginVehicle ?? null },
     ...tokens,
   });
 });
@@ -113,8 +117,12 @@ router.post("/google", async (req, res) => {
   }
 
   const tokens = await issueTokens(user.id, user.email, user.role);
+
+  const [googleVehicle] = await db.select().from(vehiclesTable)
+    .where(eq(vehiclesTable.userId, user.id)).limit(1);
+
   res.json({
-    user: { id: user.id, email: user.email, name: user.name, role: user.role, activeRole: user.activeRole, schoolIdStatus: user.schoolIdStatus, driverStatus: user.driverStatus, rating: user.rating, totalRides: user.totalRides, avatar: user.avatar },
+    user: { id: user.id, email: user.email, name: user.name, role: user.role, activeRole: user.activeRole, schoolIdStatus: user.schoolIdStatus, driverStatus: user.driverStatus, rating: user.rating, totalRides: user.totalRides, avatar: user.avatar, vehicle: googleVehicle ?? null },
     isNew,
     ...tokens,
   });
