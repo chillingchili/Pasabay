@@ -24,33 +24,32 @@ export default function Root({ children }: PropsWithChildren) {
           html, body {
             margin: 0;
             padding: 0;
-            background: #ffffff;
-            height: 100%;
-          }
-          body {
-            display: flex;
-            justify-content: center;
             min-height: 100vh;
           }
-          #phone-frame {
+          html {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            background: #f5f5f5;
+          }
+          body {
             width: 100%;
-            height: 100vh;
             display: flex;
             flex-direction: column;
           }
-          #phone-frame > div {
+          body > div:first-of-type {
             flex: 1;
             display: flex;
             flex-direction: column;
           }
           @media (min-width: 480px) {
-            #phone-frame {
-              max-width: 360px;
-              height: calc(100vh - 48px);
+            body {
+              width: 360px;
               margin: 24px 0;
               border-radius: 44px;
               border: 6px solid #1f1f1f;
               box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+              transform: translateZ(0);
               overflow: hidden;
             }
           }
@@ -67,9 +66,7 @@ export default function Root({ children }: PropsWithChildren) {
           }}
         />
       </head>
-      <body>
-        <div id="phone-frame">{children}</div>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
