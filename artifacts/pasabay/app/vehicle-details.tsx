@@ -88,9 +88,8 @@ export default function VehicleDetailsScreen() {
       }));
       setLoading(false);
       setSuccess(true);
-      redirectTimer.current = setTimeout(() => {
-        router.replace("/(main)/profile");
-      }, 1200);
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+      Alert.alert("", "Your details have been sent for verification", [{ text: "OK", onPress: () => router.replace("/(main)/profile") }]);
     } catch (err: unknown) {
       const message = (err as { message?: string })?.message ?? "Failed to submit vehicle details. Please try again.";
       setError(message);
