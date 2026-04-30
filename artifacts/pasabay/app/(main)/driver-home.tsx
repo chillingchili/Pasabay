@@ -271,7 +271,15 @@ export default function DriverHomeScreen() {
   const handleArrived = () => {
     const rideIdToUse = rideId || acceptedRef.current?.rideId;
     if (!rideIdToUse) {
-      setDriverError("Ride ID not available yet. Please wait a moment.");
+      emitDriverOffline();
+      setIsOnline(false);
+      setRouteInfo(null);
+      setRoutePolyline(null);
+      setSelectedDest(null);
+      setDestQuery("");
+      setShowRouteInfo(false);
+      setShowCancelConfirm(false);
+      setInfoBarHeight(0);
       return;
     }
     console.log("[MATCH-STAGE-5] Driver pressed Arrived:", { rideId: rideIdToUse });
