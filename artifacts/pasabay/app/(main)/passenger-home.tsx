@@ -184,13 +184,6 @@ export default function PassengerHomeScreen() {
 
   return (
     <View style={styles.container}>
-      {locationError && (
-        <View style={{ position: "absolute", top: 60, left: 16, right: 16, zIndex: 100, backgroundColor: "rgba(255, 68, 68, 0.95)", padding: 12, borderRadius: 10 }}>
-          <Text style={{ color: "#fff", fontSize: 13, textAlign: "center", fontFamily: "Inter_500Medium" }}>
-            {locationError}
-          </Text>
-        </View>
-      )}
       <RealMap
         showRoute={!!routePolyline}
         routePolyline={routePolyline ?? undefined}
@@ -216,6 +209,7 @@ export default function PassengerHomeScreen() {
 
       <View style={[styles.topArea, { paddingTop: topPad - 4 }]}>
         <View style={styles.greetingRow}>
+          {locationError && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#e53935" }} />}
           {user?.role === "driver" ? (
             <Pressable
               style={[styles.roleSwitchBtn, { backgroundColor: colors.primary }]}
