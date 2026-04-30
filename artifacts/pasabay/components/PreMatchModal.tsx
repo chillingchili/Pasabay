@@ -32,6 +32,7 @@ export function PreMatchModal({
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(300)).current;
   const bottomSafe = Platform.OS === "web" ? 60 : insets.bottom;
+  const webSheetStyle = Platform.OS === "web" ? { maxWidth: 372, width: "100%", alignSelf: "center" as const } : {};
 
   useEffect(() => {
     if (visible) {
@@ -55,6 +56,7 @@ export function PreMatchModal({
         <Animated.View
           style={[
             styles.sheet,
+            webSheetStyle,
             {
               backgroundColor: "rgba(255,255,255,0.97)",
               maxHeight: height * 0.85,
