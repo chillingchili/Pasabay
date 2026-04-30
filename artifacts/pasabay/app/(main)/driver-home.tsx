@@ -23,7 +23,7 @@ export default function DriverHomeScreen() {
   const { colors } = useTheme();
   const { fs, isSmall } = useScale();
   const dimensions = useWindowDimensions();
-  const { user, pendingMatchRequest, clearPendingMatch, activeRide, clearActiveRide, setActiveRide, switchRole } = useApp();
+  const { user, pendingMatchRequest, clearPendingMatch, activeRide, clearActiveRide, setActiveRide, switchRole, socketConnected } = useApp();
   const { location: userLoc } = useLocation();
 
   const [isOnline, setIsOnline] = useState(false);
@@ -96,6 +96,7 @@ export default function DriverHomeScreen() {
   }, [accepted, userLoc]);
 
   useEffect(() => {
+    if (!socketConnected) return;
     const off = onMatchAccepted((data) => {
       setRideId(data.rideId);
       if (acceptedRef.current) {
@@ -103,9 +104,10 @@ export default function DriverHomeScreen() {
       }
     });
     return off;
-  }, []);
+  }, [socketConnected]);
 
   useEffect(() => {
+    if (!socketConnected) return;
     const offRouteSet = onDriverRouteSet((data) => {
       setRouteInfo({ distanceKm: data.distanceKm, durationMin: data.durationMin });
       setIsOnline(true);
@@ -118,7 +120,7 @@ export default function DriverHomeScreen() {
       offRouteSet();
       offError();
     };
-  }, []);
+  }, [socketConnected]);
 
   // Fit the map to show the full route ONCE when destination changes
   // (NOT when user location changes, which happens on every GPS update)
@@ -155,6 +157,10 @@ export default function DriverHomeScreen() {
     }
     if (!userLoc) {
       setDriverError("Please enable location services to go online.");
+      return;
+    }
+    if (!socketConnected) {
+      setDriverError("Connecting to server. Please wait a moment and try again.");
       return;
     }
     setIsLoading(true);
