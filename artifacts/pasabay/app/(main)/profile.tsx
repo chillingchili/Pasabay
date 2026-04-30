@@ -20,6 +20,8 @@ export default function ProfileScreen() {
   const [showAbout, setShowAbout] = useState(false);
 
   const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
+  const isWeb = Platform.OS === "web";
+  const webAlertBoxStyle = isWeb ? { maxWidth: 372, alignSelf: "center" as const } : styles.alertBoxWidth;
 
   const initials = user?.name
     ? user.name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()
@@ -116,7 +118,7 @@ export default function ProfileScreen() {
       {/* Edit Name Modal */}
       <Modal visible={showEditName} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={[styles.alertBox, { backgroundColor: colors.background }]}>
+          <View style={[styles.alertBox, webAlertBoxStyle, { backgroundColor: colors.background }]}>
             <Text style={[styles.alertTitle, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>Edit name</Text>
             <TextInput
               style={[styles.nameInput, { backgroundColor: colors.card, color: colors.foreground, borderColor: colors.border, fontFamily: "Inter_400Regular" }]}
@@ -146,7 +148,7 @@ export default function ProfileScreen() {
       {/* Help & Support Modal */}
       <Modal visible={showHelp} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={[styles.alertBox, { backgroundColor: colors.background }]}>
+          <View style={[styles.alertBox, webAlertBoxStyle, { backgroundColor: colors.background }]}>
             <Text style={[styles.alertTitle, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>Help & Support</Text>
             <Text style={[styles.alertMsg, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
               {"Frequently Asked Questions:\n\n"}
@@ -169,7 +171,7 @@ export default function ProfileScreen() {
       {/* About Modal */}
       <Modal visible={showAbout} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={[styles.alertBox, { backgroundColor: colors.background }]}>
+          <View style={[styles.alertBox, webAlertBoxStyle, { backgroundColor: colors.background }]}>
             <Text style={[styles.alertTitle, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>About Pasabay</Text>
             <Text style={[styles.alertMsg, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
               {"Pasabay v1.0.0\n\n"}
@@ -187,7 +189,7 @@ export default function ProfileScreen() {
 
       <Modal visible={confirmLogout} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={[styles.alertBox, { backgroundColor: colors.background }]}>
+          <View style={[styles.alertBox, webAlertBoxStyle, { backgroundColor: colors.background }]}>
             <Text style={[styles.alertTitle, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>Log out?</Text>
             <Text style={[styles.alertMsg, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>You'll be returned to the welcome screen.</Text>
             <View style={styles.alertBtns}>
@@ -204,7 +206,7 @@ export default function ProfileScreen() {
 
       <Modal visible={confirmDelete} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={[styles.alertBox, { backgroundColor: colors.background }]}>
+          <View style={[styles.alertBox, webAlertBoxStyle, { backgroundColor: colors.background }]}>
             <Text style={[styles.alertTitle, { color: colors.destructive, fontFamily: "Sora_800ExtraBold" }]}>Delete account?</Text>
             <Text style={[styles.alertMsg, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>This is permanent and cannot be undone. All your data will be lost.</Text>
             <View style={styles.alertBtns}>
@@ -310,7 +312,8 @@ const styles = StyleSheet.create({
   menuBadgeText: { fontSize: 11 },
   version: { textAlign: "center", fontSize: 11, paddingTop: 8 },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center", padding: 32 },
-  alertBox: { width: "100%", borderRadius: 20, padding: 24, gap: 10 },
+  alertBox: { borderRadius: 20, padding: 24, gap: 10 },
+  alertBoxWidth: { width: "100%" },
   alertTitle: { fontSize: 18, fontWeight: "700" },
   alertMsg: { fontSize: 14, lineHeight: 20 },
   alertBtns: { flexDirection: "row", gap: 10, marginTop: 6 },
