@@ -184,9 +184,10 @@
     <div class="status" id="status">Initializing...</div>
   </div>
 
-  <!-- Stage definitions for PostMessage protocol: { type: "demo:stage", stage: N, role: "driver"|"passenger" } -->
   <script>
-    // Stage engine stub — populated in task 2
+    // ============================================================
+    // Step A: Stage definitions and state variables
+    // ============================================================
     const STAGES = [
       { id: 1, label: 'Driver Goes Online', driver: true, passenger: false },
       { id: 2, label: 'Passenger Picks Destination', driver: false, passenger: true },
@@ -209,6 +210,9 @@
     let passengerReady = false;
     const APP_URL = window.location.origin;
 
+    // ============================================================
+    // Step B: PostMessage helpers + UI updates
+    // ============================================================
     function updateUI() {
       const stage = currentStage > 0 ? STAGES[currentStage - 1] : null;
       document.getElementById('stageLabel').textContent =
@@ -237,6 +241,9 @@
       }
     }
 
+    // ============================================================
+    // Step C: Stage advancement
+    // ============================================================
     function advanceStage() {
       if (currentStage >= STAGES.length) {
         clearInterval(autoPlayTimer);
@@ -307,6 +314,9 @@
         });
     }
 
+    // ============================================================
+    // Step D: Auto-login flow (called on page load)
+    // ============================================================
     async function initializeDemo() {
       const status = document.getElementById('status');
       status.textContent = 'Seeding demo accounts...';
@@ -397,7 +407,9 @@
       }
     }
 
-    // Button wiring
+    // ============================================================
+    // Step E: Wire up button handlers
+    // ============================================================
     document.getElementById('playPauseBtn').addEventListener('click', togglePlay);
     document.getElementById('skipBtn').addEventListener('click', skipStage);
     document.getElementById('restartBtn').addEventListener('click', restart);
@@ -422,7 +434,9 @@
       }
     });
 
-    // Start
+    // ============================================================
+    // Step F: Start initialization
+    // ============================================================
     updateUI();
     initializeDemo();
   </script>
