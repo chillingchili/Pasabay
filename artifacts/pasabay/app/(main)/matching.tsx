@@ -98,6 +98,8 @@ export default function MatchingScreen() {
           body: JSON.stringify({ pickupLat, pickupLng, dropoffLat, dropoffLng, pickupName, dropoffName, radiusKm: radius }),
         });
 
+        console.log("[MATCH-STAGE-1] /rides/request response:", { matched: result.matched, driverId: result.driverId });
+
         setIsLoading(false);
 
         if (!result.matched) {

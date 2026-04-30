@@ -123,6 +123,8 @@ router.post("/request", requireAuth, async (req, res) => {
   const activeRoutes = await db.select().from(activeRoutesTable)
     .where(eq(activeRoutesTable.status, "active"));
 
+  console.log("[MATCH-STAGE-2] Active drivers found:", activeRoutes.length);
+
   const MATCH_RADIUS_KM = radiusKm ?? 0.3;
   const matches: { routeId: string; driverId: string; pickupSnapped: RoutePoint; dropoffSnapped: RoutePoint; passengerDistKm: number; fare: number; matchingFee: number; pickupEtaMin: number }[] = [];
 
@@ -173,6 +175,8 @@ router.post("/request", requireAuth, async (req, res) => {
   matches.sort((a, b) => a.pickupEtaMin - b.pickupEtaMin);
   const best = matches[0];
 
+  console.log("[MATCH-STAGE-2] Best match selected:", { routeId: best.routeId, driverId: best.driverId, pickupEtaMin: best.pickupEtaMin });
+
   const [passenger] = await db.select({
     id: usersTable.id, name: usersTable.name, rating: usersTable.rating, avatar: usersTable.avatar,
   }).from(usersTable).where(eq(usersTable.id, passengerId)).limit(1);
@@ -197,6 +201,8 @@ router.post("/request", requireAuth, async (req, res) => {
   } catch {
     // socket not initialized yet — ignore
   }
+
+  console.log("[MATCH-STAGE-3] match:request emitted to driver:", best.driverId);
 
   res.json({
     matched: true,

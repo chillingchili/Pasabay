@@ -87,6 +87,8 @@ export function registerSocketHandlers(io: Server) {
           currentLat: data.originLat, currentLng: data.originLng, lastSeen: Date.now(),
         });
 
+        console.log("[MATCH-STAGE-0] Driver online:", { userId, routeId });
+
         socket.join("drivers:active");
         socket.emit("driver:route_set", {
           routeId, distanceKm: route.distanceKm,
@@ -152,6 +154,8 @@ export function registerSocketHandlers(io: Server) {
           status: "matched",
         }).returning();
 
+        console.log("[MATCH-STAGE-4a] Driver accepted — ride created:", { rideId: ride.id, passengerId: data.passengerId });
+
         await db.insert(ridePassengersTable).values({
           rideId: ride.id,
           passengerId: data.passengerId,
@@ -179,6 +183,9 @@ export function registerSocketHandlers(io: Server) {
         });
 
         socket.emit("match:accepted_confirmed", { rideId: ride.id, passengerId: data.passengerId });
+
+        console.log("[MATCH-STAGE-4a] match:confirmed emitted to passenger:", { rideId: ride.id });
+
         logger.info({ rideId: ride.id, driverId: userId, passengerId: data.passengerId }, "Match confirmed");
       } catch (err) {
         logger.error({ err, userId }, "match:accept error");
@@ -187,6 +194,7 @@ export function registerSocketHandlers(io: Server) {
     });
 
     socket.on("match:decline", (data: { passengerId: string }) => {
+      console.log("[MATCH-STAGE-4b] Driver declined:", { passengerId: data.passengerId });
       io.to(`user:${data.passengerId}`).emit("match:declined", {
         message: "Driver declined. Searching for another driver...",
       });

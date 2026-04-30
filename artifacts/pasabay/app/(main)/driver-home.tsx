@@ -42,6 +42,7 @@ export default function DriverHomeScreen() {
   const [showRecenter, setShowRecenter] = useState(false);
   const [infoBarHeight, setInfoBarHeight] = useState(0);
   const [driverError, setDriverError] = useState<string | null>(null);
+  const [showRouteInfo, setShowRouteInfo] = useState(false);
 
   const slideAnim = useRef(new Animated.Value(-160)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -86,6 +87,7 @@ export default function DriverHomeScreen() {
   useEffect(() => {
     if (!accepted || !userLoc) return;
     const interval = setInterval(() => {
+      console.log("[MATCH-STAGE-6] Emitting driver location:", { lat: userLoc.lat, lng: userLoc.lng });
       emitDriverLocation(userLoc.lat, userLoc.lng);
     }, 10000);
     return () => clearInterval(interval);
@@ -163,6 +165,7 @@ export default function DriverHomeScreen() {
   };
 
   const handleAccept = (req: MatchRequestPayload) => {
+    console.log("[MATCH-STAGE-4a] Driver accepting match:", { routeId: req.routeId, passengerId: req.passengerId });
     emitMatchAccept({
       routeId: req.routeId,
       passengerId: req.passengerId,
@@ -200,6 +203,7 @@ export default function DriverHomeScreen() {
   };
 
   const handleDecline = (req: MatchRequestPayload) => {
+    console.log("[MATCH-STAGE-4b] Driver declining match:", { passengerId: req.passengerId });
     emitMatchDecline(req.passengerId);
     clearPendingMatch();
   };
@@ -400,38 +404,9 @@ export default function DriverHomeScreen() {
       />
 
       {selectedDest && (
-        <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 16, 24) + 60 }]} onLayout={(e) => setInfoBarHeight(e.nativeEvent.layout.height)}>
-          <View style={styles.routeRow}>
-            <View style={[styles.routeIcon, { backgroundColor: colors.primaryLight }]}>
-              <Feather name="map-pin" size={16} color={colors.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>To</Text>
-              <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{selectedDest.name}</Text>
-            </View>
-          </View>
-          <View style={styles.routeMeta}>
-            <View style={styles.metaBlock}>
-              <Feather name="clock" size={12} color={colors.textSecondary} />
-              <Text style={[styles.metaText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>
-                {etaMin != null ? `${etaMin} min` : "—"}
-              </Text>
-            </View>
-            <View style={styles.metaBlock}>
-              <Feather name="droplet" size={12} color={colors.textSecondary} />
-              <Text style={[styles.metaText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>
-                {fuelEst ?? "—"}
-              </Text>
-            </View>
-            <View style={styles.metaBlock}>
-              <Feather name="maximize" size={12} color={colors.textSecondary} />
-              <Text style={[styles.metaText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>
-                {routeInfo ? `${routeInfo.distanceKm.toFixed(1)} km` : "—"}
-              </Text>
-            </View>
-          </View>
+        <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 16, 24) + (isOnline && !accepted && !showRouteInfo ? 32 : 60) }]} onLayout={(e) => setInfoBarHeight(e.nativeEvent.layout.height)}>
           {isOnline && !accepted ? (
-            <View style={[styles.navBar, { backgroundColor: colors.primary }]}>
+            <Pressable style={[styles.navBar, { backgroundColor: colors.primary }]} onPress={() => setShowRouteInfo(v => !v)}>
               <View style={[styles.navIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
                 <Feather name="navigation" size={20} color="#fff" />
               </View>
@@ -443,7 +418,8 @@ export default function DriverHomeScreen() {
                 <Feather name="clock" size={14} color="#fff" />
                 <Text style={styles.navEtaText}>{etaMin != null ? `${etaMin} min` : "—"}</Text>
               </View>
-            </View>
+              <Feather name={showRouteInfo ? "chevron-down" : "chevron-up"} size={16} color="#fff" />
+            </Pressable>
           ) : (
             <Pressable
               style={[styles.driveBtn, { backgroundColor: colors.primary }]}
@@ -454,6 +430,39 @@ export default function DriverHomeScreen() {
                 Drive to Destination
               </Text>
             </Pressable>
+          )}
+          {(!isOnline || accepted || showRouteInfo) && (
+            <>
+              <View style={styles.routeRow}>
+                <View style={[styles.routeIcon, { backgroundColor: colors.primaryLight }]}>
+                  <Feather name="map-pin" size={16} color={colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.infoLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>To</Text>
+                  <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{selectedDest.name}</Text>
+                </View>
+              </View>
+              <View style={styles.routeMeta}>
+                <View style={styles.metaBlock}>
+                  <Feather name="clock" size={12} color={colors.textSecondary} />
+                  <Text style={[styles.metaText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>
+                    {etaMin != null ? `${etaMin} min` : "—"}
+                  </Text>
+                </View>
+                <View style={styles.metaBlock}>
+                  <Feather name="droplet" size={12} color={colors.textSecondary} />
+                  <Text style={[styles.metaText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>
+                    {fuelEst ?? "—"}
+                  </Text>
+                </View>
+                <View style={styles.metaBlock}>
+                  <Feather name="maximize" size={12} color={colors.textSecondary} />
+                  <Text style={[styles.metaText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>
+                    {routeInfo ? `${routeInfo.distanceKm.toFixed(1)} km` : "—"}
+                  </Text>
+                </View>
+              </View>
+            </>
           )}
         </View>
       )}

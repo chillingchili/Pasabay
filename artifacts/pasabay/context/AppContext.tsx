@@ -170,9 +170,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       const offMatchRequest = onMatchRequest((data) => {
         setPendingMatchRequest(data);
+        console.log("[MATCH-STAGE-3] match:request received by client:", { passengerName: data.passengerName });
       });
       const offMatchConfirmed = onMatchConfirmed((data) => {
         setMatchConfirmed(data);
+        console.log("[MATCH-STAGE-4a] match:confirmed received:", { rideId: data.rideId });
         setActiveRide({
           rideId: data.rideId,
           driver: {
@@ -211,6 +213,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
       const offDriverLocation = onDriverLocationUpdate((data) => {
         setDriverLocation({ lat: data.lat, lng: data.lng, heading: data.heading });
+        console.log("[MATCH-STAGE-6] Driver location update:", { lat: data.lat, lng: data.lng });
       });
 
       return () => {

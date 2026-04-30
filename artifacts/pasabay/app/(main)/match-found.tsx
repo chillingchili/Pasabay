@@ -24,6 +24,9 @@ export default function MatchFoundScreen() {
   const { fs, isSmall } = useScale();
   const dimensions = useWindowDimensions();
   const { matchConfirmed, clearMatchConfirmed, completedRide, clearCompletedRide, addRideHistory, activeRide, driverLocation, clearActiveRide, networkStatus } = useApp();
+
+  console.log("[MATCH-STAGE-5] Match-found screen mounted:", { rideId: matchConfirmed?.rideId, driver: matchConfirmed?.driver?.name });
+
   const slideAnim = useRef(new Animated.Value(60)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const badgeScale = useRef(new Animated.Value(0.6)).current;
