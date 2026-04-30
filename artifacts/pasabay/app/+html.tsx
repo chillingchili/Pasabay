@@ -44,15 +44,18 @@ export default function Root({ children }: PropsWithChildren) {
           }
           @media (min-width: 480px) {
             body {
-              position: relative;
-              width: 360px;
+              width: 372px;
               margin: 24px 0;
+              padding: 6px;
+              background: #1f1f1f;
               border-radius: 44px;
               transform: translateZ(0);
               overflow: hidden;
-              box-shadow:
-                inset 0 0 0 6px #1f1f1f,
-                0 16px 48px rgba(0,0,0,0.15);
+              box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+            }
+            body > div:first-of-type {
+              border-radius: 38px;
+              overflow: hidden;
             }
           }
         `}</style>
