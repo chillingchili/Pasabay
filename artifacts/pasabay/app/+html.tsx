@@ -19,6 +19,18 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Pasabay" />
         <link rel="manifest" href="/manifest.json" />
+        <style>{`
+          html, body {
+            margin: 0;
+            padding: 0;
+            background: #e8e8e8;
+            min-height: 100vh;
+          }
+          body {
+            display: flex;
+            justify-content: center;
+          }
+        `}</style>
         <script
           dangerouslySetInnerHTML={{
             __html: `
