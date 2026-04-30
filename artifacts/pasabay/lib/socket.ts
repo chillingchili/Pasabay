@@ -136,6 +136,10 @@ export function emitDriverOffline() {
   socket?.emit("driver:offline");
 }
 
+export function emitDriverArrived() {
+  socket?.emit("driver:arrived");
+}
+
 export function emitMatchAccept(data: {
   routeId: string;
   passengerId: string;

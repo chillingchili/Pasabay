@@ -134,6 +134,18 @@ export function registerSocketHandlers(io: Server) {
       logger.info({ userId }, "Driver went offline");
     });
 
+    socket.on("driver:arrived", async () => {
+      const session = driverSessions.get(userId);
+      if (session) {
+        await db.update(activeRoutesTable)
+          .set({ status: "completed", updatedAt: new Date() })
+          .where(eq(activeRoutesTable.id, session.routeId));
+        driverSessions.delete(userId);
+      }
+      socket.leave("drivers:active");
+      logger.info({ userId }, "Driver arrived — route completed");
+    });
+
     socket.on("match:accept", async (data: { routeId: string; passengerId: string; pickupLat: number; pickupLng: number; dropoffLat: number; dropoffLng: number; pickupName: string; dropoffName: string; fare: number; matchingFee: number; distanceKm: number }) => {
       try {
         // Clear any pending timeout for this match
@@ -277,7 +289,7 @@ export function registerSocketHandlers(io: Server) {
       }
     });
 
-    socket.on("disconnect", () => {
+    socket.on("disconnect", async () => {
       // Clear timeouts for this user
       for (const [key, timeout] of matchTimeouts.entries()) {
         if (key.includes(userId)) {
@@ -287,6 +299,9 @@ export function registerSocketHandlers(io: Server) {
       }
       const session = driverSessions.get(userId);
       if (session && session.socketId === socket.id) {
+        await db.update(activeRoutesTable)
+          .set({ status: "completed", updatedAt: new Date() })
+          .where(eq(activeRoutesTable.id, session.routeId));
         driverSessions.delete(userId);
       }
       logger.info({ socketId: socket.id, userId }, "Socket disconnected");

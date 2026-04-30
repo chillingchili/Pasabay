@@ -10,7 +10,7 @@ import { Card, Button, Surface } from "react-native-paper";
 import { useLocation } from "@/hooks/useLocation";
 import { useApp } from "@/context/AppContext";
 import { useScale } from "@/hooks/useScale";
-import { emitDriverOnline, emitDriverOffline, emitMatchAccept, emitMatchDecline,
+import { emitDriverOnline, emitDriverOffline, emitDriverArrived, emitMatchAccept, emitMatchDecline,
   emitRideComplete, emitRideCancel, onDriverRouteSet, onDriverError,
   onMatchAccepted, emitDriverLocation,
 } from "@/lib/socket";
@@ -45,6 +45,7 @@ export default function DriverHomeScreen() {
   const [infoBarHeight, setInfoBarHeight] = useState(0);
   const [driverError, setDriverError] = useState<string | null>(null);
   const [showRouteInfo, setShowRouteInfo] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const slideAnim = useRef(new Animated.Value(-160)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -224,6 +225,40 @@ export default function DriverHomeScreen() {
     } else {
       setDriverError("Ride ID not available yet. Please wait a moment.");
     }
+  };
+
+  const handleCancelTrip = () => {
+    setShowCancelConfirm(true);
+  };
+
+  const handleConfirmCancel = () => {
+    emitDriverOffline();
+    setIsOnline(false);
+    setRouteInfo(null);
+    setRoutePolyline(null);
+    setSelectedDest(null);
+    setDestQuery("");
+    setDriverError(null);
+    setShowRouteInfo(false);
+    setShowCancelConfirm(false);
+    setInfoBarHeight(0);
+  };
+
+  const handleDismissCancel = () => {
+    setShowCancelConfirm(false);
+  };
+
+  const handleArrived = () => {
+    emitDriverArrived();
+    emitDriverOffline();
+    setIsOnline(false);
+    setRouteInfo(null);
+    setRoutePolyline(null);
+    setSelectedDest(null);
+    setDestQuery("");
+    setDriverError(null);
+    setShowRouteInfo(false);
+    setInfoBarHeight(0);
   };
 
   const handleNoShow = () => {
@@ -420,7 +455,7 @@ export default function DriverHomeScreen() {
       />
 
       {selectedDest && (
-        <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 16, 24) + (isOnline && !accepted && !showRouteInfo ? 16 : 60) }]} onLayout={(e) => setInfoBarHeight(e.nativeEvent.layout.height)}>
+        <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 16, 24) + 60 }]} onLayout={(e) => setInfoBarHeight(e.nativeEvent.layout.height)}>
           {isOnline && !accepted ? (
             <Pressable style={[styles.navBar, { backgroundColor: colors.primary }]} onPress={() => setShowRouteInfo(v => !v)}>
               <View style={[styles.navIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
@@ -483,6 +518,30 @@ export default function DriverHomeScreen() {
               </View>
             </>
           )}
+          {isOnline && !accepted && !showCancelConfirm && (
+            <View style={styles.actionRow}>
+              <Pressable style={[styles.cancelBtn, { borderColor: colors.outlineVariant }]} onPress={handleCancelTrip}>
+                <Feather name="x" size={14} color={colors.onSurfaceVariant} />
+                <Text style={[styles.cancelBtnText, { color: colors.onSurfaceVariant }]}>Cancel</Text>
+              </Pressable>
+              <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.primary }]} onPress={handleArrived}>
+                <Feather name="check" size={14} color="#fff" />
+                <Text style={styles.arrivedBtnText}>Arrived</Text>
+              </Pressable>
+            </View>
+          )}
+          {isOnline && !accepted && showCancelConfirm && (
+            <View style={styles.actionRow}>
+              <Pressable style={[styles.cancelBtn, { borderColor: colors.outlineVariant }]} onPress={handleDismissCancel}>
+                <Feather name="arrow-left" size={14} color={colors.onSurfaceVariant} />
+                <Text style={[styles.cancelBtnText, { color: colors.onSurfaceVariant }]}>Back</Text>
+              </Pressable>
+              <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.error }]} onPress={handleConfirmCancel}>
+                <Feather name="alert-triangle" size={14} color="#fff" />
+                <Text style={styles.arrivedBtnText}>Confirm Cancel</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
       )}
     </View>
@@ -525,7 +584,7 @@ const styles = StyleSheet.create({
   timerText: { fontSize: 16 },
   noShowBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   noShowText: { fontSize: 12 },
-  infoBar: { position: "absolute", bottom: 72, left: 0, right: 0, zIndex: 5, paddingHorizontal: 20, paddingTop: 16, gap: 12, borderTopLeftRadius: 20, borderTopRightRadius: 20, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 10 },
+  infoBar: { position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 5, paddingHorizontal: 20, paddingTop: 16, gap: 12, borderTopLeftRadius: 20, borderTopRightRadius: 20, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 10 },
   infoLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
   infoValue: { fontSize: 16, fontFamily: "Inter_600SemiBold" },
   routeRow: { flexDirection: "row", alignItems: "center", gap: 10 },
@@ -535,6 +594,11 @@ const styles = StyleSheet.create({
   metaText: { fontSize: 13 },
   errorBanner: { flexDirection: "row", alignItems: "center", gap: 8, padding: 10, borderRadius: 12 },
   errorBannerText: { flex: 1, fontSize: 13 },
+  actionRow: { flexDirection: "row", gap: 10 },
+  cancelBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, height: 44, borderRadius: 12, borderWidth: 1.5 },
+  cancelBtnText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  arrivedBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, height: 44, borderRadius: 12 },
+  arrivedBtnText: { color: "#fff", fontSize: 14, fontFamily: "Inter_600SemiBold" },
   recenterBtn: {
     position: "absolute",
     right: 16,
