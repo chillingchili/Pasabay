@@ -19,6 +19,7 @@ interface DriverSession {
 
 const driverSessions = new Map<string, DriverSession>();
 const passengerSockets = new Map<string, string>();
+export const matchTimeouts = new Map<string, NodeJS.Timeout>();
 
 async function authenticateSocket(socket: Socket): Promise<string | null> {
   try {
@@ -135,6 +136,11 @@ export function registerSocketHandlers(io: Server) {
 
     socket.on("match:accept", async (data: { routeId: string; passengerId: string; pickupLat: number; pickupLng: number; dropoffLat: number; dropoffLng: number; pickupName: string; dropoffName: string; fare: number; matchingFee: number; distanceKm: number }) => {
       try {
+        // Clear any pending timeout for this match
+        const timeoutKey = `${data.routeId}:${data.passengerId}`;
+        const existing = matchTimeouts.get(timeoutKey);
+        if (existing) { clearTimeout(existing); matchTimeouts.delete(timeoutKey); }
+
         const session = driverSessions.get(userId);
         if (!session) { socket.emit("driver:error", { message: "No active route" }); return; }
 
@@ -194,6 +200,13 @@ export function registerSocketHandlers(io: Server) {
     });
 
     socket.on("match:decline", (data: { passengerId: string }) => {
+      // Clear any timeout that matches this passenger
+      for (const [key, timeout] of matchTimeouts.entries()) {
+        if (key.includes(data.passengerId)) {
+          clearTimeout(timeout);
+          matchTimeouts.delete(key);
+        }
+      }
       console.log("[MATCH-STAGE-4b] Driver declined:", { passengerId: data.passengerId });
       io.to(`user:${data.passengerId}`).emit("match:declined", {
         message: "Driver declined. Searching for another driver...",
@@ -265,6 +278,13 @@ export function registerSocketHandlers(io: Server) {
     });
 
     socket.on("disconnect", () => {
+      // Clear timeouts for this user
+      for (const [key, timeout] of matchTimeouts.entries()) {
+        if (key.includes(userId)) {
+          clearTimeout(timeout);
+          matchTimeouts.delete(key);
+        }
+      }
       const session = driverSessions.get(userId);
       if (session && session.socketId === socket.id) {
         driverSessions.delete(userId);

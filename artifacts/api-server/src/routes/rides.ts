@@ -8,6 +8,7 @@ import { getRoute, projectPointOnPolyline, polylineDistanceKm, haversineKm } fro
 import type { RoutePoint } from "../lib/osrm.js";
 import { z } from "zod/v4";
 import { getIo } from "../lib/io.js";
+import { matchTimeouts } from "../sockets/index.js";
 
 const router = Router();
 
@@ -203,6 +204,16 @@ router.post("/request", requireAuth, async (req, res) => {
   }
 
   console.log("[MATCH-STAGE-3] match:request emitted to driver:", best.driverId);
+
+  // 30-second driver response timeout — auto-decline if driver doesn't respond
+  const timeoutKey = `${best.routeId}:${passengerId}`;
+  const timeout = setTimeout(() => {
+    getIo().to(`user:${passengerId}`).emit("match:declined", {
+      message: "No drivers available. Please try again.",
+    });
+    matchTimeouts.delete(timeoutKey);
+  }, 30000);
+  matchTimeouts.set(timeoutKey, timeout);
 
   res.json({
     matched: true,
