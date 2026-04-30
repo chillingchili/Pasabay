@@ -12,10 +12,7 @@ function TabBarIcon({ name, color, focused }: { name: keyof typeof Feather.glyph
   const { colors } = useTheme();
   return (
     <View style={{ alignItems: "center", justifyContent: "center", width: 44, height: 44 }}>
-      {focused && (
-        <View style={{ position: "absolute", top: 2, width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary }} />
-      )}
-      <Feather name={name} size={22} color={color} style={{ marginTop: focused ? 6 : 0 }} />
+      <Feather name={name} size={22} color={color} />
     </View>
   );
 }
