@@ -398,6 +398,20 @@
           }
         }, 500);
 
+        // 10-second fallback: send auth even without ready confirmation
+        setTimeout(() => {
+          if (!driverReady || !passengerReady) {
+            console.warn('[Demo] iframe(s) did not report ready after 10s — sending auth anyway');
+            if (driverToken) {
+              postToFrame('driver', { type: 'demo:auth', token: driverToken, role: 'driver', userData: driverUserData });
+            }
+            if (passengerToken) {
+              postToFrame('passenger', { type: 'demo:auth', token: passengerToken, role: 'passenger', userData: passengerUserData });
+            }
+            document.getElementById('status').textContent = '\u26A0 Ready signal missed \u2014 press Play to continue';
+          }
+        }, 10000);
+
       } catch (err) {
         const msg = err.message.includes('Failed to fetch') || err.message.includes('NetworkError')
           ? '\u26A0 Cannot reach API server. Start the backend first (npm run dev in api-server).'
@@ -414,7 +428,10 @@
     document.getElementById('skipBtn').addEventListener('click', skipStage);
     document.getElementById('restartBtn').addEventListener('click', restart);
 
-    // Keyboard shortcuts
+    // ============================================================
+    // Presentation keyboard shortcuts (Step F)
+    // Space = Play/Pause, ArrowRight = Skip, R = Restart
+    // ============================================================
     document.addEventListener('keydown', (e) => {
       switch (e.key) {
         case ' ':
