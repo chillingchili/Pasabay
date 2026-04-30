@@ -37,34 +37,22 @@ export default function Root({ children }: PropsWithChildren) {
             display: flex;
             flex-direction: column;
           }
-          #app-root {
+          body > div:first-of-type {
             flex: 1;
             display: flex;
             flex-direction: column;
           }
           @media (min-width: 480px) {
             body {
+              position: relative;
               width: 360px;
               margin: 24px 0;
-            }
-            #app-root {
-              position: relative;
               border-radius: 44px;
-              box-shadow: 0 16px 48px rgba(0,0,0,0.15);
               transform: translateZ(0);
               overflow: hidden;
-            }
-            #app-root::after {
-              content: '';
-              position: absolute;
-              top: 0;
-              left: 0;
-              right: 0;
-              bottom: 0;
-              border: 6px solid #1f1f1f;
-              border-radius: 44px;
-              pointer-events: none;
-              z-index: 99999;
+              box-shadow:
+                inset 0 0 0 6px #1f1f1f,
+                0 16px 48px rgba(0,0,0,0.15);
             }
           }
         `}</style>
@@ -80,9 +68,7 @@ export default function Root({ children }: PropsWithChildren) {
           }}
         />
       </head>
-      <body>
-        <div id="app-root">{children}</div>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
