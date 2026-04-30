@@ -561,7 +561,7 @@ export default function DriverHomeScreen() {
                   </Text>
                 </View>
               </View>
-              {isOnline && !accepted && !showCancelConfirm && (
+              {isOnline && accepted && !arrived && !showCancelConfirm && (
                 <View style={styles.actionRow}>
                   <Pressable style={[styles.cancelBtn, { borderColor: colors.outlineVariant }]} onPress={handleCancelTrip}>
                     <Feather name="x" size={14} color={colors.onSurfaceVariant} />
