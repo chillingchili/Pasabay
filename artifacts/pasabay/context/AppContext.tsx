@@ -5,10 +5,12 @@ import type { GoogleUserInfo } from "@/hooks/useGoogleAuth";
 import { apiRequest, clearTokens, setTokens, getTokens, API_BASE, type ApiError } from "@/lib/api";
 import {
   connectSocket, disconnectSocket, reconnectSocket,
+  connectSocketWithToken, setDemoToken,
   onMatchRequest, onMatchConfirmed, onMatchDeclined,
   onRideCompleted, onRideCanceled,
   onMatchAccepted, onDriverLocationUpdate,
   onDriverArrived,
+  emitDriverOnline, emitDriverArrived, emitMatchAccept,
   type MatchRequestPayload, type MatchConfirmedPayload, type RideCompletedPayload, type DriverArrivedPayload,
 } from "@/lib/socket";
 import { useNetworkStatus } from "@/lib/network";
@@ -99,6 +101,10 @@ interface AppContextValue {
   clearActiveRide: () => void;
   setActiveRide: (ride: ActiveRide | null) => void;
   forceLogout: () => void;
+  isDemoMode: boolean;
+  handleDemoAuth: (token: string, role: 'driver' | 'passenger', userData: { id: string; name: string; email: string; role: string }) => Promise<void>;
+  handleDemoStage: (stage: number, role: 'driver' | 'passenger') => Promise<void>;
+  resetDemo: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -161,6 +167,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [activeRide, setActiveRide] = useState<ActiveRide | null>(null);
   const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number; heading?: number } | null>(null);
   const [driverArrived, setDriverArrivedState] = useState<{ rideId: string; meetingSpot: { lat: number; lng: number; name: string } } | null>(null);
+
+  // Demo mode state
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const demoRoleRef = useRef<'driver' | 'passenger' | null>(null);
+  const demoTokenRef = useRef<string | null>(null);
 
   const setUserState = (profile: UserProfile) => {
     setUser(profile);
@@ -299,6 +310,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const init = async () => {
+      // Check if we're in a demo iframe via URL param
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('demo') === 'true') {
+          // Demo mode: skip normal init, wait for PostMessage auth
+          setIsLoading(true); // Keep loading until demo:auth arrives
+          return;
+        }
+      }
+
       try {
         const { refresh } = await getTokens();
         if (!refresh) return;
@@ -544,6 +565,129 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [loadRideHistory, initSocket]);
 
+  const handleDemoAuth = useCallback(async (token: string, role: 'driver' | 'passenger', userData: { id: string; name: string; email: string; role: string }) => {
+    demoTokenRef.current = token;
+    demoRoleRef.current = role;
+    setDemoToken(token);
+
+    // Build user profile from demo auth data
+    const demoUser: UserProfile = {
+      id: userData.id,
+      name: userData.name,
+      email: userData.email,
+      role: role,
+      rating: 4.8,
+      totalRides: 12,
+      verified: true,
+      driverVerified: role === 'driver',
+      driverStatus: role === 'driver' ? 'verified' : undefined,
+      vehicle: role === 'driver' ? {
+        make: 'Toyota', model: 'Vios', year: '2022',
+        plate: 'ABC 1234', color: 'White', seats: 4, fuelEfficiency: 18,
+      } : undefined,
+    };
+
+    setUserState(demoUser);
+    setActiveRole(role);
+    setIsDemoMode(true);
+    setIsLoading(false);
+
+    // Connect socket with injected token
+    try {
+      await connectSocketWithToken(token);
+      setSocketConnected(true);
+      loadRideHistory();
+    } catch (err) {
+      console.warn('[DEMO] Socket connection failed:', err);
+    }
+
+    console.log('[DEMO] Auth complete:', { role, userId: userData.id });
+  }, [loadRideHistory]);
+
+  const handleDemoStage = useCallback(async (stage: number, role: 'driver' | 'passenger') => {
+    console.log('[DEMO] Stage:', stage, 'Role:', role);
+
+    switch (stage) {
+      case 1: // Driver goes online
+        if (role === 'driver') {
+          router.replace('/(main)' as any);
+          setTimeout(() => {
+            emitDriverOnline({
+              originName: 'USC Main Campus',
+              originLat: 10.2992, originLng: 123.8938,
+              destName: 'SM City Cebu',
+              destLat: 10.3105, destLng: 123.9179,
+            });
+          }, 500);
+        }
+        break;
+
+      case 2: // Passenger picks destination
+        if (role === 'passenger') {
+          router.replace('/(main)' as any);
+          setActiveRole('passenger');
+        }
+        break;
+
+      case 3: // Passenger requests ride
+        if (role === 'passenger') {
+          router.replace('/(main)/matching' as any);
+        }
+        break;
+
+      case 4: // Match request appears for driver
+        if (role === 'driver') {
+          router.replace('/(main)' as any);
+        }
+        break;
+
+      case 5: // Driver accepts + passenger transitions
+        if (role === 'driver') {
+          // Driver accepts the pending match
+        }
+        if (role === 'passenger') {
+          router.replace('/(main)/match-found' as any);
+        }
+        break;
+
+      case 6: // Driver arriving
+        if (role === 'driver') {
+          router.replace('/(main)' as any);
+          setTimeout(() => {
+            emitDriverArrived('');
+          }, 500);
+        }
+        break;
+
+      case 7: // Passenger sees arrival
+        if (role === 'passenger') {
+          router.replace('/(main)/match-found' as any);
+        }
+        break;
+
+      case 8: // Timer countdown
+        if (role === 'driver') router.replace('/(main)' as any);
+        if (role === 'passenger') router.replace('/(main)/match-found' as any);
+        break;
+
+      default:
+        console.warn('[DEMO] Unknown stage:', stage);
+    }
+
+    // Notify parent that stage action is done
+    window.parent.postMessage({ type: 'demo:action-done', stage, role }, '*');
+  }, [router]);
+
+  const resetDemo = useCallback(async () => {
+    demoTokenRef.current = null;
+    demoRoleRef.current = null;
+    setDemoToken(null);
+    setIsDemoMode(false);
+    await forceLogout();
+    router.replace('/welcome');
+    window.parent.postMessage({ type: 'demo:reset-done' }, '*');
+  }, [forceLogout, router]);
+
   const switchRole = useCallback(async (role: UserRole) => {
     setActiveRole(role);
     if (user) {
@@ -594,6 +738,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       clearActiveRide: () => { setActiveRide(null); setDriverLocation(null); setDriverArrivedState(null); },
       setActiveRide: (ride) => setActiveRide(ride),
       forceLogout,
+      isDemoMode,
+      handleDemoAuth,
+      handleDemoStage,
+      resetDemo,
     }}>
       {children}
     </AppContext.Provider>

@@ -126,6 +126,28 @@ export type DriverArrivedPayload = {
   meetingSpot: { lat: number; lng: number; name: string };
 };
 
+let demoToken: string | null = null;
+
+export function setDemoToken(token: string | null) {
+  demoToken = token;
+}
+
+export async function connectSocketWithToken(token: string): Promise<Socket> {
+  disconnectSocket();
+  socket = io(SOCKET_URL, {
+    auth: { token },
+    transports: ["websocket", "polling"],
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 2000,
+  });
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error("Socket connection timeout")), 10000);
+    socket!.once("connect", () => { clearTimeout(timeout); resolve(socket!); });
+    socket!.once("connect_error", (err) => { clearTimeout(timeout); reject(err); });
+  });
+}
+
 export function emitDriverOnline(data: {
   originName: string; originLat: number; originLng: number;
   destName: string; destLat: number; destLng: number;
