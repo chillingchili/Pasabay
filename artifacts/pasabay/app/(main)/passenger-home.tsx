@@ -50,6 +50,8 @@ export default function PassengerHomeScreen() {
   const [showFare, setShowFare] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
+  // Keep in sync with api-server/src/lib/fare.ts:
+  // DEFAULT_FUEL_PRICE_PHP_PER_L, DEFAULT_FUEL_EFFICIENCY_KM_PER_L, MATCHING_FEE_PHP
   const FUEL_PRICE = 65;
   const DEF_FUEL_EFF = 20;
   const MATCHING_FEE = 8;
@@ -267,7 +269,7 @@ export default function PassengerHomeScreen() {
               </View>
               <View style={[styles.fareChip, { backgroundColor: colors.accentBg }]}>
                 <Text style={[styles.fareLabel, { color: colors.accentDark }]}>{activeRide ? "fare" : "est"}</Text>
-                <Text style={[styles.fareAmount, { color: colors.accentDark }]}>₱{totalFare}</Text>
+                <Text style={[styles.fareAmount, { color: colors.accentDark }]}>₱{activeRide ? activeRide.total : totalFare}</Text>
               </View>
             </View>
 
@@ -292,18 +294,30 @@ export default function PassengerHomeScreen() {
             {showFare && (
               <>
                 <View style={[styles.fareDivider, { backgroundColor: colors.border }]} />
-                <Text style={[styles.fareTitle, { color: colors.textSecondary, fontFamily: "Inter_600SemiBold" }]}>Estimated fare</Text>
+                <Text style={[styles.fareTitle, { color: colors.textSecondary, fontFamily: "Inter_600SemiBold" }]}>
+                  {activeRide ? "Fare" : "Estimated fare"}
+                </Text>
                 <View style={styles.fareRow}>
-                  <Text style={[styles.fareRowLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Fuel ({distanceKm.toFixed(1)}km × ₱{FUEL_PRICE}/L ÷ {eff}km/L)</Text>
-                  <Text style={[styles.fareRowValue, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}>₱{fuelCost.toFixed(2)}</Text>
+                  <Text style={[styles.fareRowLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
+                    {activeRide
+                      ? `Fuel (${activeRide.distanceKm.toFixed(1)}km)`
+                      : `Fuel (${distanceKm.toFixed(1)}km × ₱${FUEL_PRICE}/L ÷ ${eff}km/L)`}
+                  </Text>
+                  <Text style={[styles.fareRowValue, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}>
+                    ₱{activeRide ? activeRide.fare.toFixed(2) : fuelCost.toFixed(2)}
+                  </Text>
                 </View>
                 <View style={styles.fareRow}>
                   <Text style={[styles.fareRowLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Matching fee</Text>
-                  <Text style={[styles.fareRowValue, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}>₱{MATCHING_FEE.toFixed(2)}</Text>
+                  <Text style={[styles.fareRowValue, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}>
+                    ₱{activeRide ? activeRide.matchingFee.toFixed(2) : MATCHING_FEE.toFixed(2)}
+                  </Text>
                 </View>
                 <View style={[styles.fareTotalRow, { borderTopColor: colors.border }]}>
                   <Text style={[styles.fareRowLabel, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>Total</Text>
-                  <Text style={[styles.fareRowValue, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>₱{totalFare.toFixed(2)}</Text>
+                  <Text style={[styles.fareRowValue, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>
+                    ₱{activeRide ? activeRide.total.toFixed(2) : totalFare.toFixed(2)}
+                  </Text>
                 </View>
               </>
             )}
