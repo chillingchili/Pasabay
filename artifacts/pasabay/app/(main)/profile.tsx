@@ -11,7 +11,7 @@ export default function ProfileScreen() {
   const colors = useColors();
   const dimensions = useWindowDimensions();
   const { user, logout, activeRole, switchRole, networkStatus } = useApp();
-  const isRegisteredDriver = user?.driverVerified || user?.vehicle;
+  const isRegisteredDriver = user?.driverVerified || user?.vehicle || !!user?.driverStatus;
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showEditName, setShowEditName] = useState(false);
