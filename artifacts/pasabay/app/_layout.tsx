@@ -68,10 +68,10 @@ export default function RootLayout() {
     maxWidth: 420,
     width: '100%',
     flex: 1,
-    height: '100dvh',
+    minHeight: '100vh',
     backgroundColor: '#fff',
     borderRadius: 44,
-    overflow: 'auto',
+    overflow: 'hidden',
     ...Platform.select({
       web: {
         boxShadow: '0 8px 48px rgba(0,0,0,0.35)',

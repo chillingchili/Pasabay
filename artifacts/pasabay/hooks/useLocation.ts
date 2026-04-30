@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { useState, useEffect } from "react";
 import * as Location from "expo-location";
 
@@ -11,13 +12,27 @@ export function useLocation() {
   const [location, setLocation] = useState<LocationData | null>(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
+        if (Platform.OS === "web") {
+          const isSecure = window.isSecureContext;
+          if (!isSecure) {
+            setLocationError(
+              "Geolocation requires HTTPS. Access this app via HTTPS or localhost.",
+            );
+            setLocation({ lat: 10.3535, lng: 123.9135, accuracy: null });
+            setLoading(false);
+            return;
+          }
+        }
+
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
           setPermissionGranted(false);
+          setLocationError("Location permission denied. Enable it in your browser/device settings.");
           setLocation({ lat: 10.3535, lng: 123.9135, accuracy: null });
           setLoading(false);
           return;
@@ -45,7 +60,10 @@ export function useLocation() {
         );
 
         return () => subscription.remove();
-      } catch {
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        setLocationError(msg);
+        console.error("[useLocation]", msg);
         setLocation({ lat: 10.3535, lng: 123.9135, accuracy: null });
       } finally {
         setLoading(false);
@@ -53,5 +71,5 @@ export function useLocation() {
     })();
   }, []);
 
-  return { location, permissionGranted, loading };
+  return { location, permissionGranted, loading, locationError };
 }

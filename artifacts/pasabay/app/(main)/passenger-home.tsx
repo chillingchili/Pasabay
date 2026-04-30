@@ -33,7 +33,7 @@ export default function PassengerHomeScreen() {
   const { fs, isSmall } = useScale();
   const dimensions = useWindowDimensions();
   const { user, driverLocation, switchRole, activeRide } = useApp();
-  const { location: userLoc } = useLocation();
+  const { location: userLoc, locationError } = useLocation();
   const [destination, setDestination] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showPreMatch, setShowPreMatch] = useState(false);
@@ -184,6 +184,13 @@ export default function PassengerHomeScreen() {
 
   return (
     <View style={styles.container}>
+      {locationError && (
+        <View style={{ position: "absolute", top: 60, left: 16, right: 16, zIndex: 100, backgroundColor: "rgba(255, 68, 68, 0.95)", padding: 12, borderRadius: 10 }}>
+          <Text style={{ color: "#fff", fontSize: 13, textAlign: "center", fontFamily: "Inter_500Medium" }}>
+            {locationError}
+          </Text>
+        </View>
+      )}
       <RealMap
         showRoute={!!routePolyline}
         routePolyline={routePolyline ?? undefined}

@@ -28,9 +28,7 @@ export default function Root({ children }: PropsWithChildren) {
           }
           body {
             display: flex;
-            align-items: center;
             justify-content: center;
-            overflow: hidden;
           }
         `}</style>
         <script
