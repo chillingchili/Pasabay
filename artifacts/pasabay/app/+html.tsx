@@ -24,26 +24,27 @@ export default function Root({ children }: PropsWithChildren) {
           html, body {
             margin: 0;
             padding: 0;
-            background: #1a1a1a;
+            background: #ffffff;
             height: 100%;
           }
           body {
             display: flex;
             justify-content: center;
-            align-items: center;
             min-height: 100vh;
           }
           #phone-frame {
             width: 100%;
-            max-width: 420px;
+            max-width: 390px;
             min-height: 100vh;
             background: #ffffff;
             border-radius: 44px;
-            box-shadow: 0 8px 48px rgba(0,0,0,0.35);
+            box-shadow:
+              0 0 0 1px rgba(0,0,0,0.06),
+              0 12px 40px rgba(0,0,0,0.12);
             overflow: hidden;
             position: relative;
           }
-          @media (max-width: 420px) {
+          @media (max-width: 390px) {
             #phone-frame {
               border-radius: 0;
               box-shadow: none;
