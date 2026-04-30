@@ -31,6 +31,7 @@ export default function MainTabLayout() {
         headerShown: false,
         tabBarStyle: {
           position: "absolute",
+          bottom: Platform.OS === 'web' ? 0 : undefined,
           backgroundColor: isIOS ? "transparent" : colors.surface,
           borderTopWidth: 1,
           borderTopColor: colors.outline,

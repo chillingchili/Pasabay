@@ -23,12 +23,14 @@ export default function Root({ children }: PropsWithChildren) {
           html, body {
             margin: 0;
             padding: 0;
-            background: #e8e8e8;
+            background: #1a1a1a;
             min-height: 100vh;
           }
           body {
             display: flex;
+            align-items: center;
             justify-content: center;
+            overflow: hidden;
           }
         `}</style>
         <script
