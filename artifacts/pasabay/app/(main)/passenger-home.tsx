@@ -201,7 +201,7 @@ export default function PassengerHomeScreen() {
 
       {showRecenter && (
         <Pressable
-          style={[styles.recenterBtn, { backgroundColor: colors.primary, bottom: Math.max(sheetContentHeight + 12, 180) }]}
+          style={[styles.recenterBtn, { backgroundColor: colors.primary, bottom: Math.max(sheetContentHeight + 12, 120) }]}
           onPress={() => { setShowRecenter(false); setRecenterKey(k => k + 1); }}
         >
           <Feather name="navigation" size={20} color="#fff" />
