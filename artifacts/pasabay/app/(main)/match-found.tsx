@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Alert, Animated, Platform, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -8,6 +8,8 @@ import { Card, Button, Text, Surface, Chip } from "react-native-paper";
 import { useApp } from "@/context/AppContext";
 import { useScale } from "@/hooks/useScale";
 import { emitRideCancel, onRideCanceled } from "@/lib/socket";
+import { getWalkingRoute, haversineKm } from "@/lib/osrm";
+import { useLocation } from "@/hooks/useLocation";
 
 function _calcEtaMin(
   driverLoc: { lat: number; lng: number },
@@ -24,11 +26,15 @@ export default function MatchFoundScreen() {
   const { colors } = useTheme();
   const { fs, isSmall } = useScale();
   const dimensions = useWindowDimensions();
-  const { matchConfirmed, clearMatchConfirmed, completedRide, clearCompletedRide, addRideHistory, activeRide, driverLocation, clearActiveRide, networkStatus } = useApp();
+  const { matchConfirmed, clearMatchConfirmed, completedRide, clearCompletedRide, addRideHistory, activeRide, driverLocation, clearActiveRide, networkStatus, driverArrived, clearDriverArrived } = useApp();
+  const { location: userLoc } = useLocation();
   const slideAnim = useRef(new Animated.Value(60)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const badgeScale = useRef(new Animated.Value(0.6)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const [walkingDistance, setWalkingDistance] = useState<number | null>(null);
+  const [walkingEtaMin, setWalkingEtaMin] = useState<number | null>(null);
+  const [showHurry, setShowHurry] = useState(false);
 
   const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
 
@@ -78,16 +84,45 @@ export default function MatchFoundScreen() {
       Alert.alert("Ride Canceled", data.reason ?? "The driver canceled this ride. Please request a new ride.");
       clearMatchConfirmed();
       clearActiveRide();
+      clearDriverArrived();
       router.replace("/(main)/passenger-home");
     });
     return off;
   }, []);
+
+  // Fetch walking route when driverArrived changes
+  useEffect(() => {
+    if (!driverArrived || !userLoc) return;
+    let cancelled = false;
+    const fetchWalk = async () => {
+      const walk = await getWalkingRoute(userLoc, driverArrived.meetingSpot);
+      if (cancelled) return;
+      if (walk) {
+        setWalkingDistance(Math.round(walk.distanceKm * 1000));
+        setWalkingEtaMin(Math.round(walk.durationSec / 60));
+      } else {
+        const distKm = haversineKm(userLoc, driverArrived.meetingSpot);
+        setWalkingDistance(Math.round(distKm * 1000));
+        setWalkingEtaMin(Math.round((distKm / 5) * 60)); // 5 km/h walking speed
+      }
+    };
+    fetchWalk();
+    return () => { cancelled = true; };
+  }, [driverArrived, userLoc]);
+
+  // Show hurry warning 30s after driver arrival
+  useEffect(() => {
+    if (!driverArrived) { setShowHurry(false); return; }
+    const timeout = setTimeout(() => setShowHurry(true), 30000);
+    return () => clearTimeout(timeout);
+  }, [driverArrived]);
 
   const handleDecline = () => {
     if (matchConfirmed?.rideId) {
       emitRideCancel(matchConfirmed.rideId, "Passenger declined after match");
     }
     clearMatchConfirmed();
+    clearDriverArrived();
     router.replace("/(main)/passenger-home");
   };
 
@@ -115,6 +150,48 @@ export default function MatchFoundScreen() {
             <Feather name="check" size={14} color={colors.primary} />
             <Text variant="labelLarge" style={[styles.matchBadgeText, { color: colors.primary, fontFamily: "Inter_600SemiBold" }]}>Match found!</Text>
           </Animated.View>
+
+          {/* Driver arrival banner */}
+          {driverArrived && (
+            <View style={[styles.arrivalBanner, { backgroundColor: colors.primary, borderRadius: 14, padding: 14, gap: 8 }]}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Feather name="check-circle" size={20} color={colors.onPrimary} />
+                <Text variant="titleMedium" style={{ color: colors.onPrimary, fontFamily: "Inter_600SemiBold" }}>
+                  Driver is here!
+                </Text>
+              </View>
+              {(walkingDistance != null || walkingEtaMin != null) && (
+                <View style={{ flexDirection: "row", gap: 16, paddingLeft: 28 }}>
+                  {walkingDistance != null && (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      <Feather name="navigation" size={12} color="rgba(255,255,255,0.8)" />
+                      <Text variant="bodySmall" style={{ color: "rgba(255,255,255,0.9)", fontFamily: "Inter_500Medium" }}>
+                        {walkingDistance < 1000 ? `${walkingDistance}m` : `${(walkingDistance / 1000).toFixed(1)}km`} walk
+                      </Text>
+                    </View>
+                  )}
+                  {walkingEtaMin != null && (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      <Feather name="clock" size={12} color="rgba(255,255,255,0.8)" />
+                      <Text variant="bodySmall" style={{ color: "rgba(255,255,255,0.9)", fontFamily: "Inter_500Medium" }}>
+                        ~{walkingEtaMin} min
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Hurry warning — 30s after driver arrival */}
+          {showHurry && (
+            <View style={[styles.hurryBanner, { backgroundColor: colors.tertiaryContainer }]}>
+              <Feather name="alert-triangle" size={14} color={colors.onTertiaryContainer} />
+              <Text variant="labelMedium" style={{ color: colors.onTertiaryContainer, fontFamily: "Inter_600SemiBold", flex: 1 }}>
+                Hurry — driver is waiting
+              </Text>
+            </View>
+          )}
 
           <View style={styles.driverCard}>
             <View style={styles.avatarContainer}>
