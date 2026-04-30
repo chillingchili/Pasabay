@@ -18,11 +18,30 @@ import { PaperProvider } from "react-native-paper";
 import { theme } from "@/constants/theme";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import OfflineBanner from "@/components/OfflineBanner";
-import { AppProvider } from "@/context/AppContext";
+import { AppProvider, useApp } from "@/context/AppContext";
+import { useDemoListener } from "@/hooks/useDemoListener";
 
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
+
+function DemoListenerWrapper() {
+  const { handleDemoAuth, handleDemoStage, resetDemo } = useApp();
+
+  useDemoListener({
+    onAuth: (token, role, userData) => {
+      handleDemoAuth(token, role, userData);
+    },
+    onStage: (stage, role) => {
+      handleDemoStage(stage, role);
+    },
+    onReset: () => {
+      resetDemo();
+    },
+  });
+
+  return null; // This component only exists to mount the hook
+}
 
 function RootLayoutNav() {
   return (
@@ -71,6 +90,7 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <PaperProvider theme={theme}>
             <AppProvider>
+              <DemoListenerWrapper />
               <GestureHandlerRootView style={{ flex: 1, ...(Platform.OS === 'web' ? {} : { minHeight: '100vh' }) }}>
                 <KeyboardProvider>
                   <RootLayoutNav />
