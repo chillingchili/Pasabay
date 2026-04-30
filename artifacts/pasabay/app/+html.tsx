@@ -55,7 +55,6 @@ export default function Root({ children }: PropsWithChildren) {
             }
             body > div:first-of-type {
               border-radius: 38px;
-              overflow: hidden;
             }
           }
         `}</style>
