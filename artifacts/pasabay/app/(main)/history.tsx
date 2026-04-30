@@ -59,7 +59,7 @@ export default function HistoryScreen() {
         showsVerticalScrollIndicator={false}
       >
         {rideHistory.length > 0 && (
-          <Card mode="elevated" style={{ borderRadius: 14, marginBottom: 16 }}>
+          <Card mode="outlined" style={{ borderRadius: 14, marginBottom: 16 }}>
             <Card.Content style={{ padding: 16 }}>
               <Text variant="headlineSmall" style={[styles.summaryStat, { color: colors.onSurface }]}>
                 {tripCount}<Text variant="labelLarge" style={{ color: colors.onSurfaceVariant }}> trips · ₱</Text>{totalSaved}<Text variant="labelLarge" style={{ color: colors.onSurfaceVariant }}> saved</Text>
