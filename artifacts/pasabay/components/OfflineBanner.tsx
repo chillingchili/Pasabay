@@ -1,15 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Platform, StyleSheet, Text, View } from "react-native";
+import { Animated, Platform, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { useColors } from "@/hooks/useColors";
+import { Surface, Text, useTheme } from "react-native-paper";
 import { useNetworkStatus } from "@/lib/network";
 
 const RECONNECT_VISIBLE_MS = 2000;
 
 export default function OfflineBanner() {
   const insets = useSafeAreaInsets();
-  const colors = useColors();
+  const theme = useTheme();
   const { isOnline: online } = useNetworkStatus();
 
   const slideAnim = useRef(new Animated.Value(-60)).current;
@@ -18,7 +18,6 @@ export default function OfflineBanner() {
 
   useEffect(() => {
     if (online) {
-      // Just came back online — show "Back online" briefly
       if (!wasOnlineRef.current) {
         setShowReconnect(true);
         Animated.spring(slideAnim, {
@@ -38,7 +37,6 @@ export default function OfflineBanner() {
         return () => clearTimeout(timer);
       }
     } else {
-      // Went offline — show persistent banner
       wasOnlineRef.current = false;
       setShowReconnect(false);
       Animated.spring(slideAnim, {
@@ -61,19 +59,36 @@ export default function OfflineBanner() {
         styles.container,
         {
           top: topOffset,
-          backgroundColor: isReconnecting ? colors.primary : colors.destructive,
           transform: [{ translateY: slideAnim }],
         },
       ]}
     >
-      <Feather
-        name={isReconnecting ? "wifi" : "wifi-off"}
-        size={16}
-        color="#fff"
-      />
-      <Text style={[styles.text, { fontFamily: "Inter_500Medium" }]}>
-        {isReconnecting ? "Back online" : "No internet connection"}
-      </Text>
+      <Surface
+        style={[
+          styles.banner,
+          {
+            backgroundColor: isReconnecting
+              ? theme.colors.primary
+              : theme.colors.tertiaryContainer,
+            elevation: 5,
+          },
+        ]}
+      >
+        <Feather
+          name={isReconnecting ? "wifi" : "wifi-off"}
+          size={16}
+          color={isReconnecting ? theme.colors.onPrimary : theme.colors.onTertiaryContainer}
+        />
+        <Text
+          variant="bodyLarge"
+          style={{
+            color: isReconnecting ? theme.colors.onPrimary : theme.colors.onTertiaryContainer,
+            fontSize: 13,
+          }}
+        >
+          {isReconnecting ? "Back online" : "No internet connection"}
+        </Text>
+      </Surface>
     </Animated.View>
   );
 }
@@ -84,15 +99,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 300,
+  },
+  banner: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     paddingVertical: 10,
     paddingHorizontal: 16,
-  },
-  text: {
-    color: "#fff",
-    fontSize: 13,
   },
 });

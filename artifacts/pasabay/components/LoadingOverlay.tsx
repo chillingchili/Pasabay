@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
-import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from "react-native";
-import { useColors } from "@/hooks/useColors";
+import { ActivityIndicator, Animated, StyleSheet } from "react-native";
+import { Surface, Text, useTheme } from "react-native-paper";
 
 interface LoadingOverlayProps {
   visible: boolean;
@@ -13,7 +13,7 @@ export default function LoadingOverlay({
   message = "Loading...",
   blocking = false,
 }: LoadingOverlayProps) {
-  const colors = useColors();
+  const theme = useTheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -45,17 +45,15 @@ export default function LoadingOverlay({
       ]}
       pointerEvents={blocking ? "none" : "auto"}
     >
-      <View style={[styles.card, { backgroundColor: colors.card }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text
-          style={[
-            styles.message,
-            { color: colors.foreground, fontFamily: "Inter_500Medium" },
-          ]}
-        >
-          {message}
-        </Text>
-      </View>
+      <Surface
+        style={[
+          styles.card,
+          { backgroundColor: theme.colors.surface, elevation: 5 },
+        ]}
+      >
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text variant="bodyLarge">{message}</Text>
+      </Surface>
     </Animated.View>
   );
 }
@@ -76,10 +74,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
-    elevation: 6,
-  },
-  message: {
-    fontSize: 14,
-    textAlign: "center",
   },
 });
