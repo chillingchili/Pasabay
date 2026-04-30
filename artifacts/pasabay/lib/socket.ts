@@ -121,6 +121,11 @@ export type DriverLocationPayload = {
   heading?: number;
 };
 
+export type DriverArrivedPayload = {
+  rideId: string;
+  meetingSpot: { lat: number; lng: number; name: string };
+};
+
 export function emitDriverOnline(data: {
   originName: string; originLat: number; originLng: number;
   destName: string; destLat: number; destLng: number;
@@ -136,8 +141,8 @@ export function emitDriverOffline() {
   socket?.emit("driver:offline");
 }
 
-export function emitDriverArrived() {
-  socket?.emit("driver:arrived");
+export function emitDriverArrived(rideId: string) {
+  socket?.emit("driver:arrived", { rideId });
 }
 
 export function emitMatchAccept(data: {
@@ -191,6 +196,11 @@ export function onRideCompleted(cb: (data: RideCompletedPayload) => void) {
 export function onRideCanceled(cb: (data: { rideId: string; canceledBy: string; reason: string }) => void) {
   socket?.on("ride:canceled", cb);
   return () => { socket?.off("ride:canceled", cb); };
+}
+
+export function onDriverArrived(cb: (data: DriverArrivedPayload) => void) {
+  socket?.on("driver:arrived", cb);
+  return () => { socket?.off("driver:arrived", cb); };
 }
 
 export function onDriverLocationUpdate(cb: (data: DriverLocationPayload) => void) {
