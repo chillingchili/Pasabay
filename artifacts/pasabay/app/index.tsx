@@ -1,13 +1,15 @@
 import { useApp } from "@/context/AppContext";
 import { Redirect } from "expo-router";
 import React, { useEffect, useRef } from "react";
-import { Animated, StyleSheet, Text, View } from "react-native";
+import { Animated, StyleSheet, View } from "react-native";
+import { Text, useTheme } from "react-native-paper";
 import { PasabayLogo } from "@/components/PasabayLogo";
 import { useScale } from "@/hooks/useScale";
 
 export default function SplashScreen() {
   const { isLoading, isAuthenticated, user } = useApp();
   const { s, fs } = useScale();
+  const { colors } = useTheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
@@ -29,11 +31,11 @@ export default function SplashScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.primary }]}>
       <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }], gap: s(12) }]}>
         <PasabayLogo size={s(80)} color="#fff" />
-        <Text style={[styles.name, { fontSize: fs(36) }]}>Pasabay</Text>
-        <Text style={styles.tagline}>Campus Commute</Text>
+        <Text variant="displaySmall" style={styles.name}>Pasabay</Text>
+        <Text variant="bodyLarge" style={styles.tagline}>Campus Commute</Text>
         <View style={styles.dots}>
           <Dot delay={0} />
           <Dot delay={200} />
@@ -65,7 +67,6 @@ function Dot({ delay }: { delay: number }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0D9E75",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -74,19 +75,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   name: {
-    fontSize: 36,
-    fontWeight: "700",
     color: "#fff",
-    fontFamily: "Sora_800ExtraBold",
-    letterSpacing: -0.5,
     marginTop: 8,
   },
   tagline: {
-    fontSize: 14,
     color: "rgba(255,255,255,0.7)",
-    fontFamily: "Inter_400Regular",
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
   },
   dots: {
     flexDirection: "row",

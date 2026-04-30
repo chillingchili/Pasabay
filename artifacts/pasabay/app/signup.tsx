@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import Svg, { Path } from "react-native-svg";
-import { useColors } from "@/hooks/useColors";
+import { useTheme, Text, TextInput, Button, Divider } from "react-native-paper";
 import { useApp } from "@/context/AppContext";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { useScale } from "@/hooks/useScale";
@@ -22,7 +22,7 @@ function GoogleIcon() {
 
 export default function SignupScreen() {
   const insets = useSafeAreaInsets();
-  const colors = useColors();
+  const { colors } = useTheme();
   const { fs, isSmall } = useScale();
   const { signup, loginWithGoogle } = useApp();
   const { signInWithGoogle, loading: googleLoading } = useGoogleAuth();
@@ -105,7 +105,7 @@ export default function SignupScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.background }}
+      style={{ flex: 1, backgroundColor: colors.surface }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
@@ -113,83 +113,71 @@ export default function SignupScreen() {
         contentContainerStyle={[styles.container, { paddingHorizontal: isSmall ? 16 : 24, paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom + 20, 32) }]}
         keyboardShouldPersistTaps="handled"
       >
-        <Pressable style={styles.back} onPress={() => router.back()}>
-          <Feather name="arrow-left" size={20} color={colors.textSecondary} />
-          <Text style={[styles.backText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Back</Text>
-        </Pressable>
+        <Button mode="text" onPress={() => router.back()} style={styles.backBtn} textColor={colors.onSurfaceVariant}>
+          Back
+        </Button>
 
-        <Text style={[styles.title, { fontSize: fs(28), color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>Create account</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Join the USC Pasabay community</Text>
+        <Text variant="headlineSmall" style={{ marginBottom: 6 }}>Create account</Text>
+        <Text variant="bodyLarge" style={{ color: colors.onSurfaceVariant, marginBottom: 28 }}>Join the USC Pasabay community</Text>
 
         <View style={[styles.form, { gap: isSmall ? 12 : 14 }]}>
           {error && (
             <View style={styles.errorBox}>
-              <Feather name="alert-circle" size={16} color={colors.destructive} />
-              <Text style={[styles.errorText, { color: colors.destructive, fontFamily: "Inter_400Regular" }]}>{error}</Text>
+              <Feather name="alert-circle" size={16} color={colors.error} />
+              <Text variant="bodyLarge" style={{ flex: 1, fontSize: 13, color: colors.error }}>{error}</Text>
             </View>
           )}
-          <FormGroup label="Full name" colors={colors}>
-            <TextInput
-              style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card, fontFamily: "Inter_400Regular" }]}
-              value={name}
-              onChangeText={setName}
-              placeholder="Juan Dela Cruz"
-              placeholderTextColor={colors.textMuted}
-              autoCapitalize="words"
-              autoComplete="name"
-            />
-          </FormGroup>
 
-          <FormGroup label="School email" colors={colors}>
-            <TextInput
-              style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card, fontFamily: "Inter_400Regular" }]}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="yourname@usc.edu.ph"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-            />
-          </FormGroup>
+          <TextInput
+            label="Full name"
+            mode="outlined"
+            value={name}
+            onChangeText={setName}
+            placeholder="Juan Dela Cruz"
+            autoCapitalize="words"
+            autoComplete="name"
+            activeOutlineColor={colors.primary}
+          />
 
-          <FormGroup label="Password" colors={colors}>
-            <View style={[styles.inputRow, { borderColor: colors.border, backgroundColor: colors.card }]}>
-              <TextInput
-                style={[styles.inputFlex, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Create a password"
-                placeholderTextColor={colors.textMuted}
-                secureTextEntry={!showPass}
-              />
-              <Pressable onPress={() => setShowPass(!showPass)} style={styles.eyeBtn}>
-                <Feather name={showPass ? "eye-off" : "eye"} size={18} color={colors.textSecondary} />
-              </Pressable>
-            </View>
-          </FormGroup>
+          <TextInput
+            label="School email"
+            mode="outlined"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="yourname@usc.edu.ph"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoComplete="email"
+            activeOutlineColor={colors.primary}
+          />
 
-          <FormGroup label="Confirm password" colors={colors}>
-            <View style={[styles.inputRow, { borderColor: colors.border, backgroundColor: colors.card }]}>
-              <TextInput
-                style={[styles.inputFlex, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}
-                value={confirm}
-                onChangeText={setConfirm}
-                placeholder="Re-enter your password"
-                placeholderTextColor={colors.textMuted}
-                secureTextEntry={!showConfirm}
-              />
-              <Pressable onPress={() => setShowConfirm(!showConfirm)} style={styles.eyeBtn}>
-                <Feather name={showConfirm ? "eye-off" : "eye"} size={18} color={colors.textSecondary} />
-              </Pressable>
-            </View>
-          </FormGroup>
+          <TextInput
+            label="Password"
+            mode="outlined"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Create a password"
+            secureTextEntry={!showPass}
+            activeOutlineColor={colors.primary}
+            right={<TextInput.Icon icon={showPass ? "eye-off" : "eye"} onPress={() => setShowPass(!showPass)} />}
+          />
+
+          <TextInput
+            label="Confirm password"
+            mode="outlined"
+            value={confirm}
+            onChangeText={setConfirm}
+            placeholder="Re-enter your password"
+            secureTextEntry={!showConfirm}
+            activeOutlineColor={colors.primary}
+            right={<TextInput.Icon icon={showConfirm ? "eye-off" : "eye"} onPress={() => setShowConfirm(!showConfirm)} />}
+          />
 
           <Pressable style={styles.checkRow} onPress={() => setAgreed(!agreed)}>
-            <View style={[styles.checkbox, { borderColor: agreed ? colors.primary : colors.border, backgroundColor: agreed ? colors.primary : "transparent" }]}>
+            <View style={[styles.checkbox, { borderColor: agreed ? colors.primary : colors.outline, backgroundColor: agreed ? colors.primary : "transparent" }]}>
               {agreed && <Feather name="check" size={12} color="#fff" />}
             </View>
-            <Text style={[styles.checkText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
+            <Text variant="bodyLarge" style={{ flex: 1, fontSize: 13, color: colors.onSurfaceVariant }}>
               I agree to the{" "}
               <Text style={{ color: colors.primary }}>Terms of Service</Text>
               {" "}and{" "}
@@ -197,37 +185,30 @@ export default function SignupScreen() {
             </Text>
           </Pressable>
 
-          <Pressable
-            style={[styles.btnPrimary, { backgroundColor: loading ? colors.mutedForeground : colors.primary }]}
+          <Button
+            mode="contained"
             onPress={handleSignup}
             disabled={loading}
+            loading={loading}
+            buttonColor={colors.primary}
+            style={styles.btn}
           >
-            {loading && <ActivityIndicator size="small" color="#fff" />}
-            <Text style={[styles.btnPrimaryText, { fontFamily: "Inter_600SemiBold" }]}>{loading ? "Creating account..." : "Sign up"}</Text>
-          </Pressable>
+            {loading ? "Creating account..." : "Sign up"}
+          </Button>
 
-          <View style={styles.divider}>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <Text style={[styles.dividerText, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>or</Text>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          </View>
+          <Divider style={{ marginVertical: 4 }} />
 
-          <Pressable
-            style={({ pressed }) => [styles.btnGoogle, { borderColor: colors.border, opacity: pressed || googleLoading ? 0.7 : 1 }]}
+          <Button
+            mode="outlined"
             onPress={handleGoogleSignup}
             disabled={googleLoading}
+            loading={googleLoading}
+            style={styles.googleBtn}
           >
-            {googleLoading ? (
-              <Text style={[styles.btnGoogleText, { color: colors.textSecondary, fontFamily: "Inter_500Medium" }]}>Signing in...</Text>
-            ) : (
-              <>
-                <GoogleIcon />
-                <Text style={[styles.btnGoogleText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>Continue with Google</Text>
-              </>
-            )}
-          </Pressable>
+            {googleLoading ? "Signing in..." : "Continue with Google"}
+          </Button>
 
-          <Text style={[styles.footer, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
+          <Text variant="bodyLarge" style={styles.footer}>
             Already have an account?{" "}
             <Text style={{ color: colors.primary, fontFamily: "Inter_500Medium" }} onPress={() => router.push("/login")}>Log in</Text>
           </Text>
@@ -237,39 +218,14 @@ export default function SignupScreen() {
   );
 }
 
-function FormGroup({ label, children, colors }: { label: string; children: React.ReactNode; colors: ReturnType<typeof useColors> }) {
-  return (
-    <View style={styles.formGroup}>
-      <Text style={[styles.label, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>{label}</Text>
-      {children}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: { paddingHorizontal: 24 },
-  back: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 24 },
-  backText: { fontSize: 14 },
+  container: {},
+  backBtn: { alignSelf: "flex-start", marginBottom: 12 },
   errorBox: { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, borderRadius: 10, backgroundColor: "#fef2f2", borderWidth: 1, borderColor: "#fecaca" },
-  errorText: { flex: 1, fontSize: 13, lineHeight: 18 },
-  title: { fontSize: 28, fontWeight: "700", marginBottom: 6 },
-  subtitle: { fontSize: 14, marginBottom: 28 },
   form: { gap: 14 },
-  formGroup: { gap: 6 },
-  label: { fontSize: 13, fontWeight: "500" },
-  input: { height: 50, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 14, fontSize: 15 },
-  inputRow: { flexDirection: "row", alignItems: "center", height: 50, borderRadius: 12, borderWidth: 1.5, paddingLeft: 14, paddingRight: 8 },
-  inputFlex: { flex: 1, fontSize: 15, height: 50 },
-  eyeBtn: { padding: 8 },
   checkRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginVertical: 4 },
   checkbox: { width: 20, height: 20, borderRadius: 6, borderWidth: 1.5, alignItems: "center", justifyContent: "center", marginTop: 1 },
-  checkText: { flex: 1, fontSize: 13, lineHeight: 18 },
-  btnPrimary: { height: 52, borderRadius: 14, alignItems: "center", justifyContent: "center", marginTop: 4, flexDirection: "row", gap: 8 },
-  btnPrimaryText: { color: "#fff", fontSize: 16 },
-  divider: { flexDirection: "row", alignItems: "center", gap: 12, marginVertical: 4 },
-  dividerLine: { flex: 1, height: 1 },
-  dividerText: { fontSize: 13 },
-  btnGoogle: { height: 52, borderRadius: 14, borderWidth: 1.5, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: "#fff" },
-  btnGoogleText: { fontSize: 15 },
-  footer: { textAlign: "center", fontSize: 13, marginTop: 4, paddingBottom: 20 },
+  btn: { height: 52, borderRadius: 14, justifyContent: "center" },
+  googleBtn: { height: 52, borderRadius: 14, justifyContent: "center" },
+  footer: { textAlign: "center", fontSize: 13, marginTop: 4, paddingBottom: 20, color: "#999999" },
 });

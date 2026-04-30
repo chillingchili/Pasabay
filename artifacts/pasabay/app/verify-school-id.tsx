@@ -1,15 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Pressable, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { useColors } from "@/hooks/useColors";
+import { Text, Button, Surface, useTheme } from "react-native-paper";
 import { useApp } from "@/context/AppContext";
 import { useScale } from "@/hooks/useScale";
 
 export default function VerifySchoolIdScreen() {
   const insets = useSafeAreaInsets();
-  const colors = useColors();
+  const { colors } = useTheme();
   const { fs, isSmall } = useScale();
   const { setSchoolIdVerified } = useApp();
   const [stage, setStage] = useState<"capture" | "analyzing" | "success">("capture");
@@ -34,16 +34,16 @@ export default function VerifySchoolIdScreen() {
     });
   };
 
-const handleContinue = () => {
-  setSchoolIdVerified();
-  router.replace("/verify-driver");
-};
+  const handleContinue = () => {
+    setSchoolIdVerified();
+    router.replace("/verify-driver");
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: "#0a7d5c", paddingTop: insets.top, paddingHorizontal: isSmall ? 16 : 24 }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { fontSize: fs(22), fontFamily: "Sora_800ExtraBold" }]}>Verify your school ID</Text>
-        <Text style={[styles.step, { fontFamily: "Inter_400Regular" }]}>Step 1 of 2</Text>
+        <Text variant="headlineSmall" style={{ color: "#fff" }}>Verify your school ID</Text>
+        <Text variant="bodyLarge" style={styles.stepSubtitle}>Step 1 of 2</Text>
       </View>
 
       <View style={styles.stepBars}>
@@ -60,7 +60,7 @@ const handleContinue = () => {
             <View style={styles.frameCorner4} />
             <View style={styles.frameInner}>
               <Feather name="credit-card" size={40} color="rgba(255,255,255,0.4)" />
-              <Text style={[styles.frameText, { fontFamily: "Inter_400Regular" }]}>Align your USC ID{"\n"}within the frame</Text>
+              <Text variant="bodyLarge" style={styles.frameText}>Align your USC ID{"\n"}within the frame</Text>
             </View>
           </Animated.View>
 
@@ -74,11 +74,11 @@ const handleContinue = () => {
       {stage === "analyzing" && (
         <View style={styles.cameraArea}>
           <View style={styles.analyzingContainer}>
-            <View style={[styles.analyzeIcon, { backgroundColor: "rgba(255,255,255,0.1)" }]}>
+            <Surface style={[styles.analyzeIcon, { backgroundColor: "rgba(255,255,255,0.1)" }]}>
               <Feather name="cpu" size={36} color="#fff" />
-            </View>
-            <Text style={[styles.analyzeTitle, { fontFamily: "Inter_600SemiBold" }]}>Verifying your ID...</Text>
-            <Text style={[styles.analyzeSubtext, { fontFamily: "Inter_400Regular" }]}>AI is checking your USC school ID</Text>
+            </Surface>
+            <Text variant="headlineSmall" style={{ color: "#fff" }}>Verifying your ID...</Text>
+            <Text variant="bodyLarge" style={{ color: "rgba(255,255,255,0.7)" }}>AI is checking your USC school ID</Text>
             <View style={styles.progressBarBg}>
               <Animated.View
                 style={[styles.progressBarFill, { width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] }) }]}
@@ -91,15 +91,15 @@ const handleContinue = () => {
       {stage === "success" && (
         <View style={styles.cameraArea}>
           <View style={styles.analyzingContainer}>
-            <View style={[styles.analyzeIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
+            <Surface style={[styles.analyzeIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
               <Feather name="check-circle" size={36} color="#fff" />
-            </View>
-            <Text style={[styles.analyzeTitle, { fontFamily: "Inter_600SemiBold" }]}>Verification successful!</Text>
-            <Text style={[styles.analyzeSubtext, { fontFamily: "Inter_400Regular" }]}>Your USC student identity has been confirmed</Text>
-            <View style={[styles.successTag, { backgroundColor: "rgba(255,255,255,0.15)" }]}>
+            </Surface>
+            <Text variant="headlineSmall" style={{ color: "#fff" }}>Verification successful!</Text>
+            <Text variant="bodyLarge" style={{ color: "rgba(255,255,255,0.7)" }}>Your USC student identity has been confirmed</Text>
+            <Surface style={[styles.successTag, { backgroundColor: "rgba(255,255,255,0.15)" }]}>
               <Feather name="user" size={14} color="#fff" />
-              <Text style={[styles.successTagText, { fontFamily: "Inter_500Medium" }]}>USC Student · Verified</Text>
-            </View>
+              <Text variant="labelLarge" style={{ color: "#fff" }}>USC Student · Verified</Text>
+            </Surface>
           </View>
         </View>
       )}
@@ -107,20 +107,18 @@ const handleContinue = () => {
       <View style={[styles.buttons, { paddingBottom: Math.max(insets.bottom + 24, 40) }]}>
         {stage === "capture" && (
           <>
-            <Pressable style={[styles.btnCapture]} onPress={handleTakePhoto}>
-              <Feather name="camera" size={20} color="#fff" />
-              <Text style={[styles.btnCaptureText, { fontFamily: "Inter_600SemiBold" }]}>Take photo</Text>
-            </Pressable>
-            <Pressable style={styles.btnGhost} onPress={handleTakePhoto}>
-              <Text style={[styles.btnGhostText, { fontFamily: "Inter_400Regular" }]}>Enter manually instead</Text>
-            </Pressable>
+            <Button mode="contained" onPress={handleTakePhoto} buttonColor="rgba(255,255,255,0.2)" textColor="#fff" style={styles.btn} icon="camera">
+              Take photo
+            </Button>
+            <Button mode="text" onPress={handleTakePhoto} textColor="rgba(255,255,255,0.5)">
+              Enter manually instead
+            </Button>
           </>
         )}
         {stage === "success" && (
-          <Pressable style={[styles.btnCapture]} onPress={() => handleContinue()}>
-            <Text style={[styles.btnCaptureText, { fontFamily: "Inter_600SemiBold" }]}>Continue</Text>
-            <Feather name="arrow-right" size={20} color="#fff" />
-          </Pressable>
+          <Button mode="contained" onPress={handleContinue} buttonColor="rgba(255,255,255,0.2)" textColor="#fff" style={styles.btn}>
+            Continue
+          </Button>
         )}
       </View>
     </View>
@@ -133,7 +131,7 @@ function TipRow({ icon, text }: { icon: keyof typeof Feather.glyphMap; text: str
       <View style={[styles.tipIcon]}>
         <Feather name={icon} size={14} color="rgba(255,255,255,0.7)" />
       </View>
-      <Text style={[styles.tipText, { fontFamily: "Inter_400Regular" }]}>{text}</Text>
+      <Text variant="bodyLarge" style={styles.tipText}>{text}</Text>
     </View>
   );
 }
@@ -141,8 +139,7 @@ function TipRow({ icon, text }: { icon: keyof typeof Feather.glyphMap; text: str
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { alignItems: "center", paddingTop: 16, paddingBottom: 8 },
-  title: { fontSize: 22, fontWeight: "700", color: "#fff" },
-  step: { fontSize: 13, color: "rgba(255,255,255,0.6)", marginTop: 4 },
+  stepSubtitle: { fontSize: 13, color: "rgba(255,255,255,0.6)", marginTop: 4 },
   stepBars: { flexDirection: "row", gap: 8, paddingHorizontal: 24, marginBottom: 20 },
   stepBar: { flex: 1, height: 4, backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 2 },
   stepBarActive: { backgroundColor: "#fff" },
@@ -159,16 +156,10 @@ const styles = StyleSheet.create({
   tipIcon: { width: 28, height: 28, borderRadius: 8, backgroundColor: "rgba(255,255,255,0.1)", alignItems: "center", justifyContent: "center" },
   tipText: { flex: 1, color: "rgba(255,255,255,0.7)", fontSize: 13, lineHeight: 18 },
   analyzingContainer: { alignItems: "center", gap: 16 },
-  analyzeIcon: { width: 80, height: 80, borderRadius: 24, alignItems: "center", justifyContent: "center" },
-  analyzeTitle: { fontSize: 20, color: "#fff", fontWeight: "600" },
-  analyzeSubtext: { fontSize: 13, color: "rgba(255,255,255,0.7)", textAlign: "center" },
+  analyzeIcon: { width: 80, height: 80, borderRadius: 24, alignItems: "center", justifyContent: "center", elevation: 2 },
   progressBarBg: { width: 240, height: 6, backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 3, overflow: "hidden" },
   progressBarFill: { height: 6, backgroundColor: "#fff", borderRadius: 3 },
-  successTag: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  successTagText: { color: "#fff", fontSize: 14 },
+  successTag: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, elevation: 1 },
   buttons: { paddingHorizontal: 24, gap: 10 },
-  btnCapture: { height: 52, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.2)", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10 },
-  btnCaptureText: { color: "#fff", fontSize: 16 },
-  btnGhost: { height: 44, alignItems: "center", justifyContent: "center" },
-  btnGhostText: { color: "rgba(255,255,255,0.5)", fontSize: 14 },
+  btn: { height: 52, borderRadius: 14, justifyContent: "center" },
 });
