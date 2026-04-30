@@ -71,7 +71,7 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <PaperProvider theme={theme}>
             <AppProvider>
-              <GestureHandlerRootView style={{ flex: 1, ...(Platform.OS === 'web' ? { height: '100%' } : { minHeight: '100vh' }) }}>
+              <GestureHandlerRootView style={{ flex: 1, ...(Platform.OS === 'web' ? {} : { minHeight: '100vh' }) }}>
                 <KeyboardProvider>
                   <RootLayoutNav />
                 </KeyboardProvider>

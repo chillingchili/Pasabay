@@ -34,23 +34,24 @@ export default function Root({ children }: PropsWithChildren) {
           }
           #phone-frame {
             width: 100%;
-            max-width: 390px;
-            height: calc(100vh - 48px);
-            margin: 24px 0;
-            background: #ffffff;
-            border-radius: 44px;
-            border: 6px solid #1f1f1f;
-            box-shadow: 0 16px 48px rgba(0,0,0,0.15);
-            overflow: hidden;
-            position: relative;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
           }
-          @media (max-width: 390px) {
+          #phone-frame > div {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+          }
+          @media (min-width: 480px) {
             #phone-frame {
-              border-radius: 0;
-              border: none;
-              box-shadow: none;
-              margin: 0;
-              height: 100vh;
+              max-width: 390px;
+              height: calc(100vh - 48px);
+              margin: 24px 0;
+              border-radius: 44px;
+              border: 6px solid #1f1f1f;
+              box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+              overflow: hidden;
             }
           }
         `}</style>
