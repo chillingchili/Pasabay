@@ -52,8 +52,8 @@ export default function DriverHomeScreen() {
     { name: "IT Park, Lahug", lat: 10.3308, lng: 123.9068 },
     { name: "SM City Cebu", lat: 10.3112, lng: 123.9172 },
     { name: "Ayala Center", lat: 10.3173, lng: 123.9046 },
-    { name: "JY Square", lat: 10.3188, lng: 123.9078 },
-    { name: "Mango Square", lat: 10.3090, lng: 123.8993 },
+    { name: "JY Square", lat: 10.3307, lng: 123.8965 },
+    { name: "Mango Square", lat: 10.3111, lng: 123.8961 },
   ];
 
   const filteredDests = destQuery
@@ -162,18 +162,6 @@ export default function DriverHomeScreen() {
     setTimeout(() => setIsLoading(false), 500);
   };
 
-  const handleGoOffline = () => {
-    setIsLoading(true);
-    emitDriverOffline();
-    setIsOnline(false);
-    setRouteInfo(null);
-    setAccepted(null);
-    setRideId(null);
-    clearActiveRide();
-    setActiveRide(null);
-    setTimeout(() => setIsLoading(false), 300);
-  };
-
   const handleAccept = (req: MatchRequestPayload) => {
     emitMatchAccept({
       routeId: req.routeId,
@@ -254,6 +242,7 @@ export default function DriverHomeScreen() {
   };
 
   const etaMin = selectedDest ? (routeInfo?.durationMin ?? 18) : null;
+  const fuelEst = routeInfo ? `₱${Math.max(Math.round(routeInfo.distanceKm * 60 / 10 / 10) * 10, 20)}` : null;
 
   return (
     <View style={styles.container}>
@@ -266,7 +255,7 @@ export default function DriverHomeScreen() {
         recenterKey={recenterKey}
         onUserDrag={() => setShowRecenter(true)}
       />
-      <LoadingOverlay visible={isLoading} message={isOnline ? "Going offline..." : "Going online..."} />
+      <LoadingOverlay visible={isLoading} message="Preparing route..." />
 
       {showRecenter && (
         <Pressable
@@ -277,20 +266,19 @@ export default function DriverHomeScreen() {
         </Pressable>
       )}
 
-      <View style={[styles.topBar, { paddingTop: topPad + 8 }]}>
+      <View style={[styles.topBar, { paddingTop: topPad - 4 }]}>
         <View style={styles.greetingRow}>
-          <Text style={[styles.greeting, { fontFamily: "Inter_600SemiBold" }]}>Driver</Text>
           <Pressable
             style={[styles.roleSwitchBtn, { backgroundColor: colors.primary }]}
             onPress={() => { switchRole("passenger"); router.replace("/(main)/passenger-home"); }}
           >
-            <Feather name="user" size={13} color="#fff" />
-            <Text style={[styles.roleSwitchText, { fontFamily: "Inter_500Medium" }]}>Ride</Text>
+            <Feather name="refresh-cw" size={12} color="#fff" />
+            <Text style={[styles.roleSwitchText, { fontFamily: "Inter_500Medium" }]}>Switch to Passenger</Text>
           </Pressable>
         </View>
 
         <View style={[styles.destBar, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
-          <View style={[styles.destDot, { backgroundColor: isOnline ? colors.primary : colors.textMuted }]} />
+          <View style={[styles.destDot, { backgroundColor: colors.primary }]} />
           <TextInput
             style={[styles.destInput, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}
             value={destQuery}
@@ -299,16 +287,7 @@ export default function DriverHomeScreen() {
             onBlur={() => setTimeout(() => setShowDestSuggestions(false), 200)}
             placeholder="Set destination..."
             placeholderTextColor={colors.textMuted}
-            editable={!isOnline}
           />
-          <Pressable
-            style={[styles.statusTag, { backgroundColor: isOnline ? colors.primaryLight : colors.card }]}
-            onPress={isOnline ? handleGoOffline : handleGoOnline}
-          >
-            <Text style={[styles.statusTagText, { color: isOnline ? colors.primary : colors.textSecondary, fontFamily: "Inter_500Medium" }]}>
-              {isOnline ? "Online" : "Go Online"}
-            </Text>
-          </Pressable>
         </View>
 
         {showDestSuggestions && !isOnline && filteredDests.length > 0 && (
@@ -420,19 +399,49 @@ export default function DriverHomeScreen() {
         driverName={accepted?.passengerName ?? "Passenger"}
       />
 
-      <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 16, 24) + 60 }]} onLayout={(e) => setInfoBarHeight(e.nativeEvent.layout.height)}>
-        <View style={styles.infoBlock}>
-          <Text style={[styles.infoLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>To destination</Text>
-          <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{selectedDest?.name ?? "Not set"}</Text>
+      {selectedDest && (
+        <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 16, 24) + 60 }]} onLayout={(e) => setInfoBarHeight(e.nativeEvent.layout.height)}>
+          <View style={styles.routeRow}>
+            <View style={[styles.routeIcon, { backgroundColor: colors.primaryLight }]}>
+              <Feather name="map-pin" size={16} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>To</Text>
+              <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{selectedDest.name}</Text>
+            </View>
+          </View>
+          <View style={styles.routeMeta}>
+            <View style={styles.metaBlock}>
+              <Feather name="clock" size={12} color={colors.textSecondary} />
+              <Text style={[styles.metaText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>
+                {etaMin != null ? `${etaMin} min` : "—"}
+              </Text>
+            </View>
+            <View style={styles.metaBlock}>
+              <Feather name="droplet" size={12} color={colors.textSecondary} />
+              <Text style={[styles.metaText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>
+                {fuelEst ?? "—"}
+              </Text>
+            </View>
+            <View style={styles.metaBlock}>
+              <Feather name="maximize" size={12} color={colors.textSecondary} />
+              <Text style={[styles.metaText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>
+                {routeInfo ? `${routeInfo.distanceKm.toFixed(1)} km` : "—"}
+              </Text>
+            </View>
+          </View>
+          <Pressable
+            style={[styles.driveBtn, { backgroundColor: isOnline ? colors.textMuted : colors.primary }]}
+            onPress={isOnline ? undefined : handleGoOnline}
+            disabled={isOnline}
+          >
+            <Feather name="navigation" size={16} color="#fff" />
+            <Text style={[styles.driveBtnText, { fontFamily: "Inter_600SemiBold" }]}>
+              {isOnline ? "Waiting for passengers..." : "Drive to Destination"}
+            </Text>
+          </Pressable>
         </View>
-        <View style={styles.infoBlock}>
-          <Text style={[styles.infoLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>ETA</Text>
-          <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>
-            {etaMin != null ? `${etaMin} ` : "— "}
-            <Text style={[styles.infoUnit, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>{etaMin != null ? "min" : ""}</Text>
-          </Text>
-        </View>
-      </View>
+      )}
     </View>
   );
 }
@@ -441,14 +450,12 @@ const styles = StyleSheet.create({
 container: { flex: 1 },
   topBar: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, paddingHorizontal: 16, gap: 8 },
   greetingRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 2 },
-  greeting: { fontSize: 15, color: "#fff", textShadowColor: "rgba(0,0,0,0.75)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
   roleSwitchBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
   roleSwitchText: { fontSize: 12, color: "#fff", textShadowColor: "rgba(0,0,0,0.75)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
   destBar: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 10, paddingLeft: 16, gap: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   destDot: { width: 8, height: 8, borderRadius: 4 },
   destInput: { flex: 1, fontSize: 14, minHeight: 34 },
-  statusTag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  statusTagText: { fontSize: 12 },
+
   suggestions: { borderRadius: 12, overflow: "hidden", zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   suggestionItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#f5f5f5" },
   suggestionText: { fontSize: 14 },
@@ -477,11 +484,16 @@ container: { flex: 1 },
   timerText: { fontSize: 16 },
   noShowBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   noShowText: { fontSize: 12 },
-  infoBar: { position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 5, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 24, paddingTop: 16 },
-  infoBlock: { gap: 3 },
-  infoLabel: { fontSize: 11 },
-  infoValue: { fontSize: 18 },
-  infoUnit: { fontSize: 14 },
+  infoBar: { position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 5, paddingHorizontal: 20, paddingTop: 16, gap: 12, borderTopLeftRadius: 20, borderTopRightRadius: 20, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 10 },
+  infoLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  infoValue: { fontSize: 16, fontFamily: "Inter_600SemiBold" },
+  routeRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  routeIcon: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  routeMeta: { flexDirection: "row", gap: 20, paddingLeft: 46 },
+  metaBlock: { flexDirection: "row", alignItems: "center", gap: 4 },
+  metaText: { fontSize: 13 },
+  driveBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 50, borderRadius: 14 },
+  driveBtnText: { color: "#fff", fontSize: 16 },
   errorBanner: { flexDirection: "row", alignItems: "center", gap: 8, padding: 10, borderRadius: 12 },
   errorBannerText: { flex: 1, fontSize: 13 },
   recenterBtn: {

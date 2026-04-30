@@ -8,6 +8,15 @@ import { useApp } from "@/context/AppContext";
 const isWeb = Platform.OS === "web";
 const isIOS = Platform.OS === "ios";
 
+function TabBarIcon({ name, color, focused }: { name: keyof typeof Feather.glyphMap; color: string; focused: boolean }) {
+  const colors = useColors();
+  return (
+    <View style={{ alignItems: "center", justifyContent: "center", width: 44, height: 44 }}>
+      <Feather name={name} size={22} color={color} />
+    </View>
+  );
+}
+
 export default function MainTabLayout() {
   const colors = useColors();
   const colorScheme = useColorScheme();
@@ -26,6 +35,8 @@ export default function MainTabLayout() {
           borderTopWidth: 1,
           borderTopColor: colors.border,
           elevation: 0,
+          height: 64,
+          paddingBottom: 8,
         },
         tabBarBackground: () =>
           isIOS && !isWeb ? (
@@ -40,8 +51,8 @@ export default function MainTabLayout() {
         options={{
           title: "Home",
           href: activeRole === "passenger" ? undefined : null,
-          tabBarIcon: ({ color }) => (
-            <Feather name="home" size={22} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name="home" color={color} focused={focused} />
           ),
         }}
       />
@@ -50,8 +61,8 @@ export default function MainTabLayout() {
         options={{
           title: "Home",
           href: activeRole === "driver" ? undefined : null,
-          tabBarIcon: ({ color }) => (
-            <Feather name="home" size={22} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name="home" color={color} focused={focused} />
           ),
         }}
       />
@@ -59,8 +70,8 @@ export default function MainTabLayout() {
         name="history"
         options={{
           title: "History",
-          tabBarIcon: ({ color }) => (
-            <Feather name="clock" size={22} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name="clock" color={color} focused={focused} />
           ),
         }}
       />
@@ -68,8 +79,8 @@ export default function MainTabLayout() {
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color }) => (
-            <Feather name="user" size={22} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name="user" color={color} focused={focused} />
           ),
         }}
       />

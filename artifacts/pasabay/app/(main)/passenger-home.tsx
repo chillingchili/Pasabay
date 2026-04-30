@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Animated, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -22,8 +22,8 @@ const DEST_COORDS: Record<string, { lat: number; lng: number }> = {
   "IT Park, Lahug": { lat: 10.3308, lng: 123.9068 },
   "SM City Cebu": { lat: 10.3112, lng: 123.9172 },
   "Ayala Center": { lat: 10.3173, lng: 123.9046 },
-  "JY Square": { lat: 10.3188, lng: 123.9078 },
-  "Mango Square": { lat: 10.3090, lng: 123.8993 },
+  "JY Square": { lat: 10.3307, lng: 123.8965 },
+  "Mango Square": { lat: 10.3111, lng: 123.8961 },
 };
 
 export default function PassengerHomeScreen() {
@@ -47,11 +47,16 @@ export default function PassengerHomeScreen() {
   const [fitRouteKey, setFitRouteKey] = useState(0);
   const [showRecenter, setShowRecenter] = useState(false);
   const [sheetContentHeight, setSheetContentHeight] = useState(0);
+  const [showFare, setShowFare] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const sheetAnim = useRef(new Animated.Value(0)).current;
+
+  const FUEL_PRICE = 60;
+  const FUEL_EFFICIENCY = 10;
+  const MATCHING_FEE = 8;
+  const fuelCost = distanceKm * FUEL_PRICE / FUEL_EFFICIENCY;
+  const totalFare = Math.max(15, Math.round(fuelCost + MATCHING_FEE));
 
   const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
-  const bottomPad = Platform.OS === "web" ? Math.max(insets.bottom + 80, 100) : Math.max(insets.bottom + 100, 100);
 
   const pickupPoint = useMemo(() =>
     userLoc ? { lat: userLoc.lat, lng: userLoc.lng, name: "Your location" } : null,
@@ -74,9 +79,8 @@ export default function PassengerHomeScreen() {
       ])
     );
     pulse.start();
-    Animated.spring(sheetAnim, { toValue: 1, tension: 50, friction: 10, useNativeDriver: true }).start();
     return () => pulse.stop();
-  }, [pulseAnim, sheetAnim]);
+  }, [pulseAnim]);
 
   // Fit the map to show the full route ONCE when destination changes
   // (NOT when pickup changes, which happens on every GPS update)
@@ -103,13 +107,13 @@ export default function PassengerHomeScreen() {
         const dist = route.distanceKm;
         setDistanceKm(dist);
         setEtaMin(Math.round(route.durationSec / 60));
-        const fare = Math.max(15, Math.round(dist * 5.5 + 8));
+        const fare = Math.max(15, Math.round(dist * 6 + 8));
         setFareEstimate(fare);
       } else {
         const dist = haversineKm(pickupPoint, dropoffPoint);
         setDistanceKm(dist);
         setEtaMin(Math.round(dist * 3));
-        const fare = Math.max(15, Math.round(dist * 5.5 + 8));
+        const fare = Math.max(15, Math.round(dist * 6 + 8));
         setFareEstimate(fare);
       }
     };
@@ -201,16 +205,15 @@ export default function PassengerHomeScreen() {
         </Pressable>
       )}
 
-      <View style={[styles.topArea, { paddingTop: topPad + 8 }]}>
+      <View style={[styles.topArea, { paddingTop: topPad - 4 }]}>
         <View style={styles.greetingRow}>
-          <Text style={[styles.greeting, { fontFamily: "Inter_600SemiBold" }]}>{greeting} 👋</Text>
           {user?.role === "driver" && (
             <Pressable
               style={[styles.roleSwitchBtn, { backgroundColor: colors.primary }]}
               onPress={() => { switchRole("driver"); router.replace("/(main)/driver-home"); }}
             >
-              <Feather name="truck" size={13} color="#fff" />
-              <Text style={[styles.roleSwitchText, { fontFamily: "Inter_500Medium" }]}>Drive</Text>
+              <Feather name="refresh-cw" size={12} color="#fff" />
+              <Text style={[styles.roleSwitchText, { fontFamily: "Inter_500Medium" }]}>Switch to Driver</Text>
             </Pressable>
           )}
         </View>
@@ -247,89 +250,104 @@ export default function PassengerHomeScreen() {
         )}
       </View>
 
-      <Animated.View
-        onLayout={(e) => setSheetContentHeight(e.nativeEvent.layout.height)}
-        style={[
-          styles.bottomSheet,
-          {
-            backgroundColor: "rgba(255,255,255,0.97)",
-            paddingBottom: bottomPad,
-            maxHeight: Platform.OS === "web" ? dimensions.height * 0.55 : undefined,
-            transform: [{ translateY: sheetAnim.interpolate({ inputRange: [0, 1], outputRange: [200, 0] }) }],
-          },
-        ]}
-      >
-        <View style={[styles.handle, { backgroundColor: colors.border }]} />
-
-        <ScrollView style={styles.sheetScroll} contentContainerStyle={styles.sheetScrollContent} showsVerticalScrollIndicator={false} bounces={false}>
-        {activeRide ? (
-          <>
-            <View style={styles.destRow}>
-              <View style={[styles.destIcon, { backgroundColor: colors.primaryLight }]}>
+      {destination && !activeRide && (
+        <View
+          onLayout={(e) => setSheetContentHeight(e.nativeEvent.layout.height)}
+          style={[styles.sheetOuter, { paddingBottom: Math.max(insets.bottom + 16, 24) + 60, backgroundColor: "rgba(255,255,255,0.97)" }]}
+        >
+          <View style={styles.sheetInner}>
+            <View style={styles.routeRow}>
+              <View style={[styles.routeIcon, { backgroundColor: colors.primaryLight }]}>
                 <Feather name="map-pin" size={16} color={colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.destLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Your driver is coming</Text>
-                <Text style={[styles.destValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{activeRide.driver.name}</Text>
-              </View>
-            </View>
-
-            <View style={[styles.walkCard, { backgroundColor: colors.accentBg, marginBottom: 14 }]}>
-              <Feather name="navigation" size={16} color={colors.accentDark} />
-              <Text style={[styles.walkText, { color: colors.accentDark, fontFamily: "Inter_500Medium" }]}>
-                {walkToPickupM > 0
-                  ? `${walkToPickupM < 1000 ? `${walkToPickupM}m` : `${(walkToPickupM / 1000).toFixed(1)}km`} walk to pickup point`
-                  : activeRide.distanceKm > 0
-                    ? `${activeRide.distanceKm.toFixed(1)}km ride`
-                    : "Calculating walking distance..."}
-              </Text>
-            </View>
-
-            <View style={styles.statChips}>
-              <StatChip label="Vehicle" value={activeRide.driver.vehicle ? `${activeRide.driver.vehicle.make} ${activeRide.driver.vehicle.model}` : "Not specified"} colors={colors} />
-              <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-              <StatChip label="Fare" value={`₱${activeRide.total.toFixed(0)}`} colors={colors} />
-            </View>
-          </>
-        ) : destination ? (
-          <>
-            <View style={styles.destRow}>
-              <View style={[styles.destIcon, { backgroundColor: colors.primaryLight }]}>
-                <Feather name="map-pin" size={16} color={colors.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.destLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Drop-off</Text>
-                <Text style={[styles.destValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{destination}</Text>
+                <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Drop-off</Text>
+                <Text style={[styles.infoValue, { color: colors.foreground }]}>{destination}</Text>
               </View>
               <View style={[styles.fareChip, { backgroundColor: colors.accentBg }]}>
-                <Text style={[styles.fareLabel, { color: colors.accentDark, fontFamily: "Inter_400Regular" }]}>fare</Text>
-                <Text style={[styles.fareAmount, { color: colors.accentDark, fontFamily: "Sora_800ExtraBold" }]}>₱{fareEstimate}</Text>
+                <Text style={[styles.fareLabel, { color: colors.accentDark }]}>fare</Text>
+                <Text style={[styles.fareAmount, { color: colors.accentDark }]}>₱{fareEstimate}</Text>
               </View>
             </View>
 
-            <View style={styles.statChips}>
-              <StatChip label="Distance" value={`${distanceKm.toFixed(1)} km`} colors={colors} />
-              <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-              <StatChip label="Walk" value="~4 min" colors={colors} />
-              <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-              <StatChip label="ETA" value={`~${etaMin} min`} colors={colors} />
+            <View style={styles.routeMeta}>
+              <View style={styles.metaBlock}>
+                <Feather name="maximize" size={12} color={colors.textSecondary} />
+                <Text style={[styles.metaText, { color: colors.foreground }]}>{distanceKm.toFixed(1)} km</Text>
+              </View>
+              <View style={styles.metaBlock}>
+                <Feather name="clock" size={12} color={colors.textSecondary} />
+                <Text style={[styles.metaText, { color: colors.foreground }]}>{etaMin} min</Text>
+              </View>
             </View>
 
+            <Pressable onPress={() => setShowFare(!showFare)} style={styles.fareToggle}>
+              <Text style={[styles.fareToggleText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>
+                {showFare ? "Hide fare breakdown" : "Show fare breakdown"}
+              </Text>
+              <Feather name={showFare ? "chevron-up" : "chevron-down"} size={14} color={colors.primary} />
+            </Pressable>
+
+            {showFare && (
+              <>
+                <View style={[styles.fareDivider, { backgroundColor: colors.border }]} />
+                <Text style={[styles.fareTitle, { color: colors.textSecondary, fontFamily: "Inter_600SemiBold" }]}>Fare breakdown</Text>
+                <View style={styles.fareRow}>
+                  <Text style={[styles.fareRowLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Fuel ({distanceKm.toFixed(1)}km × ₱{FUEL_PRICE}/L ÷ {FUEL_EFFICIENCY}km/L)</Text>
+                  <Text style={[styles.fareRowValue, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}>₱{fuelCost.toFixed(2)}</Text>
+                </View>
+                <View style={styles.fareRow}>
+                  <Text style={[styles.fareRowLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Matching fee</Text>
+                  <Text style={[styles.fareRowValue, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}>₱{MATCHING_FEE.toFixed(2)}</Text>
+                </View>
+                <View style={[styles.fareTotalRow, { borderTopColor: colors.border }]}>
+                  <Text style={[styles.fareRowLabel, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>Total</Text>
+                  <Text style={[styles.fareRowValue, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>₱{totalFare.toFixed(2)}</Text>
+                </View>
+              </>
+            )}
+
             <Pressable
-              style={({ pressed }) => [styles.findBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }]}
+              style={[styles.driveBtn, { backgroundColor: colors.primary }]}
               onPress={handleFindRide}
             >
-              <Feather name="search" size={18} color="#fff" />
-              <Text style={[styles.findBtnText, { fontFamily: "Inter_600SemiBold" }]}>Find a pasabay</Text>
+              <Feather name="search" size={16} color="#fff" />
+              <Text style={[styles.driveBtnText, { fontFamily: "Inter_600SemiBold" }]}>Find a Pasabay</Text>
             </Pressable>
-          </>
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={[styles.emptyText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Enter a destination to find a ride</Text>
           </View>
-        )}
-        </ScrollView>
-      </Animated.View>
+        </View>
+      )}
+
+      {activeRide && (
+        <View
+          onLayout={(e) => setSheetContentHeight(e.nativeEvent.layout.height)}
+          style={[styles.sheetOuter, { paddingBottom: Math.max(insets.bottom + 16, 24) + 60, backgroundColor: "rgba(255,255,255,0.97)" }]}
+        >
+          <View style={styles.sheetInner}>
+            <View style={styles.routeRow}>
+              <View style={[styles.routeIcon, { backgroundColor: colors.primaryLight }]}>
+                <Feather name="navigation" size={16} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Your driver is coming</Text>
+                <Text style={[styles.infoValue, { color: colors.foreground }]}>{activeRide.driver.name}</Text>
+              </View>
+            </View>
+            <View style={styles.routeMeta}>
+              <View style={styles.metaBlock}>
+                <Feather name="truck" size={12} color={colors.textSecondary} />
+                <Text style={[styles.metaText, { color: colors.foreground }]}>
+                  {activeRide.driver.vehicle ? `${activeRide.driver.vehicle.make} ${activeRide.driver.vehicle.model}` : "—"}
+                </Text>
+              </View>
+              <View style={styles.metaBlock}>
+                <Feather name="dollar-sign" size={12} color={colors.textSecondary} />
+                <Text style={[styles.metaText, { color: colors.foreground }]}>₱{activeRide.total.toFixed(0)}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
 
       <PreMatchModal
         visible={showPreMatch}
@@ -344,20 +362,10 @@ export default function PassengerHomeScreen() {
   );
 }
 
-function StatChip({ label, value, colors }: { label: string; value: string; colors: ReturnType<typeof useColors> }) {
-  return (
-    <View style={styles.statChip}>
-      <Text style={[styles.statLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>{label}</Text>
-      <Text style={[styles.statValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{value}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
   topArea: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, paddingHorizontal: 16, gap: 8 },
   greetingRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 2 },
-  greeting: { fontSize: 15, color: "#fff", textShadowColor: "rgba(0,0,0,0.75)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
   roleSwitchBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
   roleSwitchText: { fontSize: 12, color: "#fff", textShadowColor: "rgba(0,0,0,0.75)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
   searchContainer: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 10, paddingLeft: 16, gap: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
@@ -367,28 +375,28 @@ const styles = StyleSheet.create({
   suggestions: { borderRadius: 12, overflow: "hidden", zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 5 },
   suggestionItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#f5f5f5" },
   suggestionText: { fontSize: 14 },
-  bottomSheet: { position: "absolute", bottom: 0, left: 0, right: 0, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingTop: 0, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 10, maxHeight: "65%" },
-  handle: { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 16 },
-  sheetScroll: { flex: 1 },
-  sheetScrollContent: { paddingBottom: 20 },
-  destRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
-  destIcon: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
-  destLabel: { fontSize: 11, marginBottom: 2 },
-  destValue: { fontSize: 15 },
   fareChip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   fareLabel: { fontSize: 10 },
   fareAmount: { fontSize: 14 },
-  statChips: { flexDirection: "row", backgroundColor: "#f7f7f7", borderRadius: 12, padding: 12, marginBottom: 14, alignItems: "center" },
-  statChip: { flex: 1, alignItems: "center" },
-  statLabel: { fontSize: 10, marginBottom: 3 },
-  statValue: { fontSize: 14 },
-  statDivider: { width: 1, height: 28 },
-  findBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", height: 52, borderRadius: 14, gap: 8 },
-  findBtnText: { color: "#fff", fontSize: 16 },
-  walkCard: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, padding: 10 },
-  walkText: { fontSize: 13, flex: 1 },
-  emptyState: { paddingVertical: 20, alignItems: "center" },
-  emptyText: { fontSize: 14 },
+  sheetOuter: { position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 5, borderTopLeftRadius: 20, borderTopRightRadius: 20, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 10 },
+  sheetInner: { paddingHorizontal: 20, paddingTop: 16, gap: 10 },
+  fareToggle: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4, paddingVertical: 4 },
+  fareToggleText: { fontSize: 12 },
+  infoLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  infoValue: { fontSize: 16, fontFamily: "Inter_600SemiBold" },
+  routeRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  routeIcon: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  routeMeta: { flexDirection: "row", gap: 20, paddingLeft: 46 },
+  metaBlock: { flexDirection: "row", alignItems: "center", gap: 4 },
+  metaText: { fontSize: 13, fontFamily: "Inter_500Medium" },
+  driveBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 50, borderRadius: 14 },
+  driveBtnText: { color: "#fff", fontSize: 16 },
+  fareDivider: { height: 1, marginTop: 4 },
+  fareTitle: { fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 },
+  fareRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  fareRowLabel: { fontSize: 13 },
+  fareRowValue: { fontSize: 13 },
+  fareTotalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1, paddingTop: 8 },
   recenterBtn: {
     position: "absolute",
     right: 16,
