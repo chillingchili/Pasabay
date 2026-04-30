@@ -430,16 +430,31 @@ export default function DriverHomeScreen() {
               </Text>
             </View>
           </View>
-          <Pressable
-            style={[styles.driveBtn, { backgroundColor: isOnline ? colors.textMuted : colors.primary }]}
-            onPress={isOnline ? undefined : handleGoOnline}
-            disabled={isOnline}
-          >
-            <Feather name="navigation" size={16} color="#fff" />
-            <Text style={[styles.driveBtnText, { fontFamily: "Inter_600SemiBold" }]}>
-              {isOnline ? "Waiting for passengers..." : "Drive to Destination"}
-            </Text>
-          </Pressable>
+          {isOnline && !accepted ? (
+            <View style={[styles.navBar, { backgroundColor: colors.primary }]}>
+              <View style={[styles.navIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
+                <Feather name="navigation" size={20} color="#fff" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.navLabel}>En route to</Text>
+                <Text style={styles.navDest}>{selectedDest?.name ?? "Destination"}</Text>
+              </View>
+              <View style={styles.navEta}>
+                <Feather name="clock" size={14} color="#fff" />
+                <Text style={styles.navEtaText}>{etaMin != null ? `${etaMin} min` : "—"}</Text>
+              </View>
+            </View>
+          ) : (
+            <Pressable
+              style={[styles.driveBtn, { backgroundColor: colors.primary }]}
+              onPress={handleGoOnline}
+            >
+              <Feather name="navigation" size={16} color="#fff" />
+              <Text style={[styles.driveBtnText, { fontFamily: "Inter_600SemiBold" }]}>
+                Drive to Destination
+              </Text>
+            </Pressable>
+          )}
         </View>
       )}
     </View>
@@ -510,5 +525,44 @@ container: { flex: 1 },
     shadowRadius: 8,
     elevation: 15,
     zIndex: 15,
+  },
+  navBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    height: 56,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+  },
+  navIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  navLabel: {
+    fontSize: 11,
+    color: "rgba(255,255,255,0.75)",
+    fontFamily: "Inter_400Regular",
+  },
+  navDest: {
+    fontSize: 15,
+    color: "#fff",
+    fontFamily: "Inter_600SemiBold",
+  },
+  navEta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  navEtaText: {
+    fontSize: 14,
+    color: "#fff",
+    fontFamily: "Sora_800ExtraBold",
   },
 });
