@@ -209,13 +209,21 @@ export default function PassengerHomeScreen() {
 
       <View style={[styles.topArea, { paddingTop: topPad - 4 }]}>
         <View style={styles.greetingRow}>
-          {user?.role === "driver" && (
+          {user?.role === "driver" ? (
             <Pressable
               style={[styles.roleSwitchBtn, { backgroundColor: colors.primary }]}
               onPress={() => { switchRole("driver"); router.replace("/(main)/driver-home"); }}
             >
               <Feather name="refresh-cw" size={12} color="#fff" />
               <Text style={[styles.roleSwitchText, { fontFamily: "Inter_500Medium" }]}>Switch to Driver</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              style={[styles.roleSwitchBtn, { backgroundColor: colors.primary }]}
+              onPress={() => router.push("/vehicle-details")}
+            >
+              <Feather name="truck" size={12} color="#fff" />
+              <Text style={[styles.roleSwitchText, { fontFamily: "Inter_500Medium" }]}>Become a driver</Text>
             </Pressable>
           )}
         </View>
