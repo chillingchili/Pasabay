@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pasabay — Demo Simulation</title>
+  <style>
+    body {
+      margin: 0;
+      background: #1a1a1a;
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: #1a1a1a;
+    }
+
+    .demo-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .demo-header {
+      text-align: center;
+      margin-bottom: 24px;
+      width: 100%;
+    }
+
+    .stage-label {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      max-width: 860px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 0 auto;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #0D9E75;
+      border-radius: 3px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    .phones-row {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .phone-frame {
+      background: #fff;
+      border-radius: 20px;
+      padding: 4px;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+
+    .phone-frame iframe {
+      width: 420px;
+      height: 844px;
+      border: none;
+      border-radius: 18px;
+      display: block;
+    }
+
+    .role-label {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.7);
+      margin-top: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .ctrl-btn {
+      padding: 11px 28px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.3px;
+    }
+
+    .ctrl-btn.play {
+      background: #0D9E75;
+      color: #fff;
+    }
+
+    .ctrl-btn.play.playing {
+      background: #e8a838;
+    }
+
+    .ctrl-btn.skip {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .ctrl-btn.restart {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .ctrl-btn:hover {
+      opacity: 0.85;
+      transform: translateY(-1px);
+    }
+
+    .status {
+      margin-top: 12px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.5);
+      font-style: italic;
+    }
+
+    @media (max-width: 940px) {
+      .phones-row {
+        flex-direction: column;
+      }
+      .phone-frame iframe {
+        width: 90vw;
+        height: calc(90vw * 2.01);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-container">
+    <!-- Header: stage label + progress bar -->
+    <div class="demo-header">
+      <div class="stage-label" id="stageLabel">Stage 0/8: Ready</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <!-- Phone frames -->
+    <div class="phones-row">
+      <div class="phone-frame">
+        <iframe id="driverFrame" src="" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+        <div class="role-label">Driver View</div>
+      </div>
+      <div class="phone-frame">
+        <iframe id="passengerFrame" src="" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+        <div class="role-label">Passenger View</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button id="playPauseBtn" class="ctrl-btn play">&#9654; Play</button>
+      <button id="skipBtn" class="ctrl-btn skip">&#9197; Skip Stage</button>
+      <button id="restartBtn" class="ctrl-btn restart">&#8634; Restart</button>
+    </div>
+
+    <!-- Status -->
+    <div class="status" id="status">Initializing...</div>
+  </div>
+
+  <!-- Stage definitions for PostMessage protocol: { type: "demo:stage", stage: N, role: "driver"|"passenger" } -->
+  <script>
+    // Stage engine stub — populated in task 2
+    const STAGES = [
+      { id: 1, label: 'Driver Goes Online', driver: true, passenger: false },
+      { id: 2, label: 'Passenger Picks Destination', driver: false, passenger: true },
+      { id: 3, label: 'Passenger Requests Ride', driver: false, passenger: true },
+      { id: 4, label: 'Match Request Appears', driver: true, passenger: false },
+      { id: 5, label: 'Driver Accepts Match', driver: true, passenger: true },
+      { id: 6, label: 'Driver Arriving', driver: true, passenger: false },
+      { id: 7, label: 'Passenger Sees Arrival', driver: false, passenger: true },
+      { id: 8, label: 'Timer Countdown', driver: true, passenger: true },
+    ];
+
+    let currentStage = 0;
+    let isPlaying = false;
+    let autoPlayTimer = null;
+    let driverToken = null;
+    let passengerToken = null;
+    let driverUserData = null;
+    let passengerUserData = null;
+    let driverReady = false;
+    let passengerReady = false;
+    const APP_URL = window.location.origin;
+
+    function updateUI() {
+      const stage = currentStage > 0 ? STAGES[currentStage - 1] : null;
+      document.getElementById('stageLabel').textContent =
+        stage ? `Stage ${currentStage}/8: ${stage.label}` : 'Stage 0/8: Ready';
+      document.getElementById('progressFill').style.width = `${(currentStage / 8) * 100}%`;
+
+      const btn = document.getElementById('playPauseBtn');
+      if (isPlaying) {
+        btn.innerHTML = '&#9208; Pause';
+        btn.classList.add('playing');
+      } else {
+        btn.innerHTML = '&#9654; Play';
+        btn.classList.remove('playing');
+      }
+
+      document.getElementById('status').textContent =
+        isPlaying ? '\u25B6 Auto-playing...' : '\u23F8 Paused';
+    }
+
+    function postToFrame(role, message) {
+      const frame = role === 'driver'
+        ? document.getElementById('driverFrame')
+        : document.getElementById('passengerFrame');
+      if (frame && frame.contentWindow) {
+        frame.contentWindow.postMessage(message, '*');
+      }
+    }
+
+    function advanceStage() {
+      if (currentStage >= STAGES.length) {
+        clearInterval(autoPlayTimer);
+        isPlaying = false;
+        updateUI();
+        document.getElementById('status').textContent = '\u2713 Demo complete! All 8 stages finished.';
+        return;
+      }
+
+      currentStage++;
+      const stage = STAGES[currentStage - 1];
+      updateUI();
+
+      if (stage.driver) {
+        postToFrame('driver', { type: 'demo:stage', stage: currentStage, role: 'driver' });
+      }
+      if (stage.passenger) {
+        postToFrame('passenger', { type: 'demo:stage', stage: currentStage, role: 'passenger' });
+      }
+
+      document.getElementById('status').textContent =
+        `\u25B6 Stage ${currentStage}/8: ${stage.label}`;
+    }
+
+    function togglePlay() {
+      if (currentStage >= STAGES.length) return;
+
+      isPlaying = !isPlaying;
+      if (isPlaying) {
+        autoPlayTimer = setInterval(advanceStage, 5000);
+      } else {
+        clearInterval(autoPlayTimer);
+      }
+      updateUI();
+    }
+
+    function skipStage() {
+      if (currentStage >= STAGES.length) {
+        document.getElementById('status').textContent = '\u2713 Demo already complete. Press Restart.';
+        return;
+      }
+      if (isPlaying) {
+        clearInterval(autoPlayTimer);
+        advanceStage();
+        if (currentStage < STAGES.length) {
+          autoPlayTimer = setInterval(advanceStage, 5000);
+        }
+      } else {
+        advanceStage();
+      }
+    }
+
+    function restart() {
+      clearInterval(autoPlayTimer);
+      isPlaying = false;
+      currentStage = 0;
+      updateUI();
+
+      postToFrame('driver', { type: 'demo:reset' });
+      postToFrame('passenger', { type: 'demo:reset' });
+
+      fetch(`${APP_URL}/api/demo/reset`, { method: 'POST' })
+        .then(() => {
+          document.getElementById('status').textContent = '\u21BA Restarted \u2014 ready to play';
+        })
+        .catch(() => {
+          document.getElementById('status').textContent = '\u21BA Restarted (server reset failed, continuing)';
+        });
+    }
+
+    async function initializeDemo() {
+      const status = document.getElementById('status');
+      status.textContent = 'Seeding demo accounts...';
+
+      try {
+        const seedResp = await fetch(`${APP_URL}/api/demo/seed`, { method: 'POST' });
+        if (!seedResp.ok) throw new Error(`Seed failed: ${seedResp.status}`);
+
+        const seedData = await seedResp.json();
+        driverToken = seedData.driverToken;
+        passengerToken = seedData.passengerToken;
+        driverUserData = {
+          id: seedData.driverId,
+          name: 'Juan Driver',
+          email: 'demo-driver@usc.edu.ph',
+          role: 'driver'
+        };
+        passengerUserData = {
+          id: seedData.passengerId,
+          name: 'Maria Passenger',
+          email: 'demo-passenger@usc.edu.ph',
+          role: 'passenger'
+        };
+
+        status.textContent = 'Loading driver view...';
+
+        document.getElementById('driverFrame').src = `${APP_URL}/?demo=true&role=driver`;
+        document.getElementById('passengerFrame').src = `${APP_URL}/?demo=true&role=passenger`;
+
+        window.addEventListener('message', function onReady(event) {
+          if (event.data?.type === 'demo:ready') {
+            if (event.data.role === 'driver') driverReady = true;
+            if (event.data.role === 'passenger') passengerReady = true;
+
+            if (driverReady && passengerReady) {
+              status.textContent = '\u2713 Both views ready \u2014 press Play to start';
+            } else {
+              status.textContent = `Loading... (driver: ${driverReady ? '\u2713' : '...'}, passenger: ${passengerReady ? '\u2713' : '...'})`;
+            }
+          }
+
+          if (event.data?.type === 'demo:action-done') {
+            console.log(`[Demo] Action done: stage ${event.data.stage} (${event.data.role})`);
+          }
+        });
+
+        const driverFrame = document.getElementById('driverFrame');
+        const passengerFrame = document.getElementById('passengerFrame');
+
+        const sendAuth = () => {
+          if (driverToken && driverFrame.contentWindow) {
+            postToFrame('driver', {
+              type: 'demo:auth',
+              token: driverToken,
+              role: 'driver',
+              userData: driverUserData
+            });
+          }
+          if (passengerToken && passengerFrame.contentWindow) {
+            postToFrame('passenger', {
+              type: 'demo:auth',
+              token: passengerToken,
+              role: 'passenger',
+              userData: passengerUserData
+            });
+          }
+        };
+
+        let authAttempts = 0;
+        const authInterval = setInterval(() => {
+          authAttempts++;
+          if (driverFrame.contentWindow && passengerFrame.contentWindow) {
+            sendAuth();
+            clearInterval(authInterval);
+            status.textContent = 'Authenticating...';
+          } else if (authAttempts > 20) {
+            clearInterval(authInterval);
+            status.textContent = '\u26A0 Failed to load iframes. Check that the app server is running.';
+          }
+        }, 500);
+
+      } catch (err) {
+        const msg = err.message.includes('Failed to fetch') || err.message.includes('NetworkError')
+          ? '\u26A0 Cannot reach API server. Start the backend first (npm run dev in api-server).'
+          : `\u26A0 Error: ${err.message}`;
+        status.textContent = msg;
+        console.error('[Demo] Initialization error:', err);
+      }
+    }
+
+    // Button wiring
+    document.getElementById('playPauseBtn').addEventListener('click', togglePlay);
+    document.getElementById('skipBtn').addEventListener('click', skipStage);
+    document.getElementById('restartBtn').addEventListener('click', restart);
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      switch (e.key) {
+        case ' ':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          skipStage();
+          break;
+        case 'r':
+          if (!e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            restart();
+          }
+          break;
+      }
+    });
+
+    // Start
+    updateUI();
+    initializeDemo();
+  </script>
+</body>
+</html>
