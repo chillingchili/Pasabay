@@ -10,6 +10,7 @@ import { useScale } from "@/hooks/useScale";
 import { emitRideCancel, onRideCanceled } from "@/lib/socket";
 import { getWalkingRoute, haversineKm } from "@/lib/osrm";
 import { useLocation } from "@/hooks/useLocation";
+import { RealMap } from "@/components/RealMap";
 
 function _calcEtaMin(
   driverLoc: { lat: number; lng: number },
@@ -35,6 +36,9 @@ export default function MatchFoundScreen() {
   const [walkingDistance, setWalkingDistance] = useState<number | null>(null);
   const [walkingEtaMin, setWalkingEtaMin] = useState<number | null>(null);
   const [showHurry, setShowHurry] = useState(false);
+  const [mapFitKey, setMapFitKey] = useState(0);
+
+  useEffect(() => { setMapFitKey(k => k + 1); }, []);
 
   const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
 
@@ -260,6 +264,18 @@ export default function MatchFoundScreen() {
                 </Text>
               </View>
             </Card.Content>
+          </Card>
+
+          {/* Meeting spot map */}
+          <Card mode="outlined" style={{ borderRadius: 14, overflow: "hidden" }}>
+            <View style={{ height: 180, position: "relative" }}>
+              <RealMap
+                pickupPoint={pickup ? { lat: pickup.lat, lng: pickup.lng, name: pickup.name } : undefined}
+                userLocation={userLoc ?? undefined}
+                driverLocation={driverLocation ?? undefined}
+                fitRouteKey={mapFitKey}
+              />
+            </View>
           </Card>
 
           {/* Ride status indicator */}

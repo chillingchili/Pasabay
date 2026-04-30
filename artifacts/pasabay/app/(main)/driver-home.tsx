@@ -135,18 +135,18 @@ export default function DriverHomeScreen() {
     };
   }, [socketConnected]);
 
-  // Fit the map to show the full route ONCE when destination changes
-  // (NOT when user location changes, which happens on every GPS update)
+  // Fit the map to show the full route ONCE when destination or accepted match changes
   useEffect(() => {
-    if (!selectedDest) return;
+    if (!selectedDest && !accepted) return;
     setFitRouteKey((k) => k + 1);
-  }, [selectedDest]);
+  }, [selectedDest, accepted]);
 
   useEffect(() => {
-    if (!userLoc || !selectedDest) return;
+    const dest = accepted ? accepted.pickup : selectedDest;
+    if (!userLoc || !dest) return;
     let cancelled = false;
     const fetch = async () => {
-      const route = await getRoute(userLoc, selectedDest);
+      const route = await getRoute(userLoc, dest);
       if (cancelled) return;
       if (route) {
         setRoutePolyline(route.polyline);
@@ -155,7 +155,7 @@ export default function DriverHomeScreen() {
     };
     fetch();
     return () => { cancelled = true; };
-  }, [selectedDest, userLoc]);
+  }, [selectedDest, userLoc, accepted]);
 
   useEffect(() => {
     if (!demoDriverDest || selectedDest) return;
