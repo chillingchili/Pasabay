@@ -71,7 +71,6 @@ export default function RootLayout() {
     minHeight: '100vh',
     backgroundColor: '#fff',
     borderRadius: 44,
-    overflow: 'hidden',
     ...Platform.select({
       web: {
         boxShadow: '0 8px 48px rgba(0,0,0,0.35)',
@@ -93,7 +92,7 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <PaperProvider theme={theme}>
             <AppProvider>
-              <GestureHandlerRootView style={{ flex: 1 }}>
+              <GestureHandlerRootView style={{ flex: 1, minHeight: '100vh' }}>
                 <KeyboardProvider>
                   <RootLayoutNav />
                 </KeyboardProvider>
