@@ -68,12 +68,13 @@ export default function RootLayout() {
     maxWidth: 420,
     width: '100%',
     flex: 1,
-    minHeight: '100vh',
+    height: '100dvh',
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 44,
+    overflow: 'auto',
     ...Platform.select({
       web: {
-        boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
+        boxShadow: '0 8px 48px rgba(0,0,0,0.35)',
       },
       default: {
         elevation: 8,
@@ -92,7 +93,7 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <PaperProvider theme={theme}>
             <AppProvider>
-              <GestureHandlerRootView style={{ flex: 1, minHeight: '100vh' }}>
+              <GestureHandlerRootView style={{ flex: 1 }}>
                 <KeyboardProvider>
                   <RootLayoutNav />
                 </KeyboardProvider>
