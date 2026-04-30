@@ -35,19 +35,22 @@ export default function Root({ children }: PropsWithChildren) {
           #phone-frame {
             width: 100%;
             max-width: 390px;
-            min-height: 100vh;
+            height: calc(100vh - 48px);
+            margin: 24px 0;
             background: #ffffff;
             border-radius: 44px;
-            box-shadow:
-              0 0 0 1px rgba(0,0,0,0.06),
-              0 12px 40px rgba(0,0,0,0.12);
+            border: 6px solid #1f1f1f;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.15);
             overflow: hidden;
             position: relative;
           }
           @media (max-width: 390px) {
             #phone-frame {
               border-radius: 0;
+              border: none;
               box-shadow: none;
+              margin: 0;
+              height: 100vh;
             }
           }
         `}</style>
