@@ -1,8 +1,10 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Animated, Modal, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { useColors } from "@/hooks/useColors";
+import { useTheme } from "react-native-paper";
+import { Card, Button, Text, Divider, Surface } from "react-native-paper";
+import type { MD3Colors } from "react-native-paper";
 
 interface PreMatchModalProps {
   visible: boolean;
@@ -25,7 +27,7 @@ export function PreMatchModal({
   onConfirm,
   onCancel,
 }: PreMatchModalProps) {
-  const colors = useColors();
+  const { colors } = useTheme();
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(300)).current;
@@ -61,51 +63,53 @@ export function PreMatchModal({
           ]}
         >
           {/* Handle */}
-          <View style={[styles.handle, { backgroundColor: colors.border }]} />
+          <View style={[styles.handle, { backgroundColor: colors.outline }]} />
 
           {/* Header */}
           <View style={styles.header}>
-            <Text style={[styles.headerTitle, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>
+            <Text variant="headlineSmall" style={[styles.headerTitle, { color: colors.onSurface }]}>
               Before you ride
             </Text>
             <Pressable onPress={onCancel} style={styles.closeBtn}>
-              <Feather name="x" size={20} color={colors.textSecondary} />
+              <Feather name="x" size={20} color={colors.onSurfaceVariant} />
             </Pressable>
           </View>
 
           {/* Scrollable Content */}
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             {/* Route Summary Card */}
-            <View style={[styles.routeCard, { backgroundColor: colors.card }]}>
-              <View style={styles.routeRow}>
-                <View style={[styles.routeDot, { backgroundColor: colors.primary }]} />
-                <View style={styles.routeText}>
-                  <Text style={[styles.routeLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
-                    Destination
-                  </Text>
-                  <Text style={[styles.routeValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
-                    {destination}
-                  </Text>
+            <Card mode="outlined" style={{ backgroundColor: colors.surfaceVariant, borderRadius: 14, marginBottom: 12 }}>
+              <Card.Content style={{ padding: 14 }}>
+                <View style={styles.routeRow}>
+                  <View style={[styles.routeDot, { backgroundColor: colors.primary }]} />
+                  <View style={styles.routeText}>
+                    <Text variant="labelLarge" style={[styles.routeLabel, { color: colors.onSurfaceVariant, fontSize: 11 }]}>
+                      Destination
+                    </Text>
+                    <Text variant="bodyLarge" style={[styles.routeValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>
+                      {destination}
+                    </Text>
+                  </View>
                 </View>
-              </View>
 
-              <View style={styles.summaryRow}>
-                <SummaryItem label="Fare" value={`₱${fareEstimate.toFixed(0)}`} colors={colors} />
-                <View style={[styles.summaryDivider, { backgroundColor: colors.border }]} />
-                <SummaryItem label="Distance" value={`${distanceKm.toFixed(1)} km`} colors={colors} />
-                <View style={[styles.summaryDivider, { backgroundColor: colors.border }]} />
-                <SummaryItem label="ETA" value={`~${etaMin} min`} colors={colors} />
-              </View>
-              <Text style={[styles.fareBreakdown, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>
-                Est. fuel (₱65/L ÷ 20km/L × {distanceKm.toFixed(1)}km) + ₱8 fee = ₱{fareEstimate.toFixed(0)}
-              </Text>
-            </View>
+                <View style={styles.summaryRow}>
+                  <SummaryItem label="Fare" value={`₱${fareEstimate.toFixed(0)}`} colors={colors} />
+                  <View style={[styles.summaryDivider, { backgroundColor: colors.outline }]} />
+                  <SummaryItem label="Distance" value={`${distanceKm.toFixed(1)} km`} colors={colors} />
+                  <View style={[styles.summaryDivider, { backgroundColor: colors.outline }]} />
+                  <SummaryItem label="ETA" value={`~${etaMin} min`} colors={colors} />
+                </View>
+                <Text variant="labelLarge" style={[styles.fareBreakdown, { color: colors.onSurfaceDisabled, fontFamily: "Inter_400Regular", fontSize: 11 }]}>
+                  Est. fuel (₱65/L ÷ 20km/L × {distanceKm.toFixed(1)}km) + ₱8 fee = ₱{fareEstimate.toFixed(0)}
+                </Text>
+              </Card.Content>
+            </Card>
 
             {/* Walking Info */}
             {walkingInfo && (
-              <View style={[styles.walkCard, { backgroundColor: colors.accentBg }]}>
-                <Feather name="navigation" size={16} color={colors.accentDark} />
-                <Text style={[styles.walkText, { color: colors.accentDark, fontFamily: "Inter_500Medium" }]}>
+              <View style={[styles.walkCard, { backgroundColor: colors.tertiaryContainer }]}>
+                <Feather name="navigation" size={16} color={colors.onTertiaryContainer} />
+                <Text variant="labelLarge" style={[styles.walkText, { color: colors.onTertiaryContainer, fontFamily: "Inter_500Medium", fontSize: 12 }]}>
                   {walkingInfo.toPickupM}m walk to pickup · {walkingInfo.fromDropoffM}m walk from dropoff
                 </Text>
               </View>
@@ -113,7 +117,7 @@ export function PreMatchModal({
 
             {/* Terms & Conditions */}
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
+              <Text variant="bodyLarge" style={[styles.sectionTitle, { color: colors.onSurface, fontFamily: "Inter_600SemiBold", fontSize: 13 }]}>
                 Terms & Conditions
               </Text>
               <BulletPoint text="This is a cost-sharing rideshare, not a commercial service" colors={colors} />
@@ -123,7 +127,7 @@ export function PreMatchModal({
 
             {/* Expected Behavior */}
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
+              <Text variant="bodyLarge" style={[styles.sectionTitle, { color: colors.onSurface, fontFamily: "Inter_600SemiBold", fontSize: 13 }]}>
                 Expected behavior
               </Text>
               <BulletPoint text="Be at pickup point on time" colors={colors} />
@@ -134,26 +138,28 @@ export function PreMatchModal({
 
           {/* Sticky Action Buttons */}
           <View style={styles.actions}>
-            <Pressable
-              style={[styles.cancelActionBtn, { borderColor: colors.border }]}
+            <Button
+              mode="outlined"
+              textColor={colors.onSurfaceVariant}
               onPress={onCancel}
+              style={[styles.cancelActionBtn, { borderColor: colors.outline }]}
+              contentStyle={{ height: 48 }}
+              labelStyle={{ fontFamily: "Inter_500Medium", fontSize: 14 }}
             >
-              <Text style={[styles.cancelActionText, { color: colors.textSecondary, fontFamily: "Inter_500Medium" }]}>
-                Cancel
-              </Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.confirmBtn,
-                { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
-              ]}
+              Cancel
+            </Button>
+            <Button
+              mode="contained"
+              buttonColor={colors.primary}
+              textColor={colors.onPrimary}
               onPress={onConfirm}
+              style={styles.confirmBtn}
+              contentStyle={{ height: 48 }}
+              labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 15 }}
+              icon={() => <Feather name="check-circle" size={18} color={colors.onPrimary} />}
             >
-              <Feather name="check-circle" size={18} color="#fff" />
-              <Text style={[styles.confirmText, { fontFamily: "Inter_600SemiBold" }]}>
-                Confirm & Find Ride
-              </Text>
-            </Pressable>
+              Confirm & Find Ride
+            </Button>
           </View>
         </Animated.View>
       </View>
@@ -161,24 +167,24 @@ export function PreMatchModal({
   );
 }
 
-function SummaryItem({ label, value, colors }: { label: string; value: string; colors: ReturnType<typeof useColors> }) {
+function SummaryItem({ label, value, colors }: { label: string; value: string; colors: MD3Colors }) {
   return (
     <View style={styles.summaryItem}>
-      <Text style={[styles.summaryLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
+      <Text variant="labelLarge" style={[styles.summaryLabel, { color: colors.onSurfaceVariant, fontSize: 10 }]}>
         {label}
       </Text>
-      <Text style={[styles.summaryValue, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>
+      <Text variant="headlineSmall" style={[styles.summaryValue, { color: colors.onSurface, fontSize: 14, fontFamily: "Sora_800ExtraBold" }]}>
         {value}
       </Text>
     </View>
   );
 }
 
-function BulletPoint({ text, colors }: { text: string; colors: ReturnType<typeof useColors> }) {
+function BulletPoint({ text, colors }: { text: string; colors: MD3Colors }) {
   return (
     <View style={styles.bulletRow}>
       <View style={[styles.bulletDot, { backgroundColor: colors.primary }]} />
-      <Text style={[styles.bulletText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
+      <Text variant="labelLarge" style={[styles.bulletText, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular", fontSize: 12 }]}>
         {text}
       </Text>
     </View>
@@ -203,7 +209,6 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, marginBottom: 12 },
   headerTitle: { fontSize: 18 },
   closeBtn: { padding: 4 },
-  routeCard: { borderRadius: 14, padding: 14, marginBottom: 12 },
   routeRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
   routeDot: { width: 10, height: 10, borderRadius: 5 },
   routeText: { flex: 1 },
@@ -223,8 +228,6 @@ const styles = StyleSheet.create({
   bulletDot: { width: 5, height: 5, borderRadius: 2.5, marginTop: 5, flexShrink: 0 },
   bulletText: { fontSize: 12, flex: 1, lineHeight: 18 },
   actions: { flexDirection: "row", gap: 10, paddingHorizontal: 20, paddingTop: 12, paddingBottom: Platform.OS === "web" ? 68 : 8 },
-  cancelActionBtn: { flex: 1, height: 48, borderRadius: 14, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
-  cancelActionText: { fontSize: 14 },
-  confirmBtn: { flex: 2, flexDirection: "row", alignItems: "center", justifyContent: "center", height: 48, borderRadius: 14, gap: 8 },
-  confirmText: { color: "#fff", fontSize: 15 },
+  cancelActionBtn: { flex: 1, borderRadius: 14 },
+  confirmBtn: { flex: 2, borderRadius: 14 },
 });

@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Animated, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { useColors } from "@/hooks/useColors";
+import { useTheme } from "react-native-paper";
+import { TextInput, IconButton, Surface, Button } from "react-native-paper";
 
 interface Message {
   id: string;
@@ -24,7 +25,7 @@ const MOCK_MESSAGES: Message[] = [
 ];
 
 export function ChatSheet({ visible, onClose, driverName }: ChatSheetProps) {
-  const colors = useColors();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(300)).current;
   const [messages, setMessages] = useState<Message[]>(MOCK_MESSAGES);
@@ -62,22 +63,22 @@ export function ChatSheet({ visible, onClose, driverName }: ChatSheetProps) {
             style={[
               styles.sheet,
               {
-                backgroundColor: colors.background,
+                backgroundColor: colors.surface,
                 paddingBottom: Math.max(insets.bottom, 16),
                 transform: [{ translateY: slideAnim }],
               },
             ]}
           >
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={[styles.header, { borderBottomColor: colors.outline }]}>
               <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
                 <Text style={styles.avatarText}>{driverName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.headerName, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{driverName}</Text>
-                <Text style={[styles.headerStatus, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Active ride</Text>
+                <Text style={[styles.headerName, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>{driverName}</Text>
+                <Text style={[styles.headerStatus, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>Active ride</Text>
               </View>
               <Pressable onPress={onClose} style={styles.closeBtn}>
-                <Feather name="x" size={20} color={colors.textSecondary} />
+                <Feather name="x" size={20} color={colors.onSurfaceVariant} />
               </Pressable>
             </View>
 
@@ -95,14 +96,14 @@ export function ChatSheet({ visible, onClose, driverName }: ChatSheetProps) {
                       styles.messageBubble,
                       msg.sender === "passenger"
                         ? { backgroundColor: colors.primary }
-                        : { backgroundColor: colors.card },
+                        : { backgroundColor: colors.surfaceVariant },
                     ]}
                   >
                     <Text
                       style={[
                         styles.messageText,
                         {
-                          color: msg.sender === "passenger" ? "#fff" : colors.foreground,
+                          color: msg.sender === "passenger" ? "#fff" : colors.onSurface,
                           fontFamily: "Inter_400Regular",
                         },
                       ]}
@@ -110,26 +111,31 @@ export function ChatSheet({ visible, onClose, driverName }: ChatSheetProps) {
                       {msg.text}
                     </Text>
                   </View>
-                  <Text style={[styles.messageTime, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>{msg.time}</Text>
+                  <Text style={[styles.messageTime, { color: colors.onSurfaceDisabled, fontFamily: "Inter_400Regular" }]}>{msg.time}</Text>
                 </View>
               ))}
             </ScrollView>
 
-            <View style={[styles.inputRow, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
+            <View style={[styles.inputRow, { borderTopColor: colors.outline, backgroundColor: colors.surface }]}>
               <TextInput
-                style={[styles.input, { backgroundColor: colors.card, color: colors.foreground, fontFamily: "Inter_400Regular" }]}
+                mode="outlined"
+                style={[styles.input, { backgroundColor: colors.surfaceVariant }]}
+                outlineStyle={{ borderRadius: 20, borderColor: "transparent" }}
                 value={inputText}
                 onChangeText={setInputText}
                 placeholder="Type a message..."
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={colors.onSurfaceDisabled}
                 multiline
+                dense
               />
-              <Pressable
-                style={[styles.sendBtn, { backgroundColor: colors.primary }]}
+              <IconButton
+                icon="send"
+                iconColor={colors.onPrimary}
+                containerColor={colors.primary}
+                size={22}
                 onPress={handleSend}
-              >
-                <Feather name="send" size={18} color="#fff" />
-              </Pressable>
+                style={{ marginBottom: 0 }}
+              />
             </View>
           </Animated.View>
         </KeyboardAvoidingView>
@@ -164,6 +170,5 @@ const styles = StyleSheet.create({
   messageText: { fontSize: 14 },
   messageTime: { fontSize: 10, marginTop: 4 },
   inputRow: { flexDirection: "row", alignItems: "flex-end", padding: 12, gap: 10, borderTopWidth: 1 },
-  input: { flex: 1, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, maxHeight: 100, fontSize: 14 },
-  sendBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  input: { flex: 1, fontSize: 14 },
 });
