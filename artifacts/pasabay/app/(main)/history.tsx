@@ -21,6 +21,7 @@ export default function HistoryScreen() {
   const [selectedRide, setSelectedRide] = useState<RideHistory | null>(null);
 
   const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
+  const webModalStyle = Platform.OS === "web" ? { maxWidth: 372, alignSelf: "center" as const, width: "100%" as const } : {};
 
   const filtered = rideHistory.filter(r => {
     if (activeTab === "All") return true;
@@ -114,7 +115,7 @@ export default function HistoryScreen() {
         {selectedRide && (
           <View style={styles.modalOverlay}>
             <Pressable style={styles.modalBackdrop} onPress={() => setSelectedRide(null)} />
-            <Surface style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
+            <Surface style={[styles.modalSheet, webModalStyle, { backgroundColor: colors.surface }]}>
               <View style={[styles.modalHandle, { backgroundColor: colors.outline }]} />
               <Text variant="headlineSmall" style={[styles.modalTitle, { color: colors.onSurface }]}>Trip details</Text>
 
