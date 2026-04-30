@@ -5,7 +5,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { RealMap } from "@/components/RealMap";
 import LoadingOverlay from "@/components/LoadingOverlay";
-import { useColors } from "@/hooks/useColors";
+import { useTheme } from "react-native-paper";
+import { Card, Button, Surface } from "react-native-paper";
 import { useLocation } from "@/hooks/useLocation";
 import { useApp } from "@/context/AppContext";
 import { useScale } from "@/hooks/useScale";
@@ -19,7 +20,7 @@ import { getRoute } from "@/lib/osrm";
 
 export default function DriverHomeScreen() {
   const insets = useSafeAreaInsets();
-  const colors = useColors();
+  const { colors } = useTheme();
   const { fs, isSmall } = useScale();
   const dimensions = useWindowDimensions();
   const { user, pendingMatchRequest, clearPendingMatch, activeRide, clearActiveRide, setActiveRide, switchRole } = useApp();
@@ -30,6 +31,7 @@ export default function DriverHomeScreen() {
   const [routeInfo, setRouteInfo] = useState<{ distanceKm: number; durationMin: number } | null>(null);
   const [accepted, setAccepted] = useState<MatchRequestPayload | null>(null);
   const [rideId, setRideId] = useState<string | null>(null);
+  const acceptedRef = useRef<{ rideId: string; req: MatchRequestPayload } | null>(null);
   const [timer, setTimer] = useState(60);
   const [destQuery, setDestQuery] = useState("");
   const [showDestSuggestions, setShowDestSuggestions] = useState(false);
@@ -87,7 +89,6 @@ export default function DriverHomeScreen() {
   useEffect(() => {
     if (!accepted || !userLoc) return;
     const interval = setInterval(() => {
-      console.log("[MATCH-STAGE-6] Emitting driver location:", { lat: userLoc.lat, lng: userLoc.lng });
       emitDriverLocation(userLoc.lat, userLoc.lng);
     }, 10000);
     return () => clearInterval(interval);
@@ -96,6 +97,9 @@ export default function DriverHomeScreen() {
   useEffect(() => {
     const off = onMatchAccepted((data) => {
       setRideId(data.rideId);
+      if (acceptedRef.current) {
+        acceptedRef.current.rideId = data.rideId;
+      }
     });
     return off;
   }, []);
@@ -166,6 +170,7 @@ export default function DriverHomeScreen() {
 
   const handleAccept = (req: MatchRequestPayload) => {
     console.log("[MATCH-STAGE-4a] Driver accepting match:", { routeId: req.routeId, passengerId: req.passengerId });
+    acceptedRef.current = { rideId: "", req };
     emitMatchAccept({
       routeId: req.routeId,
       passengerId: req.passengerId,
@@ -203,21 +208,21 @@ export default function DriverHomeScreen() {
   };
 
   const handleDecline = (req: MatchRequestPayload) => {
-    console.log("[MATCH-STAGE-4b] Driver declining match:", { passengerId: req.passengerId });
     emitMatchDecline(req.passengerId);
     clearPendingMatch();
   };
 
   const handleCompleteRide = () => {
-    if (rideId) {
-      emitRideComplete(rideId);
+    const rideIdToUse = rideId || acceptedRef.current?.rideId;
+    if (rideIdToUse) {
+      emitRideComplete(rideIdToUse);
       setAccepted(null);
       setRideId(null);
       setTimer(60);
       clearActiveRide();
-      setActiveRide(null);
+      acceptedRef.current = null;
     } else {
-      setDriverError("Ride ID not available");
+      setDriverError("Ride ID not available yet. Please wait a moment.");
     }
   };
 
@@ -231,13 +236,15 @@ export default function DriverHomeScreen() {
           text: "Cancel Ride",
           style: "destructive",
           onPress: () => {
-            if (rideId) {
-              emitRideCancel(rideId, "Passenger no-show");
+            const rideIdToUse = rideId || acceptedRef.current?.rideId;
+            if (rideIdToUse) {
+              emitRideCancel(rideIdToUse, "Passenger no-show");
               setAccepted(null);
               setRideId(null);
               setTimer(60);
               clearActiveRide();
               setActiveRide(null);
+              acceptedRef.current = null;
             }
           },
         },
@@ -284,13 +291,13 @@ export default function DriverHomeScreen() {
         <View style={[styles.destBar, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
           <View style={[styles.destDot, { backgroundColor: colors.primary }]} />
           <TextInput
-            style={[styles.destInput, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}
+            style={[styles.destInput, { color: colors.onSurface, fontFamily: "Inter_400Regular" }]}
             value={destQuery}
             onChangeText={(t) => { setDestQuery(t); setShowDestSuggestions(true); }}
             onFocus={() => setShowDestSuggestions(true)}
             onBlur={() => setTimeout(() => setShowDestSuggestions(false), 200)}
             placeholder="Set destination..."
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.onSurfaceDisabled}
           />
         </View>
 
@@ -303,18 +310,18 @@ export default function DriverHomeScreen() {
                 onPress={() => handleSelectDest(d)}
               >
                 <Feather name="map-pin" size={14} color={colors.primary} />
-                <Text style={[styles.suggestionText, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}>{d.name}</Text>
+                <Text style={[styles.suggestionText, { color: colors.onSurface, fontFamily: "Inter_400Regular" }]}>{d.name}</Text>
               </Pressable>
             ))}
           </View>
         )}
 
         {driverError && (
-          <View style={[styles.errorBanner, { backgroundColor: colors.destructiveLight }]}>
-            <Feather name="alert-circle" size={14} color={colors.destructive} />
-            <Text style={[styles.errorBannerText, { color: colors.destructive, fontFamily: "Inter_500Medium" }]}>{driverError}</Text>
+          <View style={[styles.errorBanner, { backgroundColor: colors.errorContainer }]}>
+            <Feather name="alert-circle" size={14} color={colors.error} />
+            <Text style={[styles.errorBannerText, { color: colors.error, fontFamily: "Inter_500Medium" }]}>{driverError}</Text>
             <Pressable onPress={() => setDriverError(null)} hitSlop={8}>
-              <Feather name="x" size={14} color={colors.destructive} />
+              <Feather name="x" size={14} color={colors.error} />
             </Pressable>
           </View>
         )}
@@ -339,32 +346,41 @@ export default function DriverHomeScreen() {
               </Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.passengerName, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
+              <Text style={[styles.passengerName, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>
                 {pendingMatchRequest.passengerName} · ★{pendingMatchRequest.passengerRating.toFixed(1)}
               </Text>
-              <Text style={[styles.passengerRoute, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
+              <Text style={[styles.passengerRoute, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>
                 {pendingMatchRequest.pickup.name} → {pendingMatchRequest.dropoff.name}
               </Text>
             </View>
-            <View style={[styles.fareAdd, { backgroundColor: colors.accentBg }]}>
-              <Text style={[styles.fareAddText, { color: colors.accentDark, fontFamily: "Sora_800ExtraBold" }]}>
+            <View style={[styles.fareAdd, { backgroundColor: colors.tertiaryContainer }]}>
+              <Text style={[styles.fareAddText, { color: colors.onTertiaryContainer, fontFamily: "Sora_800ExtraBold" }]}>
                 + ₱{pendingMatchRequest.total.toFixed(0)}
               </Text>
             </View>
           </View>
           <View style={styles.requestActions}>
-            <Pressable
-              style={[styles.declineBtn, { borderColor: colors.border }]}
+            <Button
+              mode="outlined"
+              textColor={colors.onSurfaceVariant}
               onPress={() => handleDecline(pendingMatchRequest)}
+              style={[styles.declineBtn, { borderColor: colors.outline }]}
+              contentStyle={{ height: 44 }}
+              labelStyle={{ fontFamily: "Inter_500Medium", fontSize: 14 }}
             >
-              <Text style={[styles.declineBtnText, { color: colors.textSecondary, fontFamily: "Inter_500Medium" }]}>Decline</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.acceptBtn, { backgroundColor: colors.primary }]}
+              Decline
+            </Button>
+            <Button
+              mode="contained"
+              buttonColor={colors.primary}
+              textColor={colors.onPrimary}
               onPress={() => handleAccept(pendingMatchRequest)}
+              style={styles.acceptBtn}
+              contentStyle={{ height: 44 }}
+              labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 14 }}
             >
-              <Text style={[styles.acceptBtnText, { fontFamily: "Inter_600SemiBold" }]}>Accept</Text>
-            </Pressable>
+              Accept
+            </Button>
           </View>
         </Animated.View>
       )}
@@ -372,24 +388,24 @@ export default function DriverHomeScreen() {
       {accepted && (
         <View style={[styles.acceptedInfo, { backgroundColor: "rgba(255,255,255,0.97)", top: topPad + 130 }]}>
           <View style={styles.acceptedHeader}>
-            <View style={[styles.acceptedIcon, { backgroundColor: colors.primaryLight }]}>
+            <View style={[styles.acceptedIcon, { backgroundColor: colors.primaryContainer }]}>
               <Feather name="user" size={16} color={colors.primary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.acceptedTitle, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>Heading to pickup</Text>
-              <Text style={[styles.acceptedSubtitle, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
+              <Text style={[styles.acceptedTitle, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>Heading to pickup</Text>
+              <Text style={[styles.acceptedSubtitle, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>
                 {accepted.pickup.name} · {accepted.passengerName}
               </Text>
             </View>
-            <Pressable style={[styles.chatBtn, { backgroundColor: colors.primaryLight }]} onPress={() => setShowChat(true)}>
+            <Pressable style={[styles.chatBtn, { backgroundColor: colors.primaryContainer }]} onPress={() => setShowChat(true)}>
               <Feather name="message-circle" size={16} color={colors.primary} />
             </Pressable>
             {timer > 0 ? (
-              <View style={[styles.timerBadge, { backgroundColor: timer < 20 ? colors.destructiveLight : colors.primaryLight }]}>
-                <Text style={[styles.timerText, { color: timer < 20 ? colors.destructive : colors.primary, fontFamily: "Sora_800ExtraBold" }]}>{timer}s</Text>
+              <View style={[styles.timerBadge, { backgroundColor: timer < 20 ? colors.errorContainer : colors.primaryContainer }]}>
+                <Text style={[styles.timerText, { color: timer < 20 ? colors.error : colors.primary, fontFamily: "Sora_800ExtraBold" }]}>{timer}s</Text>
               </View>
             ) : (
-              <Pressable style={[styles.noShowBtn, { backgroundColor: colors.destructive }]} onPress={handleNoShow}>
+              <Pressable style={[styles.noShowBtn, { backgroundColor: colors.error }]} onPress={handleNoShow}>
                 <Text style={[styles.noShowText, { color: "#fff", fontFamily: "Inter_600SemiBold" }]}>Passenger No-Show</Text>
               </Pressable>
             )}
@@ -404,7 +420,7 @@ export default function DriverHomeScreen() {
       />
 
       {selectedDest && (
-        <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 16, 24) + (isOnline && !accepted && !showRouteInfo ? 32 : 60) }]} onLayout={(e) => setInfoBarHeight(e.nativeEvent.layout.height)}>
+        <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 16, 24) + (isOnline && !accepted && !showRouteInfo ? 16 : 60) }]} onLayout={(e) => setInfoBarHeight(e.nativeEvent.layout.height)}>
           {isOnline && !accepted ? (
             <Pressable style={[styles.navBar, { backgroundColor: colors.primary }]} onPress={() => setShowRouteInfo(v => !v)}>
               <View style={[styles.navIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
@@ -421,43 +437,46 @@ export default function DriverHomeScreen() {
               <Feather name={showRouteInfo ? "chevron-down" : "chevron-up"} size={16} color="#fff" />
             </Pressable>
           ) : (
-            <Pressable
-              style={[styles.driveBtn, { backgroundColor: colors.primary }]}
+            <Button
+              mode="contained"
+              buttonColor={colors.primary}
+              textColor={colors.onPrimary}
               onPress={handleGoOnline}
+              style={{ borderRadius: 14 }}
+              contentStyle={{ height: 50 }}
+              labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 16 }}
+              icon={() => <Feather name="navigation" size={16} color={colors.onPrimary} />}
             >
-              <Feather name="navigation" size={16} color="#fff" />
-              <Text style={[styles.driveBtnText, { fontFamily: "Inter_600SemiBold" }]}>
-                Drive to Destination
-              </Text>
-            </Pressable>
+              Drive to Destination
+            </Button>
           )}
           {(!isOnline || accepted || showRouteInfo) && (
             <>
               <View style={styles.routeRow}>
-                <View style={[styles.routeIcon, { backgroundColor: colors.primaryLight }]}>
+                <View style={[styles.routeIcon, { backgroundColor: colors.primaryContainer }]}>
                   <Feather name="map-pin" size={16} color={colors.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.infoLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>To</Text>
-                  <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>{selectedDest.name}</Text>
+                  <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>To</Text>
+                  <Text style={[styles.infoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>{selectedDest.name}</Text>
                 </View>
               </View>
               <View style={styles.routeMeta}>
                 <View style={styles.metaBlock}>
-                  <Feather name="clock" size={12} color={colors.textSecondary} />
-                  <Text style={[styles.metaText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>
+                  <Feather name="clock" size={12} color={colors.onSurfaceVariant} />
+                  <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>
                     {etaMin != null ? `${etaMin} min` : "—"}
                   </Text>
                 </View>
                 <View style={styles.metaBlock}>
-                  <Feather name="droplet" size={12} color={colors.textSecondary} />
-                  <Text style={[styles.metaText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>
+                  <Feather name="droplet" size={12} color={colors.onSurfaceVariant} />
+                  <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>
                     {fuelEst ?? "—"}
                   </Text>
                 </View>
                 <View style={styles.metaBlock}>
-                  <Feather name="maximize" size={12} color={colors.textSecondary} />
-                  <Text style={[styles.metaText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>
+                  <Feather name="maximize" size={12} color={colors.onSurfaceVariant} />
+                  <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>
                     {routeInfo ? `${routeInfo.distanceKm.toFixed(1)} km` : "—"}
                   </Text>
                 </View>
@@ -471,7 +490,7 @@ export default function DriverHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-container: { flex: 1 },
+  container: { flex: 1 },
   topBar: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, paddingHorizontal: 16, gap: 8 },
   greetingRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 2 },
   roleSwitchBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
@@ -494,10 +513,8 @@ container: { flex: 1 },
   fareAdd: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
   fareAddText: { fontSize: 13 },
   requestActions: { flexDirection: "row", gap: 8 },
-  declineBtn: { flex: 1, height: 44, borderRadius: 12, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
-  declineBtnText: { fontSize: 14 },
-  acceptBtn: { flex: 2, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  acceptBtnText: { color: "#fff", fontSize: 14 },
+  declineBtn: { flex: 1, borderRadius: 12 },
+  acceptBtn: { flex: 2, borderRadius: 12 },
   acceptedInfo: { position: "absolute", left: 16, right: 16, borderRadius: 16, padding: 14, zIndex: 200, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 5 },
   acceptedHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
   acceptedIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
@@ -508,7 +525,7 @@ container: { flex: 1 },
   timerText: { fontSize: 16 },
   noShowBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   noShowText: { fontSize: 12 },
-  infoBar: { position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 5, paddingHorizontal: 20, paddingTop: 16, gap: 12, borderTopLeftRadius: 20, borderTopRightRadius: 20, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 10 },
+  infoBar: { position: "absolute", bottom: 72, left: 0, right: 0, zIndex: 5, paddingHorizontal: 20, paddingTop: 16, gap: 12, borderTopLeftRadius: 20, borderTopRightRadius: 20, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 10 },
   infoLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
   infoValue: { fontSize: 16, fontFamily: "Inter_600SemiBold" },
   routeRow: { flexDirection: "row", alignItems: "center", gap: 10 },
@@ -516,8 +533,6 @@ container: { flex: 1 },
   routeMeta: { flexDirection: "row", gap: 20, paddingLeft: 46 },
   metaBlock: { flexDirection: "row", alignItems: "center", gap: 4 },
   metaText: { fontSize: 13 },
-  driveBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 50, borderRadius: 14 },
-  driveBtnText: { color: "#fff", fontSize: 16 },
   errorBanner: { flexDirection: "row", alignItems: "center", gap: 8, padding: 10, borderRadius: 12 },
   errorBannerText: { flex: 1, fontSize: 13 },
   recenterBtn: {

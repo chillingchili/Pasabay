@@ -2,23 +2,26 @@ import { Feather } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
 import { Platform, StyleSheet, View, useColorScheme } from "react-native";
-import { useColors } from "@/hooks/useColors";
+import { useTheme } from "react-native-paper";
 import { useApp } from "@/context/AppContext";
 
 const isWeb = Platform.OS === "web";
 const isIOS = Platform.OS === "ios";
 
 function TabBarIcon({ name, color, focused }: { name: keyof typeof Feather.glyphMap; color: string; focused: boolean }) {
-  const colors = useColors();
+  const { colors } = useTheme();
   return (
     <View style={{ alignItems: "center", justifyContent: "center", width: 44, height: 44 }}>
-      <Feather name={name} size={22} color={color} />
+      {focused && (
+        <View style={{ position: "absolute", top: 2, width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary }} />
+      )}
+      <Feather name={name} size={22} color={color} style={{ marginTop: focused ? 6 : 0 }} />
     </View>
   );
 }
 
 export default function MainTabLayout() {
-  const colors = useColors();
+  const { colors } = useTheme();
   const colorScheme = useColorScheme();
   const { activeRole } = useApp();
   const isDark = colorScheme === "dark";
@@ -27,22 +30,22 @@ export default function MainTabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarInactiveTintColor: colors.onSurfaceVariant,
         headerShown: false,
         tabBarStyle: {
           position: "absolute",
-          backgroundColor: isIOS ? "transparent" : colors.background,
+          backgroundColor: isIOS ? "transparent" : colors.surface,
           borderTopWidth: 1,
-          borderTopColor: colors.border,
+          borderTopColor: colors.outline,
           elevation: 0,
           height: 64,
           paddingBottom: 8,
         },
         tabBarBackground: () =>
           isIOS && !isWeb ? (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background }]} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface }]} />
           ) : (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background }]} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface }]} />
           ),
       }}
     >

@@ -6,7 +6,8 @@ import { Feather } from "@expo/vector-icons";
 import { RealMap } from "@/components/RealMap";
 import { PreMatchModal } from "@/components/PreMatchModal";
 import LoadingOverlay from "@/components/LoadingOverlay";
-import { useColors } from "@/hooks/useColors";
+import { useTheme } from "react-native-paper";
+import { Button, Surface } from "react-native-paper";
 import { useLocation } from "@/hooks/useLocation";
 import { useApp } from "@/context/AppContext";
 import { getRoute } from "@/lib/osrm";
@@ -28,7 +29,7 @@ const DEST_COORDS: Record<string, { lat: number; lng: number }> = {
 
 export default function PassengerHomeScreen() {
   const insets = useSafeAreaInsets();
-  const colors = useColors();
+  const { colors } = useTheme();
   const { fs, isSmall } = useScale();
   const dimensions = useWindowDimensions();
   const { user, driverLocation, switchRole, activeRide } = useApp();
@@ -50,8 +51,6 @@ export default function PassengerHomeScreen() {
   const [showFare, setShowFare] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  // Keep in sync with api-server/src/lib/fare.ts:
-  // DEFAULT_FUEL_PRICE_PHP_PER_L, DEFAULT_FUEL_EFFICIENCY_KM_PER_L, MATCHING_FEE_PHP
   const FUEL_PRICE = 65;
   const DEF_FUEL_EFF = 20;
   const MATCHING_FEE = 8;
@@ -224,11 +223,11 @@ export default function PassengerHomeScreen() {
         <View style={[styles.searchContainer, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
           <View style={[styles.searchDot, { backgroundColor: colors.primary }]} />
           <TextInput
-            style={[styles.searchInput, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}
+            style={[styles.searchInput, { color: colors.onSurface, fontFamily: "Inter_400Regular" }]}
             value={destination}
             onChangeText={setDestination}
             placeholder="Where are you headed?"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={colors.onSurfaceVariant}
             onFocus={() => setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           />
@@ -246,7 +245,7 @@ export default function PassengerHomeScreen() {
                 onPress={() => { setDestination(d); setShowSuggestions(false); }}
               >
                 <Feather name="map-pin" size={14} color={colors.primary} />
-                <Text style={[styles.suggestionText, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}>{d}</Text>
+                <Text style={[styles.suggestionText, { color: colors.onSurface, fontFamily: "Inter_400Regular" }]}>{d}</Text>
               </Pressable>
             ))}
           </View>
@@ -260,27 +259,27 @@ export default function PassengerHomeScreen() {
         >
           <View style={styles.sheetInner}>
             <View style={styles.routeRow}>
-              <View style={[styles.routeIcon, { backgroundColor: colors.primaryLight }]}>
+              <View style={[styles.routeIcon, { backgroundColor: colors.primaryContainer }]}>
                 <Feather name="map-pin" size={16} color={colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Drop-off</Text>
-                <Text style={[styles.infoValue, { color: colors.foreground }]}>{destination}</Text>
+                <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant }]}>Drop-off</Text>
+                <Text style={[styles.infoValue, { color: colors.onSurface }]}>{destination}</Text>
               </View>
-              <View style={[styles.fareChip, { backgroundColor: colors.accentBg }]}>
-                <Text style={[styles.fareLabel, { color: colors.accentDark }]}>{activeRide ? "fare" : "est"}</Text>
-                <Text style={[styles.fareAmount, { color: colors.accentDark }]}>₱{activeRide ? activeRide.total : totalFare}</Text>
+              <View style={[styles.fareChip, { backgroundColor: colors.tertiaryContainer }]}>
+                <Text style={[styles.fareLabel, { color: colors.onTertiaryContainer }]}>{activeRide ? "fare" : "est"}</Text>
+                <Text style={[styles.fareAmount, { color: colors.onTertiaryContainer }]}>₱{totalFare}</Text>
               </View>
             </View>
 
             <View style={styles.routeMeta}>
               <View style={styles.metaBlock}>
-                <Feather name="maximize" size={12} color={colors.textSecondary} />
-                <Text style={[styles.metaText, { color: colors.foreground }]}>{distanceKm.toFixed(1)} km</Text>
+                <Feather name="maximize" size={12} color={colors.onSurfaceVariant} />
+                <Text style={[styles.metaText, { color: colors.onSurface }]}>{distanceKm.toFixed(1)} km</Text>
               </View>
               <View style={styles.metaBlock}>
-                <Feather name="clock" size={12} color={colors.textSecondary} />
-                <Text style={[styles.metaText, { color: colors.foreground }]}>{etaMin} min</Text>
+                <Feather name="clock" size={12} color={colors.onSurfaceVariant} />
+                <Text style={[styles.metaText, { color: colors.onSurface }]}>{etaMin} min</Text>
               </View>
             </View>
 
@@ -293,42 +292,35 @@ export default function PassengerHomeScreen() {
 
             {showFare && (
               <>
-                <View style={[styles.fareDivider, { backgroundColor: colors.border }]} />
-                <Text style={[styles.fareTitle, { color: colors.textSecondary, fontFamily: "Inter_600SemiBold" }]}>
-                  {activeRide ? "Fare" : "Estimated fare"}
-                </Text>
+                <View style={[styles.fareDivider, { backgroundColor: colors.outline }]} />
+                <Text style={[styles.fareTitle, { color: colors.onSurfaceVariant, fontFamily: "Inter_600SemiBold" }]}>Estimated fare</Text>
                 <View style={styles.fareRow}>
-                  <Text style={[styles.fareRowLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
-                    {activeRide
-                      ? `Fuel (${activeRide.distanceKm.toFixed(1)}km)`
-                      : `Fuel (${distanceKm.toFixed(1)}km × ₱${FUEL_PRICE}/L ÷ ${eff}km/L)`}
-                  </Text>
-                  <Text style={[styles.fareRowValue, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}>
-                    ₱{activeRide ? activeRide.fare.toFixed(2) : fuelCost.toFixed(2)}
-                  </Text>
+                  <Text style={[styles.fareRowLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>Fuel ({distanceKm.toFixed(1)}km × ₱{FUEL_PRICE}/L ÷ {eff}km/L)</Text>
+                  <Text style={[styles.fareRowValue, { color: colors.onSurface, fontFamily: "Inter_400Regular" }]}>₱{fuelCost.toFixed(2)}</Text>
                 </View>
                 <View style={styles.fareRow}>
-                  <Text style={[styles.fareRowLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Matching fee</Text>
-                  <Text style={[styles.fareRowValue, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}>
-                    ₱{activeRide ? activeRide.matchingFee.toFixed(2) : MATCHING_FEE.toFixed(2)}
-                  </Text>
+                  <Text style={[styles.fareRowLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>Matching fee</Text>
+                  <Text style={[styles.fareRowValue, { color: colors.onSurface, fontFamily: "Inter_400Regular" }]}>₱{MATCHING_FEE.toFixed(2)}</Text>
                 </View>
-                <View style={[styles.fareTotalRow, { borderTopColor: colors.border }]}>
-                  <Text style={[styles.fareRowLabel, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>Total</Text>
-                  <Text style={[styles.fareRowValue, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>
-                    ₱{activeRide ? activeRide.total.toFixed(2) : totalFare.toFixed(2)}
-                  </Text>
+                <View style={[styles.fareTotalRow, { borderTopColor: colors.outline }]}>
+                  <Text style={[styles.fareRowLabel, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>Total</Text>
+                  <Text style={[styles.fareRowValue, { color: colors.onSurface, fontFamily: "Sora_800ExtraBold" }]}>₱{totalFare.toFixed(2)}</Text>
                 </View>
               </>
             )}
 
-            <Pressable
-              style={[styles.driveBtn, { backgroundColor: colors.primary }]}
+            <Button
+              mode="contained"
+              buttonColor={colors.primary}
+              textColor={colors.onPrimary}
               onPress={handleFindRide}
+              style={{ borderRadius: 14 }}
+              contentStyle={{ height: 50 }}
+              labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 16 }}
+              icon={() => <Feather name="search" size={16} color={colors.onPrimary} />}
             >
-              <Feather name="search" size={16} color="#fff" />
-              <Text style={[styles.driveBtnText, { fontFamily: "Inter_600SemiBold" }]}>Find a Pasabay</Text>
-            </Pressable>
+              Find a Pasabay
+            </Button>
           </View>
         </View>
       )}
@@ -340,24 +332,24 @@ export default function PassengerHomeScreen() {
         >
           <View style={styles.sheetInner}>
             <View style={styles.routeRow}>
-              <View style={[styles.routeIcon, { backgroundColor: colors.primaryLight }]}>
+              <View style={[styles.routeIcon, { backgroundColor: colors.primaryContainer }]}>
                 <Feather name="navigation" size={16} color={colors.primary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Your driver is coming</Text>
-                <Text style={[styles.infoValue, { color: colors.foreground }]}>{activeRide.driver.name}</Text>
+                <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant }]}>Your driver is coming</Text>
+                <Text style={[styles.infoValue, { color: colors.onSurface }]}>{activeRide.driver.name}</Text>
               </View>
             </View>
             <View style={styles.routeMeta}>
               <View style={styles.metaBlock}>
-                <Feather name="truck" size={12} color={colors.textSecondary} />
-                <Text style={[styles.metaText, { color: colors.foreground }]}>
+                <Feather name="truck" size={12} color={colors.onSurfaceVariant} />
+                <Text style={[styles.metaText, { color: colors.onSurface }]}>
                   {activeRide.driver.vehicle ? `${activeRide.driver.vehicle.make} ${activeRide.driver.vehicle.model}` : "—"}
                 </Text>
               </View>
               <View style={styles.metaBlock}>
-                <Feather name="dollar-sign" size={12} color={colors.textSecondary} />
-                <Text style={[styles.metaText, { color: colors.foreground }]}>₱{activeRide.total.toFixed(0)}</Text>
+                <Feather name="dollar-sign" size={12} color={colors.onSurfaceVariant} />
+                <Text style={[styles.metaText, { color: colors.onSurface }]}>₱{activeRide.total.toFixed(0)}</Text>
               </View>
             </View>
           </View>
@@ -404,8 +396,6 @@ const styles = StyleSheet.create({
   routeMeta: { flexDirection: "row", gap: 20, paddingLeft: 46 },
   metaBlock: { flexDirection: "row", alignItems: "center", gap: 4 },
   metaText: { fontSize: 13, fontFamily: "Inter_500Medium" },
-  driveBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 50, borderRadius: 14 },
-  driveBtnText: { color: "#fff", fontSize: 16 },
   fareDivider: { height: 1, marginTop: 4 },
   fareTitle: { fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 },
   fareRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
