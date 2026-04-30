@@ -23,7 +23,7 @@ export default function DriverHomeScreen() {
   const { colors } = useTheme();
   const { fs, isSmall } = useScale();
   const dimensions = useWindowDimensions();
-  const { user, pendingMatchRequest, clearPendingMatch, activeRide, clearActiveRide, setActiveRide, switchRole, socketConnected } = useApp();
+  const { user, pendingMatchRequest, clearPendingMatch, activeRide, clearActiveRide, setActiveRide, switchRole, socketConnected, clearMatchConfirmed } = useApp();
   const { location: userLoc } = useLocation();
 
   const [isOnline, setIsOnline] = useState(false);
@@ -33,6 +33,8 @@ export default function DriverHomeScreen() {
   const [rideId, setRideId] = useState<string | null>(null);
   const acceptedRef = useRef<{ rideId: string; req: MatchRequestPayload } | null>(null);
   const [timer, setTimer] = useState(60);
+  const [arrived, setArrived] = useState(false);
+  const [waitTimer, setWaitTimer] = useState(60);
   const [destQuery, setDestQuery] = useState("");
   const [showDestSuggestions, setShowDestSuggestions] = useState(false);
   const [selectedDest, setSelectedDest] = useState<{ lat: number; lng: number; name: string } | null>(null);
@@ -86,6 +88,17 @@ export default function DriverHomeScreen() {
     }, 1000);
     return () => clearInterval(interval);
   }, [accepted]);
+
+  useEffect(() => {
+    if (!arrived) return;
+    const interval = setInterval(() => {
+      setWaitTimer(t => {
+        if (t <= 1) { clearInterval(interval); return 0; }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [arrived]);
 
   useEffect(() => {
     if (!accepted || !userLoc) return;
@@ -192,7 +205,6 @@ export default function DriverHomeScreen() {
       distanceKm: req.distanceKm,
     });
     setAccepted(req);
-    setTimer(60);
     clearPendingMatch();
     setActiveRide({
       rideId: rideId ?? req.routeId,
@@ -226,6 +238,8 @@ export default function DriverHomeScreen() {
       setAccepted(null);
       setRideId(null);
       setTimer(60);
+      setArrived(false);
+      setWaitTimer(60);
       clearActiveRide();
       acceptedRef.current = null;
     } else {
@@ -255,16 +269,16 @@ export default function DriverHomeScreen() {
   };
 
   const handleArrived = () => {
-    emitDriverArrived();
-    emitDriverOffline();
-    setIsOnline(false);
-    setRouteInfo(null);
-    setRoutePolyline(null);
-    setSelectedDest(null);
-    setDestQuery("");
-    setDriverError(null);
-    setShowRouteInfo(false);
-    setInfoBarHeight(0);
+    const rideIdToUse = rideId || acceptedRef.current?.rideId;
+    if (!rideIdToUse) {
+      setDriverError("Ride ID not available yet. Please wait a moment.");
+      return;
+    }
+    console.log("[MATCH-STAGE-5] Driver pressed Arrived:", { rideId: rideIdToUse });
+    emitDriverArrived(rideIdToUse);
+    setArrived(true);
+    setWaitTimer(60);
+    // Keep isOnline, routeInfo, selectedDest etc — driver stays online
   };
 
   const handleNoShow = () => {
@@ -272,7 +286,7 @@ export default function DriverHomeScreen() {
       "Passenger No-Show",
       "Cancel this ride and notify the passenger?",
       [
-        { text: "Keep Waiting", style: "cancel" },
+        { text: "Keep Waiting", style: "cancel", onPress: () => { setWaitTimer(prev => prev + 30); } },
         {
           text: "Cancel Ride",
           style: "destructive",
@@ -283,8 +297,11 @@ export default function DriverHomeScreen() {
               setAccepted(null);
               setRideId(null);
               setTimer(60);
+              setArrived(false);
+              setWaitTimer(60);
               clearActiveRide();
               setActiveRide(null);
+              clearMatchConfirmed();
               acceptedRef.current = null;
             }
           },
@@ -429,7 +446,7 @@ export default function DriverHomeScreen() {
         </Animated.View>
       )}
 
-      {accepted && (
+      {accepted && !arrived && (
         <View style={[styles.acceptedInfo, { backgroundColor: "rgba(255,255,255,0.97)", top: topPad + 130 }]}>
           <View style={styles.acceptedHeader}>
             <View style={[styles.acceptedIcon, { backgroundColor: colors.primaryContainer }]}>
@@ -444,9 +461,28 @@ export default function DriverHomeScreen() {
             <Pressable style={[styles.chatBtn, { backgroundColor: colors.primaryContainer }]} onPress={() => setShowChat(true)}>
               <Feather name="message-circle" size={16} color={colors.primary} />
             </Pressable>
-            {timer > 0 ? (
-              <View style={[styles.timerBadge, { backgroundColor: timer < 20 ? colors.errorContainer : colors.primaryContainer }]}>
-                <Text style={[styles.timerText, { color: timer < 20 ? colors.error : colors.primary, fontFamily: "Sora_800ExtraBold" }]}>{timer}s</Text>
+          </View>
+        </View>
+      )}
+
+      {accepted && arrived && (
+        <View style={[styles.acceptedInfo, { backgroundColor: "rgba(255,255,255,0.97)", top: topPad + 130 }]}>
+          <View style={styles.acceptedHeader}>
+            <View style={[styles.acceptedIcon, { backgroundColor: colors.primaryContainer }]}>
+              <Feather name="user" size={16} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.acceptedTitle, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>Waiting for passenger</Text>
+              <Text style={[styles.acceptedSubtitle, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>
+                {accepted.pickup.name} · {accepted.passengerName}
+              </Text>
+            </View>
+            <Pressable style={[styles.chatBtn, { backgroundColor: colors.primaryContainer }]} onPress={() => setShowChat(true)}>
+              <Feather name="message-circle" size={16} color={colors.primary} />
+            </Pressable>
+            {waitTimer > 0 ? (
+              <View style={[styles.timerBadge, { backgroundColor: waitTimer > 30 ? "#4caf50" : waitTimer > 10 ? "#ff9800" : colors.errorContainer }]}>
+                <Text style={[styles.timerText, { color: waitTimer > 30 ? "#fff" : waitTimer > 10 ? "#fff" : colors.error, fontFamily: "Sora_800ExtraBold" }]}>{waitTimer}s</Text>
               </View>
             ) : (
               <Pressable style={[styles.noShowBtn, { backgroundColor: colors.error }]} onPress={handleNoShow}>
