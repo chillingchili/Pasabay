@@ -50,10 +50,11 @@ export default function PassengerHomeScreen() {
   const [showFare, setShowFare] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  const FUEL_PRICE = 60;
-  const FUEL_EFFICIENCY = 10;
+  const FUEL_PRICE = 65;
+  const DEF_FUEL_EFF = 20;
   const MATCHING_FEE = 8;
-  const fuelCost = distanceKm * FUEL_PRICE / FUEL_EFFICIENCY;
+  const eff = activeRide?.driver.vehicle?.fuelEfficiency ?? DEF_FUEL_EFF;
+  const fuelCost = distanceKm * FUEL_PRICE / eff;
   const totalFare = Math.max(15, Math.round(fuelCost + MATCHING_FEE));
 
   const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
@@ -107,13 +108,13 @@ export default function PassengerHomeScreen() {
         const dist = route.distanceKm;
         setDistanceKm(dist);
         setEtaMin(Math.round(route.durationSec / 60));
-        const fare = Math.max(15, Math.round(dist * 6 + 8));
+        const fare = Math.max(15, Math.round(dist * 65 / 20 + 8));
         setFareEstimate(fare);
       } else {
         const dist = haversineKm(pickupPoint, dropoffPoint);
         setDistanceKm(dist);
         setEtaMin(Math.round(dist * 3));
-        const fare = Math.max(15, Math.round(dist * 6 + 8));
+        const fare = Math.max(15, Math.round(dist * 65 / 20 + 8));
         setFareEstimate(fare);
       }
     };
@@ -265,8 +266,8 @@ export default function PassengerHomeScreen() {
                 <Text style={[styles.infoValue, { color: colors.foreground }]}>{destination}</Text>
               </View>
               <View style={[styles.fareChip, { backgroundColor: colors.accentBg }]}>
-                <Text style={[styles.fareLabel, { color: colors.accentDark }]}>fare</Text>
-                <Text style={[styles.fareAmount, { color: colors.accentDark }]}>₱{fareEstimate}</Text>
+                <Text style={[styles.fareLabel, { color: colors.accentDark }]}>{activeRide ? "fare" : "est"}</Text>
+                <Text style={[styles.fareAmount, { color: colors.accentDark }]}>₱{totalFare}</Text>
               </View>
             </View>
 
@@ -291,9 +292,9 @@ export default function PassengerHomeScreen() {
             {showFare && (
               <>
                 <View style={[styles.fareDivider, { backgroundColor: colors.border }]} />
-                <Text style={[styles.fareTitle, { color: colors.textSecondary, fontFamily: "Inter_600SemiBold" }]}>Fare breakdown</Text>
+                <Text style={[styles.fareTitle, { color: colors.textSecondary, fontFamily: "Inter_600SemiBold" }]}>Estimated fare</Text>
                 <View style={styles.fareRow}>
-                  <Text style={[styles.fareRowLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Fuel ({distanceKm.toFixed(1)}km × ₱{FUEL_PRICE}/L ÷ {FUEL_EFFICIENCY}km/L)</Text>
+                  <Text style={[styles.fareRowLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Fuel ({distanceKm.toFixed(1)}km × ₱{FUEL_PRICE}/L ÷ {eff}km/L)</Text>
                   <Text style={[styles.fareRowValue, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}>₱{fuelCost.toFixed(2)}</Text>
                 </View>
                 <View style={styles.fareRow}>

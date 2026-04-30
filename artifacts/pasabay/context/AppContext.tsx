@@ -57,7 +57,7 @@ export interface ActiveRide {
     name: string;
     rating: number;
     avatar?: string;
-    vehicle?: { make: string; model: string; color: string; plate: string } | null;
+    vehicle?: { make: string; model: string; color: string; plate: string; fuelEfficiency?: number } | null;
   };
   pickup: { lat: number; lng: number; name: string };
   dropoff: { lat: number; lng: number; name: string };

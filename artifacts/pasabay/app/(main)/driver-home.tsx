@@ -187,7 +187,7 @@ export default function DriverHomeScreen() {
         rating: user.rating,
         avatar: user.avatar,
         vehicle: user.vehicle
-          ? { make: user.vehicle.make, model: user.vehicle.model, color: user.vehicle.color, plate: user.vehicle.plate }
+          ? { make: user.vehicle.make, model: user.vehicle.model, color: user.vehicle.color, plate: user.vehicle.plate, fuelEfficiency: user.vehicle.fuelEfficiency }
           : null,
       } : { id: "", name: "", rating: 0, avatar: undefined, vehicle: null },
       pickup: req.pickup,
