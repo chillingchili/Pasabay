@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Alert, Animated, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Alert, Animated, Platform, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
-import { useColors } from "@/hooks/useColors";
+import { useTheme } from "react-native-paper";
+import { Card, Button, Text, Divider } from "react-native-paper";
 import { Feather } from "@expo/vector-icons";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { useApp } from "@/context/AppContext";
@@ -20,27 +21,30 @@ function GoogleIcon() {
   );
 }
 
-function TeaserCard({ colors }: { colors: ReturnType<typeof useColors> }) {
+function TeaserCard() {
+  const { colors } = useTheme();
   return (
-    <View style={[styles.teaserCard, { backgroundColor: colors.card, borderRadius: 14 }]}>
-      <View style={styles.teaserRow}>
-        <View style={[styles.teaserDot, { backgroundColor: colors.primary }]} />
-        <Text style={[styles.teaserLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>From</Text>
-        <Text style={[styles.teaserValue, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}>Your location</Text>
-      </View>
-      <View style={[styles.teaserDivider, { backgroundColor: colors.borderLighter }]} />
-      <View style={styles.teaserRow}>
-        <View style={[styles.teaserDot, { backgroundColor: colors.primary }]} />
-        <Text style={[styles.teaserLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>To</Text>
-        <Text style={[styles.teaserValue, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>Where to?</Text>
-      </View>
-    </View>
+    <Card mode="outlined" style={{ backgroundColor: colors.surfaceVariant, borderRadius: 14, width: 280 }}>
+      <Card.Content style={{ padding: 16 }}>
+        <View style={styles.teaserRow}>
+          <View style={[styles.teaserDot, { backgroundColor: colors.primary }]} />
+          <Text variant="labelLarge" style={[styles.teaserLabel, { color: colors.onSurfaceVariant }]}>From</Text>
+          <Text variant="bodyLarge" style={[styles.teaserValue, { color: colors.onSurface }]}>Your location</Text>
+        </View>
+        <Divider style={{ backgroundColor: colors.outlineVariant, marginLeft: 18 }} />
+        <View style={styles.teaserRow}>
+          <View style={[styles.teaserDot, { backgroundColor: colors.primary }]} />
+          <Text variant="labelLarge" style={[styles.teaserLabel, { color: colors.onSurfaceVariant }]}>To</Text>
+          <Text variant="bodyLarge" style={[styles.teaserValue, { color: colors.onSurfaceDisabled }]}>Where to?</Text>
+        </View>
+      </Card.Content>
+    </Card>
   );
 }
 
 export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
-  const colors = useColors();
+  const { colors } = useTheme();
   const { s, fs, isSmall } = useScale();
   const { loginWithGoogle, loginAsDemo } = useApp();
   const { signInWithGoogle, loading: googleLoading } = useGoogleAuth();
@@ -85,14 +89,16 @@ export default function WelcomeScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.surface }]}>
       <Animated.View style={[styles.heroSection, { paddingTop: s(60), paddingHorizontal: isSmall ? 16 : 24, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         <View style={[styles.illustration, { marginBottom: s(20) }]}>
-          <TeaserCard colors={colors} />
+          <TeaserCard />
         </View>
 
-        <Text style={[styles.title, { fontSize: fs(28), color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>Your campus, your commute</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
+        <Text variant="displaySmall" style={[styles.title, { fontSize: fs(28), color: colors.onSurface }]}>
+          Your campus, your commute
+        </Text>
+        <Text variant="bodyLarge" style={[styles.subtitle, { color: colors.onSurfaceVariant }]}>
           Share rides with fellow Carolinians.{"\n"}Safe, affordable campus commutes.
         </Text>
       </Animated.View>
@@ -100,51 +106,62 @@ export default function WelcomeScreen() {
       <View style={{ flex: 1 }} />
 
       <Animated.View style={[styles.buttons, { opacity: fadeAnim, paddingBottom: Math.max(insets.bottom + 20, 32) }]}>
-        <Pressable
-          style={({ pressed }) => [styles.btnPrimary, { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }]}
+        <Button
+          mode="contained"
+          buttonColor={colors.primary}
+          textColor={colors.onPrimary}
           onPress={() => router.push("/signup")}
+          style={styles.btnFull}
+          contentStyle={styles.btnContent}
+          labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 16 }}
         >
-          <Text style={[styles.btnPrimaryText, { fontFamily: "Inter_600SemiBold" }]}>Sign up with email</Text>
-        </Pressable>
+          Sign up with email
+        </Button>
 
-        <Pressable
-          style={({ pressed }) => [styles.btnOutline, { borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
+        <Button
+          mode="outlined"
+          textColor={colors.onSurface}
           onPress={() => router.push("/login")}
+          style={[styles.btnFull, { borderColor: colors.outline }]}
+          contentStyle={styles.btnContent}
+          labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 16 }}
         >
-          <Text style={[styles.btnOutlineText, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>Log in</Text>
-        </Pressable>
+          Log in
+        </Button>
 
         <View style={styles.divider}>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <Text style={[styles.dividerText, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>or</Text>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <View style={[styles.dividerLine, { backgroundColor: colors.outline }]} />
+          <Text variant="labelLarge" style={[styles.dividerText, { color: colors.onSurfaceDisabled }]}>or</Text>
+          <View style={[styles.dividerLine, { backgroundColor: colors.outline }]} />
         </View>
 
-        <Pressable
-          style={({ pressed }) => [styles.btnGoogle, { borderColor: colors.border, opacity: pressed || googleLoading ? 0.7 : 1 }]}
+        <Button
+          mode="outlined"
           onPress={handleGoogleAuth}
           disabled={googleLoading}
+          loading={googleLoading}
+          style={[styles.btnFull, { borderColor: colors.outline, backgroundColor: "#fff" }]}
+          contentStyle={styles.btnContent}
+          labelStyle={{ fontFamily: "Inter_500Medium", fontSize: 15, color: googleLoading ? colors.onSurfaceVariant : colors.onSurface }}
+          icon={() => googleLoading ? null : <GoogleIcon />}
         >
-          {googleLoading ? (
-            <Text style={[styles.btnGoogleText, { color: colors.textSecondary, fontFamily: "Inter_500Medium" }]}>Signing in...</Text>
-          ) : (
-            <>
-              <GoogleIcon />
-              <Text style={[styles.btnGoogleText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>Continue with Google</Text>
-            </>
-          )}
-        </Pressable>
+          {googleLoading ? "Signing in..." : "Continue with Google"}
+        </Button>
 
-        <Pressable
-          style={({ pressed }) => [styles.btnDemo, { borderColor: colors.border, backgroundColor: colors.primaryLighter, opacity: pressed ? 0.7 : 1 }]}
+        <Button
+          mode="text"
+          textColor={colors.primary}
           onPress={async () => { await loginAsDemo(); router.replace("/(main)/passenger-home"); }}
+          style={[styles.btnFull, { borderColor: colors.outline }]}
+          contentStyle={styles.btnContent}
+          labelStyle={{ fontFamily: "Inter_500Medium", fontSize: 14 }}
+          icon={() => <Feather name="zap" size={16} color={colors.primary} />}
         >
-          <Feather name="zap" size={16} color={colors.primary} />
-          <Text style={[styles.btnDemoText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>Try demo — no sign-in needed</Text>
-        </Pressable>
+          Try demo — no sign-in needed
+        </Button>
 
-        <Text style={[styles.restriction, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>
-          Restricted to <Text style={{ color: colors.textSecondary, fontFamily: "Inter_500Medium" }}>@usc.edu.ph</Text> email addresses
+        <Text variant="labelLarge" style={[styles.restriction, { color: colors.onSurfaceDisabled }]}>
+          Restricted to <Text variant="labelLarge" style={{ color: colors.onSurfaceVariant, fontFamily: "Inter_500Medium" }}>@usc.edu.ph</Text> email addresses
         </Text>
       </Animated.View>
     </View>
@@ -157,21 +174,13 @@ const styles = StyleSheet.create({
   illustration: {},
   title: { fontWeight: "800", letterSpacing: -0.5, textAlign: "center" },
   subtitle: { fontSize: 15, textAlign: "center", lineHeight: 22, marginTop: 8 },
-  teaserCard: { width: 280, padding: 16 },
   teaserRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8 },
   teaserDot: { width: 8, height: 8, borderRadius: 4 },
   teaserLabel: { fontSize: 12, width: 40 },
   teaserValue: { fontSize: 14, flex: 1 },
-  teaserDivider: { height: 1, marginLeft: 18 },
   buttons: { paddingHorizontal: 24, gap: 10 },
-  btnPrimary: { height: 52, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  btnPrimaryText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  btnOutline: { height: 52, borderRadius: 14, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
-  btnOutlineText: { fontSize: 16, fontWeight: "600" },
-  btnGoogle: { height: 52, borderRadius: 14, borderWidth: 1.5, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: "#fff" },
-  btnGoogleText: { fontSize: 15 },
-  btnDemo: { height: 44, borderRadius: 14, borderWidth: 1.5, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
-  btnDemoText: { fontSize: 14 },
+  btnFull: { borderRadius: 14 },
+  btnContent: { height: 52 },
   divider: { flexDirection: "row", alignItems: "center", gap: 12, marginVertical: 4 },
   dividerLine: { flex: 1, height: 1 },
   dividerText: { fontSize: 13 },

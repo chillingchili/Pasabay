@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Alert, Animated, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Alert, Animated, Platform, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { useColors } from "@/hooks/useColors";
+import { useTheme } from "react-native-paper";
+import { Card, Button, Text, Surface, Chip } from "react-native-paper";
 import { useApp } from "@/context/AppContext";
 import { useScale } from "@/hooks/useScale";
 import { emitRideCancel, onRideCanceled } from "@/lib/socket";
@@ -20,13 +21,10 @@ function _calcEtaMin(
 
 export default function MatchFoundScreen() {
   const insets = useSafeAreaInsets();
-  const colors = useColors();
+  const { colors } = useTheme();
   const { fs, isSmall } = useScale();
   const dimensions = useWindowDimensions();
   const { matchConfirmed, clearMatchConfirmed, completedRide, clearCompletedRide, addRideHistory, activeRide, driverLocation, clearActiveRide, networkStatus } = useApp();
-
-  console.log("[MATCH-STAGE-5] Match-found screen mounted:", { rideId: matchConfirmed?.rideId, driver: matchConfirmed?.driver?.name });
-
   const slideAnim = useRef(new Animated.Value(60)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const badgeScale = useRef(new Animated.Value(0.6)).current;
@@ -107,35 +105,35 @@ export default function MatchFoundScreen() {
     : "DR";
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <Surface style={[styles.container, { backgroundColor: colors.surface }]}>
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingHorizontal: isSmall ? 16 : 20, paddingTop: topPad + 8, paddingBottom: Math.max(insets.bottom + 120, 140) }]}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-          <Animated.View style={[styles.matchBadge, { backgroundColor: colors.primaryLight, transform: [{ scale: badgeScale }] }]}>
+          <Animated.View style={[styles.matchBadge, { backgroundColor: colors.primaryContainer, transform: [{ scale: badgeScale }] }]}>
             <Feather name="check" size={14} color={colors.primary} />
-            <Text style={[styles.matchBadgeText, { color: colors.primary, fontFamily: "Inter_600SemiBold" }]}>Match found!</Text>
+            <Text variant="labelLarge" style={[styles.matchBadgeText, { color: colors.primary, fontFamily: "Inter_600SemiBold" }]}>Match found!</Text>
           </Animated.View>
 
           <View style={styles.driverCard}>
             <View style={styles.avatarContainer}>
               <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-                <Text style={[styles.avatarText, { fontFamily: "Sora_800ExtraBold" }]}>{driverInitials}</Text>
+                <Text variant="displaySmall" style={[styles.avatarText, { fontFamily: "Sora_800ExtraBold" }]}>{driverInitials}</Text>
               </View>
-              <View style={[styles.onlineIndicator, { backgroundColor: networkStatus === "online" ? colors.primary : colors.textMuted, borderColor: colors.background }]} />
+              <View style={[styles.onlineIndicator, { backgroundColor: networkStatus === "online" ? colors.primary : colors.onSurfaceDisabled, borderColor: colors.surface }]} />
             </View>
-            <Text style={[styles.driverName, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>
+            <Text variant="headlineSmall" style={[styles.driverName, { color: colors.onSurface }]}>
               {driver?.name ?? "Your Driver"}
             </Text>
             {vehicle && (
-              <View style={[styles.verifiedBadge, { backgroundColor: colors.primary }]}>
-                <Text style={[styles.verifiedBadgeText, { fontFamily: "Inter_400Regular" }]}>Verified</Text>
-              </View>
+              <Chip mode="flat" style={{ backgroundColor: colors.primary }} textStyle={{ color: colors.onPrimary, fontFamily: "Inter_400Regular", fontSize: 12 }}>
+                Verified
+              </Chip>
             )}
             <View style={styles.ratingRow}>
               <Feather name="star" size={13} color={colors.primary} />
-              <Text style={[styles.ratingText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
+              <Text variant="labelLarge" style={[styles.ratingText, { color: colors.onSurfaceVariant }]}>
                 {driver?.rating?.toFixed(1) ?? "5.0"}
                 {driver?.rideCount != null && ` · ${driver.rideCount} rides`}
               </Text>
@@ -143,102 +141,115 @@ export default function MatchFoundScreen() {
           </View>
 
           {vehicle && (
-            <View style={[styles.vehicleCard, { backgroundColor: colors.card }]}>
-              <View style={[styles.vehicleIcon, { backgroundColor: colors.primaryLight }]}>
-                <Feather name="truck" size={20} color={colors.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.vehicleName, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
-                  {vehicle.make} {vehicle.model} · {vehicle.color}
-                </Text>
-                <Text style={[styles.vehiclePlate, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
-                  {vehicle.plate}
-                </Text>
-              </View>
-              <View style={[styles.seatBadge, { backgroundColor: colors.primaryLight }]}>
-                <Feather name="users" size={12} color={colors.primary} />
-                <Text style={[styles.seatBadgeText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>
-                  {vehicle.seats} seats
-                </Text>
-              </View>
-            </View>
+            <Card mode="outlined" style={{ backgroundColor: colors.surfaceVariant, borderRadius: 14 }}>
+              <Card.Content style={styles.cardContentRow}>
+                <View style={[styles.vehicleIcon, { backgroundColor: colors.primaryContainer }]}>
+                  <Feather name="truck" size={20} color={colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text variant="labelLarge" style={[styles.vehicleName, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>
+                    {vehicle.make} {vehicle.model} · {vehicle.color}
+                  </Text>
+                  <Text variant="labelLarge" style={[styles.vehiclePlate, { color: colors.onSurfaceVariant, fontSize: 12 }]}>
+                    {vehicle.plate}
+                  </Text>
+                </View>
+                <View style={[styles.seatBadge, { backgroundColor: colors.primaryContainer }]}>
+                  <Feather name="users" size={12} color={colors.primary} />
+                  <Text variant="labelLarge" style={[styles.seatBadgeText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>
+                    {vehicle.seats} seats
+                  </Text>
+                </View>
+              </Card.Content>
+            </Card>
           )}
 
-          <View style={[styles.pickupCard, { borderColor: colors.borderLighter }]}>
-            <View style={[styles.pickupIcon, { backgroundColor: colors.primaryLight }]}>
-              <Feather name="map-pin" size={18} color={colors.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.pickupLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Pickup at</Text>
-              <Text style={[styles.pickupValue, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
-                {pickup?.name ?? "Your pickup point"}
-              </Text>
-            </View>
-          </View>
+          <Card mode="outlined" style={{ backgroundColor: colors.surfaceVariant, borderRadius: 14 }}>
+            <Card.Content style={styles.cardContentRow}>
+              <View style={[styles.pickupIcon, { backgroundColor: colors.primaryContainer }]}>
+                <Feather name="map-pin" size={18} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text variant="labelLarge" style={[styles.pickupLabel, { color: colors.onSurfaceVariant, fontSize: 11 }]}>Pickup at</Text>
+                <Text variant="bodyLarge" style={[styles.pickupValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>
+                  {pickup?.name ?? "Your pickup point"}
+                </Text>
+              </View>
+            </Card.Content>
+          </Card>
 
           {/* Ride status indicator */}
-          <View style={[styles.rideStatusCard, { backgroundColor: colors.card }]}>
+          <View style={[styles.rideStatusCard, { backgroundColor: colors.surfaceVariant }]}>
             <Animated.View style={[styles.statusDot, { backgroundColor: colors.primary, transform: [{ scale: pulseAnim }] }]} />
-            <Text style={[styles.rideStatusText, { color: colors.textSecondary, fontFamily: "Inter_500Medium" }]}>
+            <Text variant="labelLarge" style={[styles.rideStatusText, { color: colors.onSurfaceVariant, fontFamily: "Inter_500Medium" }]}>
               {driverLocation ? "Driver is nearby" : "Driver is heading to pickup"}
             </Text>
           </View>
 
           {/* Driver location card — only shown when driverLocation is available */}
           {driverLocation && pickup && (
-            <View style={[styles.driverLocationCard, { backgroundColor: colors.card }]}>
+            <View style={[styles.driverLocationCard, { backgroundColor: colors.surfaceVariant }]}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
                 <Feather name="navigation" size={14} color={colors.primary} />
-                <Text style={[styles.driverLocationText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
+                <Text variant="labelLarge" style={[styles.driverLocationText, { color: colors.onSurfaceVariant, fontSize: 13 }]}>
                   Driver location: {driverLocation.lat.toFixed(4)}, {driverLocation.lng.toFixed(4)}
                 </Text>
               </View>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <View style={[styles.liveDot, { backgroundColor: networkStatus === "online" ? colors.primary : colors.destructive }]} />
-                <Text style={[styles.liveText, { color: networkStatus === "online" ? colors.primary : colors.destructive, fontFamily: "Inter_600SemiBold" }]}>
+                <View style={[styles.liveDot, { backgroundColor: networkStatus === "online" ? colors.primary : colors.error }]} />
+                <Text variant="labelLarge" style={[styles.liveText, { color: networkStatus === "online" ? colors.primary : colors.error, fontFamily: "Inter_600SemiBold", fontSize: 12 }]}>
                   {networkStatus === "online" ? "Live" : "Offline"}
                 </Text>
               </View>
-              <Text style={[styles.etaText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>
+              <Text variant="labelLarge" style={[styles.etaText, { color: colors.primary, fontFamily: "Inter_500Medium", fontSize: 13 }]}>
                 ~{Math.max(1, Math.round(_calcEtaMin(driverLocation, pickup)))} min away
               </Text>
             </View>
           )}
 
-          <View style={[styles.fareStrip, { backgroundColor: colors.primary, borderRadius: 14 }]}>
+          <Surface style={{ backgroundColor: colors.primary, borderRadius: 14, padding: 16, marginTop: 14 }}>
             <View style={styles.fareStripRow}>
-              <Text style={[styles.fareStripAmount, { fontFamily: "Sora_800ExtraBold" }]}>
+              <Text variant="displaySmall" style={[styles.fareStripAmount, { fontFamily: "Sora_800ExtraBold", color: colors.onPrimary }]}>
                 ₱{fare.toFixed(0)}
               </Text>
               {matchingFee > 0 && (
-                <Text style={[styles.fareStripFee, { fontFamily: "Inter_400Regular" }]}>
+                <Text variant="labelLarge" style={[styles.fareStripFee, { fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.8)" }]}>
                   + ₱{matchingFee.toFixed(0)} service fee
                 </Text>
               )}
             </View>
-            <Text style={[styles.fareStripNote, { fontFamily: "Inter_400Regular" }]}>
+            <Text variant="labelLarge" style={[styles.fareStripNote, { fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.7)", fontSize: 12 }]}>
               Fuel share only — all rides comply with LTFRB cost-sharing guidelines
             </Text>
-          </View>
+          </Surface>
         </Animated.View>
       </ScrollView>
 
-      <View style={[styles.actionBar, { backgroundColor: colors.background, borderTopColor: colors.borderLighter, paddingBottom: Math.max(insets.bottom + 24, 40) }]}>
-        <Pressable
-          style={[styles.btnDecline, { borderColor: `${colors.destructive}40` }]}
+      <View style={[styles.actionBar, { backgroundColor: colors.surface, borderTopColor: colors.outlineVariant, paddingBottom: Math.max(insets.bottom + 24, 40) }]}>
+        <Button
+          mode="outlined"
+          textColor={colors.error}
           onPress={handleDecline}
+          style={[styles.btnDecline, { borderColor: `${colors.error}40` }]}
+          contentStyle={{ height: 52 }}
+          labelStyle={{ fontFamily: "Inter_500Medium", fontSize: 15 }}
         >
-          <Text style={[styles.btnDeclineText, { color: colors.destructive, fontFamily: "Inter_500Medium" }]}>Decline</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.btnAccept, { backgroundColor: colors.primary }]}
+          Decline
+        </Button>
+        <Button
+          mode="contained"
+          buttonColor={colors.primary}
+          textColor={colors.onPrimary}
           onPress={handleAccept}
+          style={styles.btnAccept}
+          contentStyle={{ height: 52 }}
+          labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 16 }}
+          icon={() => <Feather name="check" size={18} color={colors.onPrimary} />}
         >
-          <Feather name="check" size={18} color="#fff" />
-          <Text style={[styles.btnAcceptText, { fontFamily: "Inter_600SemiBold" }]}>Accept ride</Text>
-        </Pressable>
+          Accept ride
+        </Button>
       </View>
-    </View>
+    </Surface>
   );
 }
 
@@ -254,17 +265,14 @@ const styles = StyleSheet.create({
   avatarText: { fontSize: 24, color: "#fff" },
   onlineIndicator: { position: "absolute", bottom: 2, right: 2, width: 14, height: 14, borderRadius: 7, borderWidth: 2 },
   driverName: { fontSize: 20 },
-  verifiedBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  verifiedBadgeText: { color: "#fff", fontSize: 12 },
   ratingRow: { flexDirection: "row", alignItems: "center", gap: 5 },
   ratingText: { fontSize: 14 },
-  vehicleCard: { flexDirection: "row", alignItems: "center", padding: 14, borderRadius: 14, gap: 12 },
+  cardContentRow: { flexDirection: "row", alignItems: "center", padding: 14, gap: 12 },
   vehicleIcon: { width: 42, height: 42, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   vehicleName: { fontSize: 14, marginBottom: 2 },
   vehiclePlate: { fontSize: 12 },
   seatBadge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
   seatBadgeText: { fontSize: 12 },
-  pickupCard: { flexDirection: "row", alignItems: "center", padding: 14, borderRadius: 14, borderWidth: 1, gap: 12 },
   pickupIcon: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   pickupLabel: { fontSize: 11, marginBottom: 2 },
   pickupValue: { fontSize: 14 },
@@ -276,14 +284,11 @@ const styles = StyleSheet.create({
   liveDot: { width: 8, height: 8, borderRadius: 4 },
   liveText: { fontSize: 12 },
   etaText: { fontSize: 13, marginTop: 2 },
-  fareStrip: { padding: 16, marginTop: 14, gap: 4 },
   fareStripRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  fareStripAmount: { fontSize: 28, color: "#fff" },
-  fareStripFee: { fontSize: 14, color: "rgba(255,255,255,0.8)" },
-  fareStripNote: { fontSize: 12, color: "rgba(255,255,255,0.7)", lineHeight: 16 },
+  fareStripAmount: { fontSize: 28 },
+  fareStripFee: { fontSize: 14 },
+  fareStripNote: { fontSize: 12, lineHeight: 16 },
   actionBar: { position: "absolute", bottom: 0, left: 0, right: 0, flexDirection: "row", gap: 10, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 },
-  btnDecline: { flex: 1, height: 52, borderRadius: 14, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
-  btnDeclineText: { fontSize: 15 },
-  btnAccept: { flex: 2, height: 52, borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
-  btnAcceptText: { color: "#fff", fontSize: 16 },
+  btnDecline: { flex: 1, borderRadius: 14 },
+  btnAccept: { flex: 2, borderRadius: 14 },
 });
