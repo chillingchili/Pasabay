@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
@@ -79,6 +80,12 @@ export default function VehicleDetailsScreen() {
         Alert.alert("Fuel Efficiency Adjusted", `Adjusted to ${Number(response.fuelEfficiency).toFixed(1)} km/L based on vehicle specs.`);
       }
       await refreshUser();
+      await AsyncStorage.setItem("pasabay_driver_verified", JSON.stringify({
+        driverVerified: true,
+        driverStatus: response.driverStatus ?? "submitted",
+        vehicle: response.vehicle ?? { plate: plate.trim(), make, model: model.trim(), year, color: carColor, seats: parseInt(seats) },
+        fuelEfficiencyEstimate: response.fuelEfficiencyEstimate ?? undefined,
+      }));
       setLoading(false);
       setSuccess(true);
       redirectTimer.current = setTimeout(() => {
