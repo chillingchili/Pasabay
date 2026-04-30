@@ -20,15 +20,34 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="apple-mobile-web-app-title" content="Pasabay" />
         <link rel="manifest" href="/manifest.json" />
         <style>{`
+          * { box-sizing: border-box; }
           html, body {
             margin: 0;
             padding: 0;
             background: #1a1a1a;
-            min-height: 100vh;
+            height: 100%;
           }
           body {
             display: flex;
             justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+          }
+          #phone-frame {
+            width: 100%;
+            max-width: 420px;
+            min-height: 100vh;
+            background: #ffffff;
+            border-radius: 44px;
+            box-shadow: 0 8px 48px rgba(0,0,0,0.35);
+            overflow: hidden;
+            position: relative;
+          }
+          @media (max-width: 420px) {
+            #phone-frame {
+              border-radius: 0;
+              box-shadow: none;
+            }
           }
         `}</style>
         <script
@@ -43,7 +62,9 @@ export default function Root({ children }: PropsWithChildren) {
           }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <div id="phone-frame">{children}</div>
+      </body>
     </html>
   );
 }

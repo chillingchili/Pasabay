@@ -9,7 +9,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
-import { Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -64,29 +63,8 @@ export default function RootLayout() {
 
   if (!ready) return null;
 
-  const webFrameStyle: any = Platform.OS === 'web' ? {
-    maxWidth: 420,
-    width: '100%',
-    flex: 1,
-    minHeight: '100vh',
-    backgroundColor: '#fff',
-    borderRadius: 44,
-    ...Platform.select({
-      web: {
-        boxShadow: '0 8px 48px rgba(0,0,0,0.35)',
-      },
-      default: {
-        elevation: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-      },
-    }),
-  } : {};
-
-  const content = (
-    <>
+  return (
+    <SafeAreaProvider>
       <OfflineBanner />
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
@@ -101,14 +79,6 @@ export default function RootLayout() {
           </PaperProvider>
         </QueryClientProvider>
       </ErrorBoundary>
-    </>
-  );
-
-  return (
-    <SafeAreaProvider>
-      {Platform.OS === 'web' ? (
-        <View style={webFrameStyle}>{content}</View>
-      ) : content}
     </SafeAreaProvider>
   );
 }
