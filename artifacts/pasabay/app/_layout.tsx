@@ -42,6 +42,7 @@ export default function RootLayout() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+    Sora_800ExtraBold: require("../assets/fonts/Sora/static/Sora_800ExtraBold.ttf"),
   });
   const [timedOut, setTimedOut] = React.useState(false);
 

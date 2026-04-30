@@ -106,7 +106,7 @@ export default function VehicleDetailsScreen() {
           <Text style={[styles.backText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Back</Text>
         </Pressable>
 
-        <Text style={[styles.title, { fontSize: fs(26), color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Vehicle details</Text>
+        <Text style={[styles.title, { fontSize: fs(26), color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>Vehicle details</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Tell us about your car so passengers can find you</Text>
 
         <View style={[styles.carIllustration, { backgroundColor: colors.primaryLight }]}>

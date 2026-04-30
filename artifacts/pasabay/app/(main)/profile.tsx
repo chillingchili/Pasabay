@@ -39,9 +39,9 @@ export default function ProfileScreen() {
       >
         <View style={styles.profileHeader}>
           <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-            <Text style={[styles.avatarText, { fontFamily: "Inter_700Bold" }]}>{initials}</Text>
+            <Text style={[styles.avatarText, { fontFamily: "Sora_800ExtraBold" }]}>{initials}</Text>
           </View>
-          <Text style={[styles.name, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>{user?.name || "Juan Dela Cruz"}</Text>
+          <Text style={[styles.name, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>{user?.name || "Juan Dela Cruz"}</Text>
           <Text style={[styles.email, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>{user?.email || "juan.delacruz@usc.edu.ph"}</Text>
           <View style={styles.badges}>
             <View style={[styles.networkDot, { backgroundColor: networkStatus === "online" ? colors.success : networkStatus === "reconnecting" ? colors.accentDark : colors.destructive }]} />
@@ -117,7 +117,7 @@ export default function ProfileScreen() {
       <Modal visible={showEditName} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.alertBox, { backgroundColor: colors.background }]}>
-            <Text style={[styles.alertTitle, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Edit name</Text>
+            <Text style={[styles.alertTitle, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>Edit name</Text>
             <TextInput
               style={[styles.nameInput, { backgroundColor: colors.card, color: colors.foreground, borderColor: colors.border, fontFamily: "Inter_400Regular" }]}
               value={editNameValue}
@@ -147,7 +147,7 @@ export default function ProfileScreen() {
       <Modal visible={showHelp} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.alertBox, { backgroundColor: colors.background }]}>
-            <Text style={[styles.alertTitle, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Help & Support</Text>
+            <Text style={[styles.alertTitle, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>Help & Support</Text>
             <Text style={[styles.alertMsg, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
               {"Frequently Asked Questions:\n\n"}
               {"Q: How do I request a ride?\n"}
@@ -170,7 +170,7 @@ export default function ProfileScreen() {
       <Modal visible={showAbout} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.alertBox, { backgroundColor: colors.background }]}>
-            <Text style={[styles.alertTitle, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>About Pasabay</Text>
+            <Text style={[styles.alertTitle, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>About Pasabay</Text>
             <Text style={[styles.alertMsg, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
               {"Pasabay v1.0.0\n\n"}
               {"A campus rideshare app connecting USC students heading the same direction. Passengers get reliable rides and drivers share fuel costs — safely, affordably, and campus-verified.\n\n"}
@@ -188,7 +188,7 @@ export default function ProfileScreen() {
       <Modal visible={confirmLogout} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.alertBox, { backgroundColor: colors.background }]}>
-            <Text style={[styles.alertTitle, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Log out?</Text>
+            <Text style={[styles.alertTitle, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>Log out?</Text>
             <Text style={[styles.alertMsg, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>You'll be returned to the welcome screen.</Text>
             <View style={styles.alertBtns}>
               <Pressable style={[styles.alertBtnCancel, { borderColor: colors.border }]} onPress={() => setConfirmLogout(false)}>
@@ -205,7 +205,7 @@ export default function ProfileScreen() {
       <Modal visible={confirmDelete} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.alertBox, { backgroundColor: colors.background }]}>
-            <Text style={[styles.alertTitle, { color: colors.destructive, fontFamily: "Inter_700Bold" }]}>Delete account?</Text>
+            <Text style={[styles.alertTitle, { color: colors.destructive, fontFamily: "Sora_800ExtraBold" }]}>Delete account?</Text>
             <Text style={[styles.alertMsg, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>This is permanent and cannot be undone. All your data will be lost.</Text>
             <View style={styles.alertBtns}>
               <Pressable style={[styles.alertBtnCancel, { borderColor: colors.border }]} onPress={() => setConfirmDelete(false)}>

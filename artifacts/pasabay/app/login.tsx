@@ -8,6 +8,7 @@ import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { useScale } from "@/hooks/useScale";
+import { apiRequest } from "@/lib/api";
 
 function GoogleIcon() {
   return (
@@ -32,6 +33,43 @@ export default function LoginScreen() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotMessage, setForgotMessage] = useState<string | null>(null);
+  const [forgotSuccess, setForgotSuccess] = useState(false);
+
+  const handleForgotPassword = async () => {
+    if (!forgotEmail.trim()) {
+      setForgotMessage("Please enter your email.");
+      setForgotSuccess(false);
+      return;
+    }
+    setForgotLoading(true);
+    setForgotMessage(null);
+    try {
+      await apiRequest("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email: forgotEmail.trim() }),
+      });
+      setForgotMessage("If an account with that email exists, a reset link has been sent.");
+      setForgotSuccess(true);
+    } catch (err: any) {
+      const message = err?.message ?? "";
+      const status = err?.status;
+      if (status === 404) {
+        setForgotMessage("No account found with that email.");
+      } else if (!message && !status) {
+        setForgotMessage("Could not connect to the server. Check your internet connection.");
+      } else {
+        setForgotMessage(message || "Something went wrong. Please try again.");
+      }
+      setForgotSuccess(false);
+    } finally {
+      setForgotLoading(false);
+    }
+  };
 
   const handleLogin = async () => {
     if (!email) { setError("Please enter your email."); return; }
@@ -88,93 +126,132 @@ export default function LoginScreen() {
           <Text style={[styles.backText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Back</Text>
         </Pressable>
 
-        <Text style={[styles.title, { fontSize: fs(28), color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Welcome back</Text>
+        <Text style={[styles.title, { fontSize: fs(28), color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>Welcome back</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Log in to your Pasabay account</Text>
 
-        <View style={[styles.form, { gap: isSmall ? 12 : 14 }]}>
-          {error && (
-            <View style={styles.errorBox}>
-              <Feather name="alert-circle" size={16} color={colors.destructive} />
-              <Text style={[styles.errorText, { color: colors.destructive, fontFamily: "Inter_400Regular" }]}>{error}</Text>
-            </View>
-          )}
-          <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>School email</Text>
-            <TextInput
-              style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card, fontFamily: "Inter_400Regular" }]}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="yourname@usc.edu.ph"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-
-          <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>Password</Text>
-            <View style={[styles.inputRow, { borderColor: colors.border, backgroundColor: colors.card }]}>
-              <TextInput
-                style={[styles.inputFlex, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Enter your password"
-                placeholderTextColor={colors.textMuted}
-                secureTextEntry={!showPass}
-              />
-              <Pressable onPress={() => setShowPass(!showPass)} style={styles.eyeBtn}>
-                <Feather name={showPass ? "eye-off" : "eye"} size={18} color={colors.textSecondary} />
-              </Pressable>
-            </View>
-          </View>
-
-          <Pressable style={styles.forgotRow} onPress={() => {}}>
-            <Text style={[styles.forgotText, { color: colors.primary, fontFamily: "Inter_400Regular" }]}>Forgot password?</Text>
-          </Pressable>
-
-          <Pressable
-            style={[styles.btnPrimary, { backgroundColor: loading ? colors.mutedForeground : colors.primary }]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading && <ActivityIndicator size="small" color="#fff" />}
-            <Text style={[styles.btnPrimaryText, { fontFamily: "Inter_600SemiBold" }]}>{loading ? "Logging in..." : "Log in"}</Text>
-          </Pressable>
-
-          <View style={styles.divider}>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <Text style={[styles.dividerText, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>or</Text>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          </View>
-
-          <Pressable
-            style={({ pressed }) => [styles.btnGoogle, { borderColor: colors.border, opacity: pressed || googleLoading ? 0.7 : 1 }]}
-            onPress={handleGoogleLogin}
-            disabled={googleLoading}
-          >
-            {googleLoading ? (
-              <Text style={[styles.btnGoogleText, { color: colors.textSecondary, fontFamily: "Inter_500Medium" }]}>Signing in...</Text>
-            ) : (
-              <>
-                <GoogleIcon />
-                <Text style={[styles.btnGoogleText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>Continue with Google</Text>
-              </>
+        {showForgotPassword ? (
+          <View style={[styles.form, { gap: isSmall ? 12 : 14 }]}>
+            {forgotMessage && (
+              <View style={[forgotSuccess ? styles.successBox : styles.errorBox]}>
+                <Feather name={forgotSuccess ? "check-circle" : "alert-circle"} size={16} color={forgotSuccess ? "#15803d" : colors.destructive} />
+                <Text style={[forgotSuccess ? styles.successText : styles.errorText, { color: forgotSuccess ? "#15803d" : colors.destructive, fontFamily: "Inter_400Regular" }]}>{forgotMessage}</Text>
+              </View>
             )}
-          </Pressable>
+            <View style={styles.formGroup}>
+              <Text style={[styles.label, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>School email</Text>
+              <TextInput
+                style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card, fontFamily: "Inter_400Regular" }]}
+                value={forgotEmail}
+                onChangeText={(t) => { setForgotEmail(t); setForgotMessage(null); }}
+                placeholder="yourname@usc.edu.ph"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
 
-          <Pressable
-            style={({ pressed }) => [styles.btnDemo, { backgroundColor: colors.primaryLighter, opacity: pressed ? 0.7 : 1 }]}
-            onPress={async () => { await loginAsDemo(); router.replace("/(main)/passenger-home"); }}
-          >
-            <Feather name="zap" size={16} color={colors.primary} />
-            <Text style={[styles.btnDemoText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>Try demo — no sign-in needed</Text>
-          </Pressable>
+            <Pressable
+              style={[styles.btnPrimary, { backgroundColor: forgotLoading ? colors.mutedForeground : colors.primary }]}
+              onPress={handleForgotPassword}
+              disabled={forgotLoading}
+            >
+              {forgotLoading && <ActivityIndicator size="small" color="#fff" />}
+              <Text style={[styles.btnPrimaryText, { fontFamily: "Inter_600SemiBold" }]}>{forgotLoading ? "Sending..." : "Send Reset Link"}</Text>
+            </Pressable>
 
-          <Text style={[styles.footer, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
-            Don't have an account?{" "}
-            <Text style={{ color: colors.primary, fontFamily: "Inter_500Medium" }} onPress={() => router.push("/signup")}>Sign up</Text>
-          </Text>
-        </View>
+            <Pressable
+              style={styles.forgotRow}
+              onPress={() => { setShowForgotPassword(false); setForgotMessage(null); setForgotEmail(""); }}
+            >
+              <Text style={[styles.forgotText, { color: colors.primary, fontFamily: "Inter_400Regular" }]}>Back to Login</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={[styles.form, { gap: isSmall ? 12 : 14 }]}>
+            {error && (
+              <View style={styles.errorBox}>
+                <Feather name="alert-circle" size={16} color={colors.destructive} />
+                <Text style={[styles.errorText, { color: colors.destructive, fontFamily: "Inter_400Regular" }]}>{error}</Text>
+              </View>
+            )}
+            <View style={styles.formGroup}>
+              <Text style={[styles.label, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>School email</Text>
+              <TextInput
+                style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card, fontFamily: "Inter_400Regular" }]}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="yourname@usc.edu.ph"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={[styles.label, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>Password</Text>
+              <View style={[styles.inputRow, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                <TextInput
+                  style={[styles.inputFlex, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Enter your password"
+                  placeholderTextColor={colors.textMuted}
+                  secureTextEntry={!showPass}
+                />
+                <Pressable onPress={() => setShowPass(!showPass)} style={styles.eyeBtn}>
+                  <Feather name={showPass ? "eye-off" : "eye"} size={18} color={colors.textSecondary} />
+                </Pressable>
+              </View>
+            </View>
+
+            <Pressable style={styles.forgotRow} onPress={() => { setShowForgotPassword(true); setError(null); }}>
+              <Text style={[styles.forgotText, { color: colors.primary, fontFamily: "Inter_400Regular" }]}>Forgot password?</Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.btnPrimary, { backgroundColor: loading ? colors.mutedForeground : colors.primary }]}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading && <ActivityIndicator size="small" color="#fff" />}
+              <Text style={[styles.btnPrimaryText, { fontFamily: "Inter_600SemiBold" }]}>{loading ? "Logging in..." : "Log in"}</Text>
+            </Pressable>
+
+            <View style={styles.divider}>
+              <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+              <Text style={[styles.dividerText, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>or</Text>
+              <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            </View>
+
+            <Pressable
+              style={({ pressed }) => [styles.btnGoogle, { borderColor: colors.border, opacity: pressed || googleLoading ? 0.7 : 1 }]}
+              onPress={handleGoogleLogin}
+              disabled={googleLoading}
+            >
+              {googleLoading ? (
+                <Text style={[styles.btnGoogleText, { color: colors.textSecondary, fontFamily: "Inter_500Medium" }]}>Signing in...</Text>
+              ) : (
+                <>
+                  <GoogleIcon />
+                  <Text style={[styles.btnGoogleText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>Continue with Google</Text>
+                </>
+              )}
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [styles.btnDemo, { backgroundColor: colors.primaryLighter, opacity: pressed ? 0.7 : 1 }]}
+              onPress={async () => { await loginAsDemo(); router.replace("/(main)/passenger-home"); }}
+            >
+              <Feather name="zap" size={16} color={colors.primary} />
+              <Text style={[styles.btnDemoText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>Try demo — no sign-in needed</Text>
+            </Pressable>
+
+            <Text style={[styles.footer, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
+              Don't have an account?{" "}
+              <Text style={{ color: colors.primary, fontFamily: "Inter_500Medium" }} onPress={() => router.push("/signup")}>Sign up</Text>
+            </Text>
+          </View>
+        )}
       </View>
     </KeyboardAvoidingView>
   );
@@ -188,6 +265,8 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14, marginBottom: 32 },
   errorBox: { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, borderRadius: 10, backgroundColor: "#fef2f2", borderWidth: 1, borderColor: "#fecaca" },
   errorText: { flex: 1, fontSize: 13, lineHeight: 18 },
+  successBox: { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, borderRadius: 10, backgroundColor: "#f0fdf4", borderWidth: 1, borderColor: "#bbf7d0" },
+  successText: { flex: 1, fontSize: 13, lineHeight: 18 },
   form: { gap: 14 },
   formGroup: { gap: 6 },
   label: { fontSize: 13, fontWeight: "500" },

@@ -39,7 +39,7 @@ export default function VerifyDriverScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { fontSize: fs(22), fontFamily: "Inter_700Bold" }]}>Verify your license</Text>
+        <Text style={[styles.title, { fontSize: fs(22), fontFamily: "Sora_800ExtraBold" }]}>Verify your license</Text>
         <Text style={[styles.step, { fontFamily: "Inter_400Regular" }]}>Step 2 of 2</Text>
       </View>
 
@@ -118,8 +118,9 @@ export default function VerifyDriverScreen() {
             <Pressable style={styles.btnGhost} onPress={handleContinue}>
               <Text style={[styles.btnGhostText, { fontFamily: "Inter_400Regular" }]}>Enter manually instead</Text>
             </Pressable>
-            <Pressable style={[styles.btnGhost, { opacity: 0.8 }]} onPress={() => router.replace("/(main)/passenger-home")}>
-              <Text style={[styles.btnGhostText, { fontFamily: "Inter_400Regular" }]}>Skip for now</Text>
+            <Pressable style={[styles.btnSkip]} onPress={() => router.replace("/(main)/passenger-home")}>
+              <Feather name="arrow-right" size={18} color="#fff" />
+              <Text style={[styles.btnSkipText, { fontFamily: "Inter_600SemiBold" }]}>Skip for now</Text>
             </Pressable>
           </>
         )}
@@ -181,4 +182,6 @@ const styles = StyleSheet.create({
   btnCaptureText: { color: "#fff", fontSize: 16 },
   btnGhost: { height: 40, alignItems: "center", justifyContent: "center" },
   btnGhostText: { color: "rgba(255,255,255,0.5)", fontSize: 13 },
+  btnSkip: { height: 52, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.12)", borderWidth: 1, borderColor: "rgba(255,255,255,0.25)", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+  btnSkipText: { color: "#fff", fontSize: 15 },
 });

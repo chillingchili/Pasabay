@@ -34,19 +34,15 @@ export default function VerifySchoolIdScreen() {
     });
   };
 
-const handleContinue = (skipDriver?: boolean) => {
+const handleContinue = () => {
   setSchoolIdVerified();
-  if (skipDriver) {
-    router.replace("/(main)/passenger-home");
-  } else {
-    router.replace("/verify-driver");
-  }
+  router.replace("/verify-driver");
 };
 
   return (
     <View style={[styles.container, { backgroundColor: "#0a7d5c", paddingTop: insets.top, paddingHorizontal: isSmall ? 16 : 24 }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { fontSize: fs(22), fontFamily: "Inter_700Bold" }]}>Verify your school ID</Text>
+        <Text style={[styles.title, { fontSize: fs(22), fontFamily: "Sora_800ExtraBold" }]}>Verify your school ID</Text>
         <Text style={[styles.step, { fontFamily: "Inter_400Regular" }]}>Step 1 of 2</Text>
       </View>
 
@@ -121,15 +117,10 @@ const handleContinue = (skipDriver?: boolean) => {
           </>
         )}
         {stage === "success" && (
-          <>
-            <Pressable style={[styles.btnCapture, { backgroundColor: "rgba(255,255,255,0.3)" }]} onPress={() => handleContinue(true)}>
-              <Text style={[styles.btnCaptureText, { fontFamily: "Inter_600SemiBold" }]}>Skip for now (Continue as Passenger)</Text>
-            </Pressable>
-            <Pressable style={[styles.btnCapture]} onPress={() => handleContinue(false)}>
-              <Text style={[styles.btnCaptureText, { fontFamily: "Inter_600SemiBold" }]}>Continue</Text>
-              <Feather name="arrow-right" size={20} color="#fff" />
-            </Pressable>
-          </>
+          <Pressable style={[styles.btnCapture]} onPress={() => handleContinue()}>
+            <Text style={[styles.btnCaptureText, { fontFamily: "Inter_600SemiBold" }]}>Continue</Text>
+            <Feather name="arrow-right" size={20} color="#fff" />
+          </Pressable>
         )}
       </View>
     </View>

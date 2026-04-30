@@ -26,10 +26,15 @@ export default function HistoryScreen() {
     return r.status === "canceled";
   });
 
+  const currentMonthName = new Date().toLocaleString("en-US", { month: "long" });
+  const currentMonthRides = rideHistory.filter(r => r.status === "completed" && (r.date.includes(currentMonthName) || r.date.startsWith("Today")));
+  const tripCount = currentMonthRides.length;
+  const totalSaved = currentMonthRides.reduce((sum, r) => sum + (typeof r.fare === "number" ? r.fare : 0), 0);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: topPad }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { fontSize: fs(26), color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Ride history</Text>
+        <Text style={[styles.title, { fontSize: fs(26), color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>Ride history</Text>
       </View>
 
       <View style={[styles.tabRow, { borderBottomColor: colors.borderLighter }]}>
@@ -51,6 +56,19 @@ export default function HistoryScreen() {
         contentContainerStyle={[styles.list, { paddingBottom: Math.max(insets.bottom + 80, 100) }]}
         showsVerticalScrollIndicator={false}
       >
+        {rideHistory.length > 0 && (
+          <View style={[styles.summaryCard, { backgroundColor: colors.card, borderColor: colors.borderLighter }]}>
+            <Text style={styles.summaryRow}>
+              <Text style={{ fontFamily: "Sora_800ExtraBold", color: colors.foreground }}>{tripCount}</Text>
+              <Text style={{ fontFamily: "Inter_400Regular", color: colors.textSecondary }}> trips · </Text>
+              <Text style={{ fontFamily: "System" }}>₱</Text>
+              <Text style={{ fontFamily: "Sora_800ExtraBold", color: colors.foreground }}>{totalSaved}</Text>
+              <Text style={{ fontFamily: "Inter_400Regular", color: colors.textSecondary }}> saved</Text>
+            </Text>
+            <Text style={[styles.summarySub, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>This month</Text>
+          </View>
+        )}
+
         {filtered.length === 0 ? (
           <View style={styles.empty}>
             <Feather name="clock" size={40} color={colors.textMuted} />
@@ -60,7 +78,7 @@ export default function HistoryScreen() {
           filtered.map(ride => (
             <Pressable
               key={ride.id}
-              style={[styles.rideItem, { borderBottomColor: colors.borderLighter }]}
+              style={[styles.rideCard, { backgroundColor: colors.card, borderColor: colors.borderLighter }]}
               onPress={() => setSelectedRide(ride)}
             >
               <View style={[styles.rideIcon, { backgroundColor: ride.status === "completed" ? colors.primaryLight : colors.destructiveLight }]}>
@@ -78,7 +96,7 @@ export default function HistoryScreen() {
               </View>
               <View style={styles.rideRight}>
                 <Text style={[styles.rideFare, { color: ride.status === "canceled" ? colors.textMuted : colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
-                  {ride.status === "canceled" ? "—" : `₱${ride.fare}`}
+                  {ride.status === "canceled" ? "—" : <><Text style={{ fontFamily: "System" }}>₱</Text>{ride.fare}</>}
                 </Text>
                 <Text style={[styles.rideStatus, { color: ride.status === "completed" ? colors.primary : colors.destructive, fontFamily: "Inter_400Regular" }]}>
                   {ride.status === "completed" ? "Completed" : "Canceled"}
@@ -95,7 +113,7 @@ export default function HistoryScreen() {
             <Pressable style={styles.modalBackdrop} onPress={() => setSelectedRide(null)} />
             <View style={[styles.modalSheet, { backgroundColor: colors.background }]}>
               <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
-              <Text style={[styles.modalTitle, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Trip details</Text>
+              <Text style={[styles.modalTitle, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>Trip details</Text>
 
               <View style={[styles.modalCard, { backgroundColor: colors.card }]}>
                 <DetailRow icon="map-pin" label="From" value={selectedRide.from} colors={colors} />
@@ -113,7 +131,8 @@ export default function HistoryScreen() {
                 <DetailRow
                   icon="dollar-sign"
                   label="Fare"
-                  value={selectedRide.status === "canceled" ? "—" : `₱${selectedRide.fare}`}
+                  value={selectedRide.status === "canceled" ? "—" : `${selectedRide.fare}`}
+                  valueSymbol={selectedRide.status !== "canceled" ? "₱" : undefined}
                   colors={colors}
                   valueColor={selectedRide.status === "completed" ? colors.foreground : colors.textMuted}
                 />
@@ -144,14 +163,16 @@ export default function HistoryScreen() {
   );
 }
 
-function DetailRow({ icon, label, value, colors, valueColor }: { icon: keyof typeof Feather.glyphMap; label: string; value: string; colors: ReturnType<typeof useColors>; valueColor?: string }) {
+function DetailRow({ icon, label, value, colors, valueColor, valueSymbol }: { icon: keyof typeof Feather.glyphMap; label: string; value: string; colors: ReturnType<typeof useColors>; valueColor?: string; valueSymbol?: string }) {
   return (
     <View style={styles.detailRow}>
       <View style={[styles.detailIcon, { backgroundColor: colors.primaryLight }]}>
         <Feather name={icon} size={14} color={colors.primary} />
       </View>
       <Text style={[styles.detailLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>{label}</Text>
-      <Text style={[styles.detailValue, { color: valueColor || colors.foreground, fontFamily: "Inter_500Medium" }]}>{value}</Text>
+      <Text style={[styles.detailValue, { color: valueColor || colors.foreground, fontFamily: "Inter_500Medium" }]}>
+        {valueSymbol && <Text style={{ fontFamily: "System" }}>{valueSymbol}</Text>}{value}
+      </Text>
     </View>
   );
 }
@@ -164,7 +185,10 @@ const styles = StyleSheet.create({
   tab: { paddingVertical: 10, paddingHorizontal: 4, marginRight: 20 },
   tabText: { fontSize: 14 },
   list: { paddingHorizontal: 20, paddingTop: 8 },
-  rideItem: { flexDirection: "row", alignItems: "center", paddingVertical: 14, gap: 12, borderBottomWidth: 1 },
+  summaryCard: { borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 16 },
+  summaryRow: { flexDirection: "row", flexWrap: "wrap", fontSize: 20 },
+  summarySub: { fontSize: 14, marginTop: 2 },
+  rideCard: { flexDirection: "row", alignItems: "center", padding: 14, gap: 12, borderRadius: 14, borderWidth: 1, marginBottom: 10 },
   rideIcon: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   rideContent: { flex: 1, gap: 3 },
   rideRoute: { fontSize: 14 },

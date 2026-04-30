@@ -86,6 +86,7 @@ export type MatchConfirmedPayload = {
     id: string;
     name: string;
     rating: number;
+    rideCount?: number;
     avatar: string | null;
     vehicle: {
       make: string;

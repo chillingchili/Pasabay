@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Alert, Animated, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Circle, Line, Path } from "react-native-svg";
+import Svg, { Path } from "react-native-svg";
 import { useColors } from "@/hooks/useColors";
 import { Feather } from "@expo/vector-icons";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
@@ -17,6 +17,24 @@ function GoogleIcon() {
       <Path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
       <Path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
     </Svg>
+  );
+}
+
+function TeaserCard({ colors }: { colors: ReturnType<typeof useColors> }) {
+  return (
+    <View style={[styles.teaserCard, { backgroundColor: colors.card, borderRadius: 14 }]}>
+      <View style={styles.teaserRow}>
+        <View style={[styles.teaserDot, { backgroundColor: colors.primary }]} />
+        <Text style={[styles.teaserLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>From</Text>
+        <Text style={[styles.teaserValue, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}>Your location</Text>
+      </View>
+      <View style={[styles.teaserDivider, { backgroundColor: colors.borderLighter }]} />
+      <View style={styles.teaserRow}>
+        <View style={[styles.teaserDot, { backgroundColor: colors.primary }]} />
+        <Text style={[styles.teaserLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>To</Text>
+        <Text style={[styles.teaserValue, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>Where to?</Text>
+      </View>
+    </View>
   );
 }
 
@@ -70,29 +88,13 @@ export default function WelcomeScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Animated.View style={[styles.heroSection, { paddingTop: s(60), paddingHorizontal: isSmall ? 16 : 24, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         <View style={[styles.illustration, { marginBottom: s(20) }]}>
-          <Svg width={200} height={200} viewBox="0 0 200 200" fill="none">
-            <Circle cx={100} cy={100} r={90} fill={colors.primaryLight} />
-            <Circle cx={100} cy={100} r={70} fill={colors.primaryLighter} />
-            <Line x1={40} y1={100} x2={160} y2={100} stroke={colors.primary} strokeWidth={2} opacity={0.2} />
-            <Line x1={100} y1={40} x2={100} y2={160} stroke={colors.primary} strokeWidth={2} opacity={0.2} />
-            <Path d="M70 130 Q100 90 130 70" stroke={colors.primary} strokeWidth={3} fill="none" strokeLinecap="round" strokeDasharray="6 4" />
-            <Circle cx={70} cy={130} r={10} fill={colors.primary} />
-            <Circle cx={70} cy={130} r={4} fill="#fff" />
-            <Circle cx={130} cy={70} r={10} fill={colors.accent} />
-            <Circle cx={130} cy={70} r={4} fill="#fff" />
-          </Svg>
+          <TeaserCard colors={colors} />
         </View>
 
-        <Text style={[styles.title, { fontSize: fs(36), color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Pasabay</Text>
+        <Text style={[styles.title, { fontSize: fs(28), color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>Your campus, your commute</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
           Share rides with fellow Carolinians.{"\n"}Safe, affordable campus commutes.
         </Text>
-      </Animated.View>
-
-      <Animated.View style={[styles.features, { opacity: fadeAnim }]}>
-        <FeatureItem icon="shield" label={"Verified\nstudents only"} colors={colors} />
-        <FeatureItem icon="dollar-sign" label={"Cost-sharing\nfares only"} colors={colors} />
-        <FeatureItem icon="users" label={"Same route\nmatching"} colors={colors} />
       </Animated.View>
 
       <View style={{ flex: 1 }} />
@@ -149,27 +151,18 @@ export default function WelcomeScreen() {
   );
 }
 
-function FeatureItem({ icon, label, colors }: { icon: keyof typeof Feather.glyphMap; label: string; colors: ReturnType<typeof useColors> }) {
-  return (
-    <View style={styles.featureItem}>
-      <View style={[styles.featureIcon, { backgroundColor: colors.primaryLight }]}>
-        <Feather name={icon} size={22} color={colors.primary} />
-      </View>
-      <Text style={[styles.featureText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
   heroSection: { alignItems: "center" },
   illustration: {},
-  title: { fontWeight: "700", letterSpacing: -0.5 },
+  title: { fontWeight: "800", letterSpacing: -0.5, textAlign: "center" },
   subtitle: { fontSize: 15, textAlign: "center", lineHeight: 22, marginTop: 8 },
-  features: { flexDirection: "row", paddingHorizontal: 24, paddingTop: 28, gap: 8 },
-  featureItem: { flex: 1, alignItems: "center", gap: 8 },
-  featureIcon: { width: 48, height: 48, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  featureText: { fontSize: 11, textAlign: "center", lineHeight: 15 },
+  teaserCard: { width: 280, padding: 16 },
+  teaserRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8 },
+  teaserDot: { width: 8, height: 8, borderRadius: 4 },
+  teaserLabel: { fontSize: 12, width: 40 },
+  teaserValue: { fontSize: 14, flex: 1 },
+  teaserDivider: { height: 1, marginLeft: 18 },
   buttons: { paddingHorizontal: 24, gap: 10 },
   btnPrimary: { height: 52, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   btnPrimaryText: { color: "#fff", fontSize: 16, fontWeight: "600" },

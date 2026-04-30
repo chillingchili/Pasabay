@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: "700",
     color: "#fff",
-    fontFamily: "Inter_700Bold",
+    fontFamily: "Sora_800ExtraBold",
     letterSpacing: -0.5,
     marginTop: 8,
   },

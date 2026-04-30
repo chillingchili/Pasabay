@@ -2,6 +2,7 @@ export interface MockDriver {
   id: string;
   name: string;
   rating: number;
+  rideCount?: number;
   vehicle: {
     make: string;
     model: string;
@@ -31,6 +32,7 @@ export const MOCK_DRIVERS: MockDriver[] = [
     id: "d1",
     name: "Maria Santos",
     rating: 4.8,
+    rideCount: 83,
     vehicle: { make: "Toyota", model: "Vios", color: "Silver", plate: "ABC 123", seats: 4 },
     avatar: undefined,
   },
@@ -38,6 +40,7 @@ export const MOCK_DRIVERS: MockDriver[] = [
     id: "d2",
     name: "Juan Cruz",
     rating: 4.6,
+    rideCount: 42,
     vehicle: { make: "Honda", model: "City", color: "White", plate: "DEF 456", seats: 4 },
     avatar: undefined,
   },
@@ -45,6 +48,7 @@ export const MOCK_DRIVERS: MockDriver[] = [
     id: "d3",
     name: "Ana Reyes",
     rating: 4.9,
+    rideCount: 127,
     vehicle: { make: "Mitsubishi", model: "Mirage", color: "Red", plate: "GHI 789", seats: 4 },
     avatar: undefined,
   },
@@ -90,7 +94,7 @@ export const SIMULATED_ROUTES: Record<string, SimulatedRoute> = {
       { lat: 10.3105, lng: 123.9130 },
       { lat: 10.3100, lng: 123.9080 },
       { lat: 10.3095, lng: 123.9010 },
-      { lat: 10.3090, lng: 123.8993 },
+      { lat: 10.3111, lng: 123.8961 },
     ],
   },
 };

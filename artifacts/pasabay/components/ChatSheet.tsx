@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   },
   header: { flexDirection: "row", alignItems: "center", padding: 16, borderBottomWidth: 1 },
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
-  avatarText: { color: "#fff", fontSize: 14, fontFamily: "Inter_700Bold" },
+  avatarText: { color: "#fff", fontSize: 14, fontFamily: "Sora_800ExtraBold" },
   headerName: { fontSize: 15 },
   headerStatus: { fontSize: 12 },
   closeBtn: { padding: 8 },

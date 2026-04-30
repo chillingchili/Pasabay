@@ -35,28 +35,30 @@ export default function SignupScreen() {
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSignup = async () => {
     if (!name.trim()) {
-      Alert.alert("Required", "Please enter your full name.");
+      setError("Please enter your full name.");
       return;
     }
     if (!email.endsWith("@usc.edu.ph")) {
-      Alert.alert("Invalid Email", "Please use your USC school email (@usc.edu.ph).");
+      setError("Please use your USC school email (@usc.edu.ph).");
       return;
     }
     if (password.length < 6) {
-      Alert.alert("Weak Password", "Password must be at least 6 characters.");
+      setError("Password must be at least 6 characters.");
       return;
     }
     if (password !== confirm) {
-      Alert.alert("Password Mismatch", "Passwords do not match.");
+      setError("Passwords do not match.");
       return;
     }
     if (!agreed) {
-      Alert.alert("Terms Required", "Please agree to the Terms of Service.");
+      setError("Please agree to the Terms of Service.");
       return;
     }
+    setError(null);
     setLoading(true);
     try {
       await signup(name.trim(), email, password);
@@ -65,11 +67,11 @@ export default function SignupScreen() {
       const status = err?.status || err?.statusCode;
       const message = err?.message ?? "";
       if (status === 409) {
-        Alert.alert("Account Exists", "An account with this email already exists. Try logging in instead.");
+        setError("An account with this email already exists. Try logging in instead.");
       } else if (!message && !status) {
-        Alert.alert("Connection Error", "Could not connect to the server. Check your internet connection and try again.");
+        setError("Could not connect to the server. Check your internet connection and try again.");
       } else {
-        Alert.alert("Sign Up Failed", message || "Something went wrong. Please try again.");
+        setError(message || "Something went wrong. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -82,7 +84,7 @@ export default function SignupScreen() {
       return;
     }
     if (!agreed) {
-      Alert.alert("Terms Required", "Please agree to the Terms of Service to continue.");
+      setError("Please agree to the Terms of Service to continue.");
       return;
     }
     const googleUser = await signInWithGoogle();
@@ -116,10 +118,16 @@ export default function SignupScreen() {
           <Text style={[styles.backText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Back</Text>
         </Pressable>
 
-        <Text style={[styles.title, { fontSize: fs(28), color: colors.foreground, fontFamily: "Inter_700Bold" }]}>Create account</Text>
+        <Text style={[styles.title, { fontSize: fs(28), color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>Create account</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Join the USC Pasabay community</Text>
 
         <View style={[styles.form, { gap: isSmall ? 12 : 14 }]}>
+          {error && (
+            <View style={styles.errorBox}>
+              <Feather name="alert-circle" size={16} color={colors.destructive} />
+              <Text style={[styles.errorText, { color: colors.destructive, fontFamily: "Inter_400Regular" }]}>{error}</Text>
+            </View>
+          )}
           <FormGroup label="Full name" colors={colors}>
             <TextInput
               style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card, fontFamily: "Inter_400Regular" }]}
@@ -242,6 +250,8 @@ const styles = StyleSheet.create({
   container: { paddingHorizontal: 24 },
   back: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 24 },
   backText: { fontSize: 14 },
+  errorBox: { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, borderRadius: 10, backgroundColor: "#fef2f2", borderWidth: 1, borderColor: "#fecaca" },
+  errorText: { flex: 1, fontSize: 13, lineHeight: 18 },
   title: { fontSize: 28, fontWeight: "700", marginBottom: 6 },
   subtitle: { fontSize: 14, marginBottom: 28 },
   form: { gap: 14 },

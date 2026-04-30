@@ -116,16 +116,25 @@ export default function MatchFoundScreen() {
           </Animated.View>
 
           <View style={styles.driverCard}>
-            <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-              <Text style={[styles.avatarText, { fontFamily: "Inter_700Bold" }]}>{driverInitials}</Text>
+            <View style={styles.avatarContainer}>
+              <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
+                <Text style={[styles.avatarText, { fontFamily: "Sora_800ExtraBold" }]}>{driverInitials}</Text>
+              </View>
+              <View style={[styles.onlineIndicator, { backgroundColor: networkStatus === "online" ? colors.primary : colors.textMuted, borderColor: colors.background }]} />
             </View>
-            <Text style={[styles.driverName, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
+            <Text style={[styles.driverName, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>
               {driver?.name ?? "Your Driver"}
             </Text>
+            {vehicle && (
+              <View style={[styles.verifiedBadge, { backgroundColor: colors.primary }]}>
+                <Text style={[styles.verifiedBadgeText, { fontFamily: "Inter_400Regular" }]}>Verified</Text>
+              </View>
+            )}
             <View style={styles.ratingRow}>
               <Feather name="star" size={13} color={colors.primary} />
               <Text style={[styles.ratingText, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
                 {driver?.rating?.toFixed(1) ?? "5.0"}
+                {driver?.rideCount != null && ` · ${driver.rideCount} rides`}
               </Text>
             </View>
           </View>
@@ -193,19 +202,18 @@ export default function MatchFoundScreen() {
             </View>
           )}
 
-          <View style={[styles.fareSection, { borderColor: colors.borderLighter }]}>
-            <Text style={[styles.fareTitle, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Your fare</Text>
-            <View style={styles.fareAmountRow}>
-              <Text style={[styles.fareCurrency, { color: colors.foreground, fontFamily: "Inter_400Regular" }]}>₱</Text>
-              <Text style={[styles.fareNumber, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>{fare.toFixed(0)}</Text>
+          <View style={[styles.fareStrip, { backgroundColor: colors.primary, borderRadius: 14 }]}>
+            <View style={styles.fareStripRow}>
+              <Text style={[styles.fareStripAmount, { fontFamily: "Sora_800ExtraBold" }]}>
+                ₱{fare.toFixed(0)}
+              </Text>
               {matchingFee > 0 && (
-                <View style={styles.feeChip}>
-                  <Text style={[styles.feeText, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>+ ₱{matchingFee.toFixed(0)} </Text>
-                  <Text style={[styles.feeLabel, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>service fee</Text>
-                </View>
+                <Text style={[styles.fareStripFee, { fontFamily: "Inter_400Regular" }]}>
+                  + ₱{matchingFee.toFixed(0)} service fee
+                </Text>
               )}
             </View>
-            <Text style={[styles.fareNote, { color: colors.textMuted, fontFamily: "Inter_400Regular" }]}>
+            <Text style={[styles.fareStripNote, { fontFamily: "Inter_400Regular" }]}>
               Fuel share only — all rides comply with LTFRB cost-sharing guidelines
             </Text>
           </View>
@@ -238,9 +246,13 @@ const styles = StyleSheet.create({
   matchBadge: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, alignSelf: "center" },
   matchBadgeText: { fontSize: 14 },
   driverCard: { alignItems: "center", paddingVertical: 16, gap: 6 },
-  avatar: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", marginBottom: 4 },
+  avatarContainer: { position: "relative", marginBottom: 4 },
+  avatar: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
   avatarText: { fontSize: 24, color: "#fff" },
+  onlineIndicator: { position: "absolute", bottom: 2, right: 2, width: 14, height: 14, borderRadius: 7, borderWidth: 2 },
   driverName: { fontSize: 20 },
+  verifiedBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  verifiedBadgeText: { color: "#fff", fontSize: 12 },
   ratingRow: { flexDirection: "row", alignItems: "center", gap: 5 },
   ratingText: { fontSize: 14 },
   vehicleCard: { flexDirection: "row", alignItems: "center", padding: 14, borderRadius: 14, gap: 12 },
@@ -261,15 +273,11 @@ const styles = StyleSheet.create({
   liveDot: { width: 8, height: 8, borderRadius: 4 },
   liveText: { fontSize: 12 },
   etaText: { fontSize: 13, marginTop: 2 },
-  fareSection: { borderTopWidth: 1, paddingTop: 16, gap: 6 },
-  fareTitle: { fontSize: 12 },
-  fareAmountRow: { flexDirection: "row", alignItems: "flex-end", gap: 4 },
-  fareCurrency: { fontSize: 22, fontWeight: "700", paddingBottom: 4 },
-  fareNumber: { fontSize: 44, lineHeight: 50 },
-  feeChip: { flexDirection: "row", alignItems: "flex-end", paddingBottom: 6 },
-  feeText: { fontSize: 14 },
-  feeLabel: { fontSize: 11 },
-  fareNote: { fontSize: 11, lineHeight: 15 },
+  fareStrip: { padding: 16, marginTop: 14, gap: 4 },
+  fareStripRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  fareStripAmount: { fontSize: 28, color: "#fff" },
+  fareStripFee: { fontSize: 14, color: "rgba(255,255,255,0.8)" },
+  fareStripNote: { fontSize: 12, color: "rgba(255,255,255,0.7)", lineHeight: 16 },
   actionBar: { position: "absolute", bottom: 0, left: 0, right: 0, flexDirection: "row", gap: 10, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 },
   btnDecline: { flex: 1, height: 52, borderRadius: 14, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
   btnDeclineText: { fontSize: 15 },
