@@ -134,16 +134,52 @@ export function registerSocketHandlers(io: Server) {
       logger.info({ userId }, "Driver went offline");
     });
 
-    socket.on("driver:arrived", async () => {
-      const session = driverSessions.get(userId);
-      if (session) {
-        await db.update(activeRoutesTable)
-          .set({ status: "completed", updatedAt: new Date() })
-          .where(eq(activeRoutesTable.id, session.routeId));
-        driverSessions.delete(userId);
+    socket.on("driver:arrived", async (data: { rideId: string }) => {
+      try {
+        const session = driverSessions.get(userId);
+        if (!session) {
+          socket.emit("driver:error", { message: "No active route" });
+          return;
+        }
+
+        // Look up the matched ride for this driver+route
+        const [ride] = await db.select().from(ridesTable)
+          .where(and(eq(ridesTable.driverId, userId), eq(ridesTable.status, "matched" as any)))
+          .orderBy(sql`${ridesTable.createdAt} DESC`)
+          .limit(1);
+
+        if (!ride) {
+          socket.emit("driver:error", { message: "No matched ride found" });
+          return;
+        }
+
+        // Update ride status to in_progress
+        await db.update(ridesTable)
+          .set({ status: "in_progress" as any })
+          .where(eq(ridesTable.id, ride.id));
+
+        // Get passenger info for the meeting spot
+        const [passenger] = await db.select().from(ridePassengersTable)
+          .where(eq(ridePassengersTable.rideId, ride.id));
+
+        if (passenger) {
+          // Broadcast arrival to passenger's room
+          io.to(`user:${passenger.passengerId}`).emit("driver:arrived", {
+            rideId: ride.id,
+            meetingSpot: { lat: passenger.pickupLat, lng: passenger.pickupLng, name: passenger.pickupName },
+          });
+        }
+
+        // Emit confirmation to driver
+        socket.emit("driver:arrived_confirmed", { rideId: ride.id });
+
+        console.log("[MATCH-STAGE-5] Driver arrived:", { rideId: ride.id, passengerId: passenger?.passengerId });
+
+        logger.info({ rideId: ride.id, userId }, "Driver arrived at meeting spot");
+      } catch (err) {
+        logger.error({ err, userId }, "driver:arrived error");
+        socket.emit("driver:error", { message: "Failed to confirm arrival" });
       }
-      socket.leave("drivers:active");
-      logger.info({ userId }, "Driver arrived — route completed");
     });
 
     socket.on("match:accept", async (data: { routeId: string; passengerId: string; pickupLat: number; pickupLng: number; dropoffLat: number; dropoffLng: number; pickupName: string; dropoffName: string; fare: number; matchingFee: number; distanceKm: number }) => {
