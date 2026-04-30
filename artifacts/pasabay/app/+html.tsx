@@ -45,7 +45,7 @@ export default function Root({ children }: PropsWithChildren) {
           }
           @media (min-width: 480px) {
             #phone-frame {
-              max-width: 390px;
+              max-width: 360px;
               height: calc(100vh - 48px);
               margin: 24px 0;
               border-radius: 44px;
