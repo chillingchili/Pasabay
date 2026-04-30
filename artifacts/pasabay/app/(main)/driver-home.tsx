@@ -519,31 +519,31 @@ export default function DriverHomeScreen() {
                   </Text>
                 </View>
               </View>
+              {isOnline && !accepted && !showCancelConfirm && (
+                <View style={styles.actionRow}>
+                  <Pressable style={[styles.cancelBtn, { borderColor: colors.outlineVariant }]} onPress={handleCancelTrip}>
+                    <Feather name="x" size={14} color={colors.onSurfaceVariant} />
+                    <Text style={[styles.cancelBtnText, { color: colors.onSurfaceVariant }]}>Cancel</Text>
+                  </Pressable>
+                  <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.primary }]} onPress={handleArrived}>
+                    <Feather name="check" size={14} color="#fff" />
+                    <Text style={styles.arrivedBtnText}>Arrived</Text>
+                  </Pressable>
+                </View>
+              )}
+              {isOnline && !accepted && showCancelConfirm && (
+                <View style={styles.actionRow}>
+                  <Pressable style={[styles.cancelBtn, { borderColor: colors.outlineVariant }]} onPress={handleDismissCancel}>
+                    <Feather name="arrow-left" size={14} color={colors.onSurfaceVariant} />
+                    <Text style={[styles.cancelBtnText, { color: colors.onSurfaceVariant }]}>Back</Text>
+                  </Pressable>
+                  <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.error }]} onPress={handleConfirmCancel}>
+                    <Feather name="alert-triangle" size={14} color="#fff" />
+                    <Text style={styles.arrivedBtnText}>Confirm Cancel</Text>
+                  </Pressable>
+                </View>
+              )}
             </>
-          )}
-          {isOnline && !accepted && !showCancelConfirm && (
-            <View style={styles.actionRow}>
-              <Pressable style={[styles.cancelBtn, { borderColor: colors.outlineVariant }]} onPress={handleCancelTrip}>
-                <Feather name="x" size={14} color={colors.onSurfaceVariant} />
-                <Text style={[styles.cancelBtnText, { color: colors.onSurfaceVariant }]}>Cancel</Text>
-              </Pressable>
-              <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.primary }]} onPress={handleArrived}>
-                <Feather name="check" size={14} color="#fff" />
-                <Text style={styles.arrivedBtnText}>Arrived</Text>
-              </Pressable>
-            </View>
-          )}
-          {isOnline && !accepted && showCancelConfirm && (
-            <View style={styles.actionRow}>
-              <Pressable style={[styles.cancelBtn, { borderColor: colors.outlineVariant }]} onPress={handleDismissCancel}>
-                <Feather name="arrow-left" size={14} color={colors.onSurfaceVariant} />
-                <Text style={[styles.cancelBtnText, { color: colors.onSurfaceVariant }]}>Back</Text>
-              </Pressable>
-              <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.error }]} onPress={handleConfirmCancel}>
-                <Feather name="alert-triangle" size={14} color="#fff" />
-                <Text style={styles.arrivedBtnText}>Confirm Cancel</Text>
-              </Pressable>
-            </View>
           )}
         </View>
       )}
