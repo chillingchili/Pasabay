@@ -153,9 +153,9 @@ export function registerSocketHandlers(io: Server) {
           return;
         }
 
-        // Update ride status to in_progress
+        // Update ride status to driver_en_route
         await db.update(ridesTable)
-          .set({ status: "in_progress" as any })
+          .set({ status: "driver_en_route" as any })
           .where(eq(ridesTable.id, ride.id));
 
         // Get passenger info for the meeting spot
