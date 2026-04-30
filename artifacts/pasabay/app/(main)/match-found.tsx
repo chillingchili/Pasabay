@@ -117,6 +117,13 @@ export default function MatchFoundScreen() {
     return () => clearTimeout(timeout);
   }, [driverArrived]);
 
+  // Clear arrival state on unmount
+  useEffect(() => {
+    return () => {
+      clearDriverArrived();
+    };
+  }, []);
+
   const handleDecline = () => {
     if (matchConfirmed?.rideId) {
       emitRideCancel(matchConfirmed.rideId, "Passenger declined after match");
@@ -256,10 +263,16 @@ export default function MatchFoundScreen() {
           </Card>
 
           {/* Ride status indicator */}
-          <View style={[styles.rideStatusCard, { backgroundColor: colors.surfaceVariant }]}>
-            <Animated.View style={[styles.statusDot, { backgroundColor: colors.primary, transform: [{ scale: pulseAnim }] }]} />
-            <Text variant="labelLarge" style={[styles.rideStatusText, { color: colors.onSurfaceVariant, fontFamily: "Inter_500Medium" }]}>
-              {driverLocation ? "Driver is nearby" : "Driver is heading to pickup"}
+          <View style={[styles.rideStatusCard, { backgroundColor: driverArrived ? colors.primaryContainer : colors.surfaceVariant }]}>
+            <Animated.View style={[styles.statusDot, { 
+              backgroundColor: colors.primary, 
+              transform: driverArrived ? undefined : [{ scale: pulseAnim }] 
+            }]} />
+            <Text variant="labelLarge" style={[styles.rideStatusText, { 
+              color: driverArrived ? colors.primary : colors.onSurfaceVariant, 
+              fontFamily: "Inter_500Medium" 
+            }]}>
+              {driverArrived ? "Driver has arrived at meeting spot" : driverLocation ? "Driver is nearby" : "Driver is heading to pickup"}
             </Text>
           </View>
 
@@ -321,9 +334,9 @@ export default function MatchFoundScreen() {
           style={styles.btnAccept}
           contentStyle={{ height: 52 }}
           labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 16 }}
-          icon={() => <Feather name="check" size={18} color={colors.onPrimary} />}
+          icon={() => <Feather name={driverArrived ? "clock" : "check"} size={18} color={colors.onPrimary} />}
         >
-          Accept ride
+          {driverArrived ? "Accept — driver is waiting" : "Accept ride"}
         </Button>
       </View>
     </Surface>
@@ -368,4 +381,6 @@ const styles = StyleSheet.create({
   actionBar: { position: "absolute", bottom: 0, left: 0, right: 0, flexDirection: "row", gap: 10, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 },
   btnDecline: { flex: 1, borderRadius: 14 },
   btnAccept: { flex: 2, borderRadius: 14 },
+  arrivalBanner: { borderRadius: 14, padding: 14, gap: 8 },
+  hurryBanner: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 12, padding: 12, marginTop: 4 },
 });
