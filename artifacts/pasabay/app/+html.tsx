@@ -49,7 +49,7 @@ export default function Root({ children }: PropsWithChildren) {
               padding: 6px;
               background: #1f1f1f;
               border-radius: 44px;
-              overflow: hidden;
+              position: relative;
               box-shadow: 0 16px 48px rgba(0,0,0,0.15);
             }
             body > div:first-of-type {

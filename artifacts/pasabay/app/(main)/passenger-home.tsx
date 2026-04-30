@@ -33,7 +33,7 @@ export default function PassengerHomeScreen() {
   const { fs, isSmall } = useScale();
   const dimensions = useWindowDimensions();
   const { user, driverLocation, switchRole, activeRide } = useApp();
-  const { location: userLoc, locationError } = useLocation();
+  const { location: userLoc } = useLocation();
   const isRegisteredDriver = user?.driverVerified || user?.vehicle || !!user?.driverStatus;
   const [destination, setDestination] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -210,7 +210,7 @@ export default function PassengerHomeScreen() {
 
       <View style={[styles.topArea, { paddingTop: topPad - 4 }]}>
         <View style={styles.greetingRow}>
-          {locationError && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#e53935" }} />}
+
           {user?.role === "driver" || isRegisteredDriver ? (
             <Pressable
               style={[styles.roleSwitchBtn, { backgroundColor: colors.primary }]}
@@ -252,7 +252,7 @@ export default function PassengerHomeScreen() {
               <Pressable
                 key={d}
                 style={styles.suggestionItem}
-                onPress={() => { setDestination(d); setShowSuggestions(false); }}
+                onPressIn={() => { setDestination(d); setShowSuggestions(false); }}
               >
                 <Feather name="map-pin" size={14} color={colors.primary} />
                 <Text style={[styles.suggestionText, { color: colors.onSurface, fontFamily: "Inter_400Regular" }]}>{d}</Text>
@@ -382,7 +382,7 @@ export default function PassengerHomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   topArea: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, paddingHorizontal: 16, gap: 8 },
-  greetingRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 2 },
+  greetingRow: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center", marginBottom: 2 },
   roleSwitchBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
   roleSwitchText: { fontSize: 12, color: "#fff", textShadowColor: "rgba(0,0,0,0.75)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
   searchContainer: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 10, paddingLeft: 16, gap: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },

@@ -91,7 +91,7 @@ export default function RootLayout() {
           <PaperProvider theme={theme}>
             <AppProvider>
               <DemoListenerWrapper />
-              <GestureHandlerRootView style={{ flex: 1, position: 'relative', ...(Platform.OS === 'web' ? {} : { minHeight: '100vh' }) }}>
+              <GestureHandlerRootView style={{ flex: 1, ...(Platform.OS === 'web' ? {} : { minHeight: '100vh' }) }}>
                 <KeyboardProvider>
                   <RootLayoutNav />
                 </KeyboardProvider>
