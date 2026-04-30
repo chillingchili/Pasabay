@@ -334,6 +334,9 @@ export default function DriverHomeScreen() {
             placeholder="Set destination..."
             placeholderTextColor={colors.onSurfaceDisabled}
           />
+          <Pressable style={[styles.searchBtn, { backgroundColor: colors.primary }]}>
+            <Feather name="search" size={16} color="#fff" />
+          </Pressable>
         </View>
 
         {showDestSuggestions && !isOnline && filteredDests.length > 0 && (
@@ -557,6 +560,7 @@ const styles = StyleSheet.create({
   destBar: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 10, paddingLeft: 16, gap: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   destDot: { width: 8, height: 8, borderRadius: 4 },
   destInput: { flex: 1, fontSize: 14, minHeight: 34 },
+  searchBtn: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
 
   suggestions: { borderRadius: 12, overflow: "hidden", zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   suggestionItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#f5f5f5" },
