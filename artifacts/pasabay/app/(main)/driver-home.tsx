@@ -198,7 +198,7 @@ export default function DriverHomeScreen() {
 
   const handleAccept = (req: MatchRequestPayload) => {
     console.log("[MATCH-STAGE-4a] Driver accepting match:", { routeId: req.routeId, passengerId: req.passengerId });
-    acceptedRef.current = { rideId: "", req };
+    acceptedRef.current = { rideId: rideId ?? "", req };
     emitMatchAccept({
       routeId: req.routeId,
       passengerId: req.passengerId,
@@ -212,26 +212,30 @@ export default function DriverHomeScreen() {
       matchingFee: req.matchingFee,
       distanceKm: req.distanceKm,
     });
-    setAccepted(req);
+    if (!accepted) {
+      setAccepted(req);
+    }
     clearPendingMatch();
-    setActiveRide({
-      rideId: rideId ?? req.routeId,
-      driver: user ? {
-        id: user.id,
-        name: user.name,
-        rating: user.rating,
-        avatar: user.avatar,
-        vehicle: user.vehicle
-          ? { make: user.vehicle.make, model: user.vehicle.model, color: user.vehicle.color, plate: user.vehicle.plate, fuelEfficiency: user.vehicle.fuelEfficiency }
-          : null,
-      } : { id: "", name: "", rating: 0, avatar: undefined, vehicle: null },
-      pickup: req.pickup,
-      dropoff: req.dropoff,
-      fare: req.fare,
-      matchingFee: req.matchingFee,
-      total: req.total,
-      distanceKm: req.distanceKm,
-    });
+    if (!activeRide) {
+      setActiveRide({
+        rideId: rideId ?? req.routeId,
+        driver: user ? {
+          id: user.id,
+          name: user.name,
+          rating: user.rating,
+          avatar: user.avatar,
+          vehicle: user.vehicle
+            ? { make: user.vehicle.make, model: user.vehicle.model, color: user.vehicle.color, plate: user.vehicle.plate, fuelEfficiency: user.vehicle.fuelEfficiency }
+            : null,
+        } : { id: "", name: "", rating: 0, avatar: undefined, vehicle: null },
+        pickup: req.pickup,
+        dropoff: req.dropoff,
+        fare: req.fare,
+        matchingFee: req.matchingFee,
+        total: req.total,
+        distanceKm: req.distanceKm,
+      });
+    }
   };
 
   const handleDecline = (req: MatchRequestPayload) => {
@@ -423,7 +427,7 @@ export default function DriverHomeScreen() {
         )}
       </View>
 
-      {pendingMatchRequest && !accepted && (
+      {pendingMatchRequest && (
         <Animated.View
           style={[
             styles.requestPopup,
@@ -485,6 +489,7 @@ export default function DriverHomeScreen() {
         visible={showChat}
         onClose={() => setShowChat(false)}
         driverName={accepted?.passengerName ?? "Passenger"}
+        userIsPassenger={false}
       />
 
       {(selectedDest || accepted) && (
@@ -496,7 +501,7 @@ export default function DriverHomeScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.navLabel}>Heading to</Text>
-                <Text style={styles.navDest}>{accepted.pickup.name} · {accepted.passengerName}</Text>
+                <Text style={styles.navDest}>{accepted.pickup.name}</Text>
               </View>
               <Pressable style={[styles.navChatBtn, { backgroundColor: "rgba(255,255,255,0.2)" }]} onPress={() => setShowChat(true)}>
                 <Feather name="message-circle" size={18} color="#fff" />
@@ -579,11 +584,8 @@ export default function DriverHomeScreen() {
                     </View>
                     {accepted && !arrived ? (
                       <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                          <View style={[styles.destDot, { backgroundColor: colors.primary }]} />
-                          <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>Pickup at</Text>
-                        </View>
-                        <Text style={[styles.infoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>{accepted.pickup.name} · {accepted.passengerName}</Text>
+                        <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>Dropoff</Text>
+                        <Text style={[styles.infoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>{accepted.dropoff.name}</Text>
                       </View>
                     ) : accepted && arrived && passengerOnboard ? (
                       <View style={{ flex: 1 }}>

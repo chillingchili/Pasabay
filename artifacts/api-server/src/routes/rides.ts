@@ -124,13 +124,15 @@ router.post("/request", requireAuth, async (req, res) => {
   const activeRoutes = await db.select().from(activeRoutesTable)
     .where(eq(activeRoutesTable.status, "active"));
 
-  console.log("[MATCH-STAGE-2] Active drivers found:", activeRoutes.length);
+  const activeRoutesWithCapacity = activeRoutes.filter(r => parseInt(r.availableSeats) > 0);
+
+  console.log("[MATCH-STAGE-2] Active drivers found:", activeRoutesWithCapacity.length);
 
   const MATCH_RADIUS_KM = radiusKm ?? 0.3;
   const matches: { routeId: string; driverId: string; pickupSnapped: RoutePoint; dropoffSnapped: RoutePoint; passengerDistKm: number; fare: number; matchingFee: number; pickupEtaMin: number }[] = [];
 
   const DECLINED_TTL = 60000;
-  for (const route of activeRoutes) {
+  for (const route of activeRoutesWithCapacity) {
     if (route.driverId === passengerId) continue;
     const declinedAt = declinedPairs.get(`${route.driverId}:${passengerId}`);
     if (declinedAt && (Date.now() - declinedAt) < DECLINED_TTL) continue;

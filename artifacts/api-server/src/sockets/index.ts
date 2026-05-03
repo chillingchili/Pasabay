@@ -4,7 +4,7 @@ import { activeRoutesTable, ridesTable, ridePassengersTable, usersTable, vehicle
 import { eq, and, sql } from "drizzle-orm";
 import { verifyAccessToken } from "../lib/jwt.js";
 import { getRoute, projectPointOnPolyline, polylineDistanceKm, haversineKm } from "../lib/osrm.js";
-import { calculatePassengerFare } from "../lib/fare.js";
+import { calculatePassengerFare, MATCHING_FEE_PHP as MATCHING_FEE } from "../lib/fare.js";
 import type { RoutePoint } from "../lib/osrm.js";
 import { logger } from "../lib/logger.js";
 
@@ -59,6 +59,12 @@ export function registerSocketHandlers(io: Server) {
           return;
         }
 
+        const [vehicle] = await db.select().from(vehiclesTable)
+          .where(eq(vehiclesTable.userId, userId)).limit(1);
+
+        const maxPassengers = vehicle ? vehicle.seats - 1 : 3;
+        const availableSeats = String(maxPassengers);
+
         const existing = await db.select().from(activeRoutesTable)
           .where(and(eq(activeRoutesTable.driverId, userId), eq(activeRoutesTable.status, "active")));
 
@@ -70,6 +76,7 @@ export function registerSocketHandlers(io: Server) {
             destName: data.destName, destLat: data.destLat, destLng: data.destLng,
             polyline: route.polyline, distanceKm: route.distanceKm,
             currentLat: data.originLat, currentLng: data.originLng,
+            availableSeats,
             status: "active", updatedAt: new Date(),
           }).where(eq(activeRoutesTable.id, existing[0].id)).returning();
           routeId = updated.id;
@@ -80,6 +87,7 @@ export function registerSocketHandlers(io: Server) {
             destName: data.destName, destLat: data.destLat, destLng: data.destLng,
             polyline: route.polyline, distanceKm: route.distanceKm,
             currentLat: data.originLat, currentLng: data.originLng,
+            availableSeats,
           }).returning();
           routeId = created.id;
         }
@@ -223,10 +231,9 @@ export function registerSocketHandlers(io: Server) {
 
     socket.on("match:accept", async (data: { routeId: string; passengerId: string; pickupLat: number; pickupLng: number; dropoffLat: number; dropoffLng: number; pickupName: string; dropoffName: string; fare: number; matchingFee: number; distanceKm: number }) => {
       try {
-        // Clear any pending timeout for this match
         const timeoutKey = `${data.routeId}:${data.passengerId}`;
-        const existing = matchTimeouts.get(timeoutKey);
-        if (existing) { clearTimeout(existing); matchTimeouts.delete(timeoutKey); }
+        const existingTimeout = matchTimeouts.get(timeoutKey);
+        if (existingTimeout) { clearTimeout(existingTimeout); matchTimeouts.delete(timeoutKey); }
 
         const session = driverSessions.get(userId);
         if (!session) { socket.emit("driver:error", { message: "No active route" }); return; }
@@ -235,30 +242,84 @@ export function registerSocketHandlers(io: Server) {
         const [vehicle] = await db.select().from(vehiclesTable).where(eq(vehiclesTable.userId, userId)).limit(1);
 
         const [route] = await db.select().from(activeRoutesTable).where(eq(activeRoutesTable.id, session.routeId)).limit(1);
+        if (!route) { socket.emit("driver:error", { message: "No active route" }); return; }
 
-        const [ride] = await db.insert(ridesTable).values({
-          routeId: session.routeId,
-          driverId: userId,
-          vehicleId: vehicle?.id,
-          fromName: route.originName, fromLat: route.originLat, fromLng: route.originLng,
-          toName: route.destName, toLat: route.destLat, toLng: route.destLng,
-          totalDistanceKm: route.distanceKm,
-          fuelPricePhp: 65,
-          status: "matched",
-        }).returning();
+        const availableSeats = parseInt(route.availableSeats, 10);
+        if (availableSeats <= 0) {
+          socket.emit("driver:error", { message: "No available seats. Vehicle is full." });
+          return;
+        }
 
-        console.log("[MATCH-STAGE-4a] Driver accepted — ride created:", { rideId: ride.id, passengerId: data.passengerId });
+        const existingRides = await db.select().from(ridesTable)
+          .where(and(eq(ridesTable.routeId, session.routeId), eq(ridesTable.driverId, userId), eq(ridesTable.status, "matched")));
 
-        await db.insert(ridePassengersTable).values({
-          rideId: ride.id,
-          passengerId: data.passengerId,
-          pickupName: data.pickupName, pickupLat: data.pickupLat, pickupLng: data.pickupLng,
-          dropoffName: data.dropoffName, dropoffLat: data.dropoffLat, dropoffLng: data.dropoffLng,
-          distanceKm: data.distanceKm,
-          fare: data.fare,
-          matchingFee: data.matchingFee,
-          status: "matched",
-        });
+        let rideId: string;
+        let finalFare = data.fare;
+        let finalMatchingFee = data.matchingFee;
+
+        if (existingRides.length > 0) {
+          rideId = existingRides[0].id;
+
+          const existingPassengers = await db.select().from(ridePassengersTable)
+            .where(eq(ridePassengersTable.rideId, rideId));
+
+          const allDistances = existingPassengers.map(p => p.distanceKm);
+          allDistances.push(data.distanceKm);
+
+          const recalculated = calculatePassengerFare({
+            passengerDistanceKm: data.distanceKm,
+            allPassengerDistancesKm: allDistances,
+            totalRouteDistanceKm: route.distanceKm,
+            fuelPricePhp: 65,
+          });
+          finalFare = recalculated.fare;
+
+          await db.insert(ridePassengersTable).values({
+            rideId,
+            passengerId: data.passengerId,
+            pickupName: data.pickupName, pickupLat: data.pickupLat, pickupLng: data.pickupLng,
+            dropoffName: data.dropoffName, dropoffLat: data.dropoffLat, dropoffLng: data.dropoffLng,
+            distanceKm: data.distanceKm,
+            fare: finalFare,
+            matchingFee: MATCHING_FEE,
+            status: "matched",
+          });
+
+          await db.update(activeRoutesTable)
+            .set({ availableSeats: String(availableSeats - 1), updatedAt: new Date() })
+            .where(eq(activeRoutesTable.id, session.routeId));
+
+          console.log("[MATCH-STAGE-4a] Driver accepted — added to existing ride:", { rideId, passengerId: data.passengerId, remainingSeats: availableSeats - 1 });
+        } else {
+          const [ride] = await db.insert(ridesTable).values({
+            routeId: session.routeId,
+            driverId: userId,
+            vehicleId: vehicle?.id,
+            fromName: route.originName, fromLat: route.originLat, fromLng: route.originLng,
+            toName: route.destName, toLat: route.destLat, toLng: route.destLng,
+            totalDistanceKm: route.distanceKm,
+            fuelPricePhp: 65,
+            status: "matched",
+          }).returning();
+          rideId = ride.id;
+
+          await db.insert(ridePassengersTable).values({
+            rideId,
+            passengerId: data.passengerId,
+            pickupName: data.pickupName, pickupLat: data.pickupLat, pickupLng: data.pickupLng,
+            dropoffName: data.dropoffName, dropoffLat: data.dropoffLat, dropoffLng: data.dropoffLng,
+            distanceKm: data.distanceKm,
+            fare: data.fare,
+            matchingFee: data.matchingFee,
+            status: "matched",
+          });
+
+          await db.update(activeRoutesTable)
+            .set({ availableSeats: String(availableSeats - 1), updatedAt: new Date() })
+            .where(eq(activeRoutesTable.id, session.routeId));
+
+          console.log("[MATCH-STAGE-4a] Driver accepted — ride created:", { rideId, passengerId: data.passengerId, remainingSeats: availableSeats - 1 });
+        }
 
         const driverInfo = user ? {
           id: user.id, name: user.name, rating: user.rating, avatar: user.avatar,
@@ -270,20 +331,20 @@ export function registerSocketHandlers(io: Server) {
         }
 
         io.to(`user:${data.passengerId}`).emit("match:confirmed", {
-          rideId: ride.id,
+          rideId,
           driver: driverInfo,
           pickup: { lat: data.pickupLat, lng: data.pickupLng, name: data.pickupName },
           dropoff: { lat: data.dropoffLat, lng: data.dropoffLng, name: data.dropoffName },
-          fare: data.fare, matchingFee: data.matchingFee,
-          total: data.fare + data.matchingFee,
+          fare: finalFare, matchingFee: finalMatchingFee,
+          total: finalFare + finalMatchingFee,
           distanceKm: data.distanceKm,
         });
 
-        socket.emit("match:accepted_confirmed", { rideId: ride.id, passengerId: data.passengerId });
+        socket.emit("match:accepted_confirmed", { rideId, passengerId: data.passengerId });
 
-        console.log("[MATCH-STAGE-4a] match:confirmed emitted to passenger:", { rideId: ride.id });
+        console.log("[MATCH-STAGE-4a] match:confirmed emitted to passenger:", { rideId });
 
-        logger.info({ rideId: ride.id, driverId: userId, passengerId: data.passengerId }, "Match confirmed");
+        logger.info({ rideId, driverId: userId, passengerId: data.passengerId }, "Match confirmed");
       } catch (err) {
         logger.error({ err, userId }, "match:accept error");
         socket.emit("driver:error", { message: "Failed to confirm match" });
