@@ -128,30 +128,6 @@ function addMarker(L: any, lat: number, lng: number, color: string, size: number
     markersRef.current.push(marker);
   }
 
-  function addPinMarker(L: any, lat: number, lng: number, color: string) {
-    const icon = L.divIcon({
-      html: `<div style="display:flex;flex-direction:column;align-items:center"><svg width="28" height="38" viewBox="0 0 28 38" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3))"><path d="M14 0C6.3 0 0 6.3 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.3 21.7 0 14 0z" fill="${color}" stroke="#fff" stroke-width="2"/><circle cx="14" cy="13" r="5" fill="#fff"/></svg></div>`,
-      className: "",
-      iconSize: [28, 38],
-      iconAnchor: [14, 38],
-    });
-    const marker = L.marker([lat, lng], { icon }).addTo(mapRef.current);
-    markersRef.current.push(marker);
-  }
-
-  function addSimpleDot(L: any, lat: number, lng: number, color: string, size: number) {
-    const icon = L.divIcon({
-      html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color}"></div>`,
-      className: "",
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2],
-    });
-    const marker = L.marker([lat, lng], { icon }).addTo(mapRef.current);
-    markersRef.current.push(marker);
-  }
-
-
-
   useEffect(() => {
     if (!mapRef.current || !loaded) return;
     const L = (window as any).L;
@@ -159,10 +135,10 @@ function addMarker(L: any, lat: number, lng: number, color: string, size: number
 
     // If user has manually dragged, don't auto-center unless explicit action
     // (fitRouteKey or recenterKey change resets userDragged)
-    if (pickupPoint) addPinMarker(L, pickupPoint.lat, pickupPoint.lng, "#3B82F6");
+    if (pickupPoint) addMarker(L, pickupPoint.lat, pickupPoint.lng, "#3B82F6", 30, 14, "Pickup");
     if (dropoffPoint) addMarker(L, dropoffPoint.lat, dropoffPoint.lng, "#EF4444", 30, 14, "Dropoff");
     if (driverLocation) addMarker(L, driverLocation.lat, driverLocation.lng, "#0D9E75", 36, 16, "Driver");
-    if (userLocation) addPinMarker(L, userLocation.lat, userLocation.lng, "#0D9E75");
+    if (userLocation) addMarker(L, userLocation.lat, userLocation.lng, "#0D9E75", 26, 12, "You");
 
     if (showRoute && routePolyline && routePolyline.length > 1) {
       polylineRef.current = L.polyline(
