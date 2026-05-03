@@ -135,10 +135,10 @@ function addMarker(L: any, lat: number, lng: number, color: string, size: number
 
     // If user has manually dragged, don't auto-center unless explicit action
     // (fitRouteKey or recenterKey change resets userDragged)
-    if (pickupPoint) addMarker(L, pickupPoint.lat, pickupPoint.lng, "#3B82F6", 30, 14, "Pickup");
-    if (dropoffPoint) addMarker(L, dropoffPoint.lat, dropoffPoint.lng, "#EF4444", 30, 14, "Dropoff");
-    if (driverLocation) addMarker(L, driverLocation.lat, driverLocation.lng, "#0D9E75", 36, 16, "Driver");
-    if (userLocation) addMarker(L, userLocation.lat, userLocation.lng, "#0D9E75", 26, 12, "You");
+    if (pickupPoint) addMarker(L, pickupPoint.lat, pickupPoint.lng, "#3B82F6", 30, 14);
+    if (dropoffPoint) addMarker(L, dropoffPoint.lat, dropoffPoint.lng, "#EF4444", 30, 14);
+    if (driverLocation) addMarker(L, driverLocation.lat, driverLocation.lng, "#0D9E75", 36, 16);
+    if (userLocation) addMarker(L, userLocation.lat, userLocation.lng, "#0D9E75", 26, 12);
 
     if (showRoute && routePolyline && routePolyline.length > 1) {
       polylineRef.current = L.polyline(
