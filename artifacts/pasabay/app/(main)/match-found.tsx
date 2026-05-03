@@ -35,6 +35,7 @@ export default function MatchFoundScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const [walkingDistance, setWalkingDistance] = useState<number | null>(null);
   const [walkingEtaMin, setWalkingEtaMin] = useState<number | null>(null);
+  const [walkingPolyline, setWalkingPolyline] = useState<{ lat: number; lng: number }[] | null>(null);
   const [showHurry, setShowHurry] = useState(false);
   const [mapFitKey, setMapFitKey] = useState(0);
 
@@ -94,25 +95,29 @@ export default function MatchFoundScreen() {
     return off;
   }, []);
 
-  // Fetch walking route when driverArrived changes
+  // Fetch walking route whenever userLoc + pickup available (for pre-arrival walking line)
+  // Also refetch when driverArrived changes (meeting spot may differ)
   useEffect(() => {
-    if (!driverArrived || !userLoc) return;
+    const dest = driverArrived?.meetingSpot ?? matchConfirmed?.pickup;
+    if (!userLoc || !dest) return;
     let cancelled = false;
     const fetchWalk = async () => {
-      const walk = await getWalkingRoute(userLoc, driverArrived.meetingSpot);
+      const walk = await getWalkingRoute(userLoc, dest);
       if (cancelled) return;
       if (walk) {
         setWalkingDistance(Math.round(walk.distanceKm * 1000));
         setWalkingEtaMin(Math.round(walk.durationSec / 60));
+        setWalkingPolyline(walk.polyline);
       } else {
-        const distKm = haversineKm(userLoc, driverArrived.meetingSpot);
+        const distKm = haversineKm(userLoc, dest);
         setWalkingDistance(Math.round(distKm * 1000));
         setWalkingEtaMin(Math.round((distKm / 5) * 60)); // 5 km/h walking speed
+        setWalkingPolyline(null);
       }
     };
     fetchWalk();
     return () => { cancelled = true; };
-  }, [driverArrived, userLoc]);
+  }, [!!userLoc, matchConfirmed?.pickup?.lat, matchConfirmed?.pickup?.lng, driverArrived]);
 
   // Show hurry warning 30s after driver arrival
   useEffect(() => {
@@ -273,6 +278,8 @@ export default function MatchFoundScreen() {
           <Card mode="outlined" style={{ borderRadius: 14, overflow: "hidden" }}>
             <View style={{ height: 180, position: "relative" }}>
               <RealMap
+                showRoute={!!walkingPolyline}
+                routePolyline={walkingPolyline ?? undefined}
                 pickupPoint={pickup ? { lat: pickup.lat, lng: pickup.lng, name: pickup.name } : undefined}
                 userLocation={userLoc ?? undefined}
                 driverLocation={driverLocation ?? undefined}
@@ -280,6 +287,16 @@ export default function MatchFoundScreen() {
               />
             </View>
           </Card>
+
+          {/* Pre-arrival walking info — shown before driver arrives */}
+          {walkingPolyline && !driverArrived && (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 4 }}>
+              <Feather name="navigation" size={14} color={colors.primary} />
+              <Text variant="labelMedium" style={{ color: colors.onSurfaceVariant, fontFamily: "Inter_500Medium" }}>
+                {walkingDistance != null && (walkingDistance < 1000 ? `${walkingDistance}m` : `${(walkingDistance / 1000).toFixed(1)}km`)} walk to pickup · ~{walkingEtaMin ?? 1} min
+              </Text>
+            </View>
+          )}
 
           {/* Ride status indicator */}
           <View style={[styles.rideStatusCard, { backgroundColor: driverArrived ? colors.primaryContainer : colors.surfaceVariant }]}>
