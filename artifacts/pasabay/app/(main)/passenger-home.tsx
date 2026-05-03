@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Animated, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -14,6 +14,7 @@ import { getRoute } from "@/lib/osrm";
 import { getWalkingRoute } from "@/lib/osrm";
 import { haversineKm } from "@/lib/osrm";
 import { useScale } from "@/hooks/useScale";
+import { onRideCanceled } from "@/lib/socket";
 import { useWindowDimensions } from "react-native";
 
 const QUICK_DESTINATIONS = ["USC Talamban", "IT Park, Lahug", "SM City Cebu", "Ayala Center", "JY Square", "Mango Square"];
@@ -157,6 +158,17 @@ export default function PassengerHomeScreen() {
     console.log('[DEMO] Setting passenger destination:', demoPassengerDest);
     setDestination(demoPassengerDest);
   }, [demoPassengerDest, destination]);
+
+  // Handle ride cancellation (driver no-show, driver cancel, etc.)
+  const didCancelRef = useRef(false);
+  useEffect(() => {
+    const off = onRideCanceled((data) => {
+      if (didCancelRef.current) return;
+      didCancelRef.current = true;
+      Alert.alert("Ride Canceled", data.reason ?? "The ride was canceled. Please request a new ride.");
+    });
+    return off;
+  }, []);
 
   const handleFindRide = () => {
     if (!destination) return;
