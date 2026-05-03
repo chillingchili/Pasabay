@@ -14,6 +14,14 @@ export const API_BASE = IS_DEV
 const ACCESS_KEY = "pasabay_access_token";
 const REFRESH_KEY = "pasabay_refresh_token";
 
+export async function safeSetItem(key: string, value: string) {
+  try {
+    await AsyncStorage.setItem(key, value);
+  } catch {
+    console.warn(`[AsyncStorage] Failed to set item "${key}": storage quota may be exceeded`);
+  }
+}
+
 export async function getTokens(): Promise<{ access: string | null; refresh: string | null }> {
   const [access, refresh] = await Promise.all([
     AsyncStorage.getItem(ACCESS_KEY),
@@ -24,8 +32,8 @@ export async function getTokens(): Promise<{ access: string | null; refresh: str
 
 export async function setTokens(access: string, refresh: string) {
   await Promise.all([
-    AsyncStorage.setItem(ACCESS_KEY, access),
-    AsyncStorage.setItem(REFRESH_KEY, refresh),
+    safeSetItem(ACCESS_KEY, access),
+    safeSetItem(REFRESH_KEY, refresh),
   ]);
 }
 

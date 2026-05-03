@@ -32,7 +32,7 @@ export default function PassengerHomeScreen() {
   const { colors } = useTheme();
   const { fs, isSmall } = useScale();
   const dimensions = useWindowDimensions();
-  const { user, driverLocation, switchRole, activeRide } = useApp();
+  const { user, driverLocation, switchRole, activeRide, demoPassengerDest } = useApp();
   const { location: userLoc } = useLocation();
   const isRegisteredDriver = user?.driverVerified || user?.vehicle || !!user?.driverStatus;
   const [destination, setDestination] = useState("");
@@ -151,6 +151,12 @@ export default function PassengerHomeScreen() {
     fetch();
     return () => { cancelled = true; };
   }, [userLoc, activeRide?.pickup]);
+
+  useEffect(() => {
+    if (!demoPassengerDest || destination) return;
+    console.log('[DEMO] Setting passenger destination:', demoPassengerDest);
+    setDestination(demoPassengerDest);
+  }, [demoPassengerDest, destination]);
 
   const handleFindRide = () => {
     if (!destination) return;

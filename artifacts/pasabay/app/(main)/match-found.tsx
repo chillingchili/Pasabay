@@ -146,6 +146,9 @@ export default function MatchFoundScreen() {
   const pickup = matchConfirmed?.pickup;
   const fare = matchConfirmed?.fare ?? 0;
   const matchingFee = matchConfirmed?.matchingFee ?? 0;
+  const distanceKm = matchConfirmed?.distanceKm ?? 0;
+  const total = fare + matchingFee;
+  const ratePerKm = distanceKm > 0 ? fare / distanceKm : 0;
   const driverInitials = driver?.name
     ? driver.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
     : "DR";
@@ -313,19 +316,36 @@ export default function MatchFoundScreen() {
             </View>
           )}
 
+          {/* Fare breakdown — transparent calculation */}
           <Surface style={{ backgroundColor: colors.primary, borderRadius: 14, padding: 16, marginTop: 14 }}>
-            <View style={styles.fareStripRow}>
-              <Text variant="displaySmall" style={[styles.fareStripAmount, { fontFamily: "Sora_800ExtraBold", color: colors.onPrimary }]}>
-                ₱{fare.toFixed(0)}
-              </Text>
-              {matchingFee > 0 && (
-                <Text variant="labelLarge" style={[styles.fareStripFee, { fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.8)" }]}>
-                  + ₱{matchingFee.toFixed(0)} service fee
-                </Text>
-              )}
+            <Text variant="labelLarge" style={[styles.fareBreakdownTitle, { fontFamily: "Inter_600SemiBold", color: colors.onPrimary }]}>
+              Fare breakdown
+            </Text>
+            <View style={styles.fareBreakdownRow}>
+              <Text variant="bodySmall" style={{ color: "rgba(255,255,255,0.8)", fontFamily: "Inter_400Regular" }}>Distance</Text>
+              <Text variant="bodySmall" style={{ color: colors.onPrimary, fontFamily: "Inter_500Medium" }}>{distanceKm.toFixed(1)} km</Text>
             </View>
-            <Text variant="labelLarge" style={[styles.fareStripNote, { fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.7)", fontSize: 12 }]}>
-              Fuel share only — all rides comply with LTFRB cost-sharing guidelines
+            {ratePerKm > 0 && (
+              <View style={styles.fareBreakdownRow}>
+                <Text variant="bodySmall" style={{ color: "rgba(255,255,255,0.8)", fontFamily: "Inter_400Regular" }}>Rate</Text>
+                <Text variant="bodySmall" style={{ color: colors.onPrimary, fontFamily: "Inter_500Medium" }}>₱{ratePerKm.toFixed(2)}/km</Text>
+              </View>
+            )}
+            <View style={styles.fareBreakdownRow}>
+              <Text variant="bodySmall" style={{ color: "rgba(255,255,255,0.8)", fontFamily: "Inter_400Regular" }}>Base fare (fuel share)</Text>
+              <Text variant="bodySmall" style={{ color: colors.onPrimary, fontFamily: "Inter_500Medium" }}>₱{fare.toFixed(2)}</Text>
+            </View>
+            <View style={styles.fareBreakdownRow}>
+              <Text variant="bodySmall" style={{ color: "rgba(255,255,255,0.8)", fontFamily: "Inter_400Regular" }}>Service fee</Text>
+              <Text variant="bodySmall" style={{ color: colors.onPrimary, fontFamily: "Inter_500Medium" }}>+ ₱{matchingFee.toFixed(2)}</Text>
+            </View>
+            <View style={[styles.fareBreakdownDivider, { borderBottomColor: "rgba(255,255,255,0.2)" }]} />
+            <View style={styles.fareBreakdownRow}>
+              <Text variant="labelLarge" style={{ color: colors.onPrimary, fontFamily: "Inter_600SemiBold" }}>Total</Text>
+              <Text variant="labelLarge" style={{ color: colors.onPrimary, fontFamily: "Sora_800ExtraBold" }}>₱{total.toFixed(0)}</Text>
+            </View>
+            <Text variant="labelSmall" style={{ fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.6)", fontSize: 11, marginTop: 8, lineHeight: 14 }}>
+              Fuel share based on distance, fuel price (₱65/L), and driver's vehicle efficiency. All rides comply with LTFRB cost-sharing guidelines.
             </Text>
           </Surface>
         </Animated.View>
@@ -390,10 +410,9 @@ const styles = StyleSheet.create({
   liveDot: { width: 8, height: 8, borderRadius: 4 },
   liveText: { fontSize: 12 },
   etaText: { fontSize: 13, marginTop: 2 },
-  fareStripRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  fareStripAmount: { fontSize: 28 },
-  fareStripFee: { fontSize: 14 },
-  fareStripNote: { fontSize: 12, lineHeight: 16 },
+  fareBreakdownTitle: { fontSize: 13, marginBottom: 10, letterSpacing: 0.5 },
+  fareBreakdownRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 3 },
+  fareBreakdownDivider: { borderBottomWidth: 1, marginVertical: 6 },
   actionBar: { position: "absolute", bottom: 0, left: 0, right: 0, flexDirection: "row", gap: 10, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 },
   btnDecline: { flex: 1, borderRadius: 14 },
   btnAccept: { flex: 2, borderRadius: 14 },

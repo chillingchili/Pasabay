@@ -19,7 +19,7 @@ const DEMO_PASSENGER_EMAIL = "demo-passenger@usc.edu.ph";
 const DEMO_DRIVER_PASSWORD = "demodrive123";
 const DEMO_PASSENGER_PASSWORD = "demopass123";
 
-const DRIVER_ORIGIN: RoutePoint = { lat: 10.2992, lng: 123.8938 };
+const DRIVER_ORIGIN: RoutePoint = { lat: 10.2980, lng: 123.8920 };
 const DRIVER_DEST: RoutePoint = { lat: 10.3105, lng: 123.9179 };
 
 // POST /api/demo/seed — create or find demo accounts, return tokens

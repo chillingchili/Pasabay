@@ -194,9 +194,9 @@
       { id: 3, label: 'Passenger Requests Ride', driver: false, passenger: true },
       { id: 4, label: 'Match Request Appears', driver: true, passenger: false },
       { id: 5, label: 'Driver Accepts Match', driver: true, passenger: true },
-      { id: 6, label: 'Driver Arriving', driver: true, passenger: false },
-      { id: 7, label: 'Passenger Sees Arrival', driver: false, passenger: true },
-      { id: 8, label: 'Timer Countdown', driver: true, passenger: true },
+      { id: 6, label: 'Driver En Route to Pickup', driver: true, passenger: true },
+      { id: 7, label: 'Driver Arrives at Pickup', driver: true, passenger: true },
+      { id: 8, label: 'Ride Complete', driver: true, passenger: true },
     ];
 
     let currentStage = 0;
@@ -208,7 +208,8 @@
     let passengerUserData = null;
     let driverReady = false;
     let passengerReady = false;
-    const APP_URL = window.location.origin;
+    const API_URL = 'http://localhost:3000';
+const APP_URL = 'http://localhost:19000';
 
     // ============================================================
     // Step B: PostMessage helpers + UI updates
@@ -305,7 +306,7 @@
       postToFrame('driver', { type: 'demo:reset' });
       postToFrame('passenger', { type: 'demo:reset' });
 
-      fetch(`${APP_URL}/api/demo/reset`, { method: 'POST' })
+      fetch(`${API_URL}/api/demo/reset`, { method: 'POST' })
         .then(() => {
           document.getElementById('status').textContent = '\u21BA Restarted \u2014 ready to play';
         })
@@ -322,7 +323,7 @@
       status.textContent = 'Seeding demo accounts...';
 
       try {
-        const seedResp = await fetch(`${APP_URL}/api/demo/seed`, { method: 'POST' });
+        const seedResp = await fetch(`${API_URL}/api/demo/seed`, { method: 'POST' });
         if (!seedResp.ok) throw new Error(`Seed failed: ${seedResp.status}`);
 
         const seedData = await seedResp.json();

@@ -8,7 +8,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -28,19 +28,20 @@ const queryClient = new QueryClient();
 function DemoListenerWrapper() {
   const { handleDemoAuth, handleDemoStage, resetDemo } = useApp();
 
-  useDemoListener({
-    onAuth: (token, role, userData) => {
-      handleDemoAuth(token, role, userData);
-    },
-    onStage: (stage, role) => {
-      handleDemoStage(stage, role);
-    },
-    onReset: () => {
-      resetDemo();
-    },
-  });
+  const onAuth = useCallback(
+    (token: string, role: 'driver' | 'passenger', userData: { id: string; name: string; email: string; role: string }) =>
+      handleDemoAuth(token, role, userData),
+    [handleDemoAuth]
+  );
+  const onStage = useCallback(
+    (stage: number, role: 'driver' | 'passenger') => handleDemoStage(stage, role),
+    [handleDemoStage]
+  );
+  const onReset = useCallback(() => resetDemo(), [resetDemo]);
 
-  return null; // This component only exists to mount the hook
+  useDemoListener({ onAuth, onStage, onReset });
+
+  return null;
 }
 
 function RootLayoutNav() {

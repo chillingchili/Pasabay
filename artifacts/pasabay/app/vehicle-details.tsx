@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text as RNText, View } from "react-native";
 import { router } from "expo-router";
@@ -7,7 +6,7 @@ import { Feather } from "@expo/vector-icons";
 import { useTheme, Text, TextInput, Button, Surface } from "react-native-paper";
 import { useApp } from "@/context/AppContext";
 import { useScale } from "@/hooks/useScale";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, safeSetItem } from "@/lib/api";
 
 const CAR_MAKES = ["Toyota", "Honda", "Mitsubishi", "Nissan", "Hyundai", "Suzuki", "Ford", "Other"];
 const SEAT_OPTIONS = ["2", "3", "4", "5", "6", "7"];
@@ -80,7 +79,7 @@ export default function VehicleDetailsScreen() {
         Alert.alert("Fuel Efficiency Adjusted", `Adjusted to ${Number(response.fuelEfficiency).toFixed(1)} km/L based on vehicle specs.`);
       }
       await refreshUser();
-      await AsyncStorage.setItem("pasabay_driver_verified", JSON.stringify({
+      await safeSetItem("pasabay_driver_verified", JSON.stringify({
         driverVerified: true,
         driverStatus: response.driverStatus ?? "submitted",
         vehicle: response.vehicle ?? { plate: plate.trim(), make, model: model.trim(), year, color: carColor, seats: parseInt(seats) },

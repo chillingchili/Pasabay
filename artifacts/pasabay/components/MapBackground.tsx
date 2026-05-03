@@ -141,10 +141,10 @@ export function MapBackground({
           </>
         )}
 
-        {/* User location pin (at default USC Talamban main gate) */}
-        <Circle cx={229} cy={187} r={18} fill="rgba(13,158,117,0.15)" />
-        <Circle cx={229} cy={187} r={8} fill="#0D9E75" />
-        <Circle cx={229} cy={187} r={4} fill="#fff" />
+{/* User location pin (at default USC Talamban main gate) */}
+        <Circle cx={229} cy={237} r={14} fill="rgba(13,158,117,0.2)" />
+        <Circle cx={229} cy={237} r={7} fill="#0D9E75" />
+        <Circle cx={229} cy={237} r={3} fill="#fff" />
       </Svg>
     </View>
   );
