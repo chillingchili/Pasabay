@@ -64,4 +64,4 @@ Thumbs.db
 .gitignore
 
 #graphify
-.graphify-out
+graphify-out
