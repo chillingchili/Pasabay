@@ -8,8 +8,6 @@ import { useApp } from "@/context/AppContext";
 import { useScale } from "@/hooks/useScale";
 import { apiRequest, formatApiError } from "@/lib/api";
 import { onMatchDeclined } from "@/lib/socket";
-import LoadingOverlay from "@/components/LoadingOverlay";
-import ErrorBanner from "@/components/ErrorBanner";
 
 export default function MatchingScreen() {
   const insets = useSafeAreaInsets();
@@ -24,19 +22,13 @@ export default function MatchingScreen() {
     pickupName?: string; dropoffName?: string;
   }>();
 
-  const [searching, setSearching] = useState(true);
   const [status, setStatus] = useState("Looking for a driver on your route…");
   const [fareEst, setFareEst] = useState<number | null>(null);
   const [distEst, setDistEst] = useState<number | null>(null);
   const [etaEst, setEtaEst] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showError, setShowError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [retryCount, setRetryCount] = useState(0);
-  const [showRetry, setShowRetry] = useState(false);
+  const [restartKey, setRestartKey] = useState(0);
   const didNavigate = useRef(false);
-
-  const MIN_SEARCH_MS = 60000; // 60 seconds minimum search duration
+  const cancelledRef = useRef(false);
 
   const ring1 = useRef(new Animated.Value(1)).current;
   const ring2 = useRef(new Animated.Value(1)).current;
@@ -80,58 +72,52 @@ export default function MatchingScreen() {
   }, [ring1, ring2, ring3, dot1, dot2, dot3]);
 
   useEffect(() => {
-    const searchForDriver = async () => {
-      const startTime = Date.now();
-      try {
-        const pickupLat = parseFloat(params.pickupLat ?? "10.2969");
-        const pickupLng = parseFloat(params.pickupLng ?? "123.9008");
-        const dropoffLat = parseFloat(params.dropoffLat ?? "10.3535");
-        const dropoffLng = parseFloat(params.dropoffLng ?? "123.9135");
-        const pickupName = params.pickupName ?? "USC Main Gate";
-        const dropoffName = params.dropoffName ?? params.destination ?? "IT Park, Lahug";
+    if (cancelledRef.current) return;
+    const pickupLat = parseFloat(params.pickupLat ?? "10.2969");
+    const pickupLng = parseFloat(params.pickupLng ?? "123.9008");
+    const dropoffLat = parseFloat(params.dropoffLat ?? "10.3535");
+    const dropoffLng = parseFloat(params.dropoffLng ?? "123.9135");
+    const pickupName = params.pickupName ?? "USC Main Gate";
+    const dropoffName = params.dropoffName ?? params.destination ?? "IT Park, Lahug";
+    const radiiToTry = [0.3, 0.5, 1.0, 2.0];
 
-        const radiiToTry = [0.3, 0.5, 1.0, 2.0];
-        const radius = radiiToTry[Math.min(retryCount, radiiToTry.length - 1)];
+    let retries = 0;
+    let stopped = false;
 
-        const result = await apiRequest<any>("/rides/request", {
-          method: "POST",
-          body: JSON.stringify({ pickupLat, pickupLng, dropoffLat, dropoffLng, pickupName, dropoffName, radiusKm: radius }),
-        });
+    const poll = async () => {
+      while (!stopped && !cancelledRef.current) {
+        try {
+          const radius = radiiToTry[Math.min(retries, radiiToTry.length - 1)];
+          const result = await apiRequest<any>("/rides/request", {
+            method: "POST",
+            body: JSON.stringify({ pickupLat, pickupLng, dropoffLat, dropoffLng, pickupName, dropoffName, radiusKm: radius }),
+          });
 
-        console.log("[MATCH-STAGE-1] /rides/request response:", { matched: result.matched, driverId: result.driverId });
+          if (stopped || cancelledRef.current) return;
 
-        setIsLoading(false);
-
-        if (!result.matched) {
-          const elapsed = Date.now() - startTime;
-          if (elapsed < MIN_SEARCH_MS) {
-            await new Promise(resolve => setTimeout(resolve, MIN_SEARCH_MS - elapsed));
+          if (result.matched) {
+            setFareEst(result.total ?? result.fare);
+            setDistEst(result.distanceKm);
+            setEtaEst(result.pickupEtaMin);
+            setStatus("Driver found! Waiting for confirmation…");
+            return;
           }
-          setStatus(result.message ?? "No drivers found. Try again in a moment.");
-          setSearching(false);
-          setShowRetry(true);
-          return;
+
+          retries++;
+          setStatus("No drivers yet. Still searching…");
+        } catch {
+          if (stopped || cancelledRef.current) return;
+          retries++;
+          setStatus("Still searching for a driver…");
         }
 
-        setFareEst(result.total ?? result.fare);
-        setDistEst(result.distanceKm);
-        setEtaEst(result.pickupEtaMin);
-        setStatus("Driver found! Waiting for confirmation…");
-      } catch (err: any) {
-        const elapsed = Date.now() - startTime;
-        if (elapsed < MIN_SEARCH_MS) {
-          await new Promise(resolve => setTimeout(resolve, MIN_SEARCH_MS - elapsed));
-        }
-        setIsLoading(false);
-        setErrorMessage(formatApiError(err));
-        setShowError(true);
-        setStatus("Connection error. Please try again.");
-        setSearching(false);
-        setShowRetry(true);
+        await new Promise(resolve => setTimeout(resolve, 10000));
       }
     };
-    searchForDriver();
-  }, [retryCount]);
+
+    poll();
+    return () => { stopped = true; };
+  }, [restartKey]);
 
   useEffect(() => {
     if (matchConfirmed && !didNavigate.current) {
@@ -146,33 +132,22 @@ export default function MatchingScreen() {
       setFareEst(null);
       setDistEst(null);
       setEtaEst(null);
+      setRestartKey(k => k + 1);
     });
     return off;
   }, []);
 
   const handleCancel = () => {
+    cancelledRef.current = true;
     didNavigate.current = true;
     clearMatchConfirmed();
     router.back();
-  };
-
-  const handleRetry = () => {
-    setShowRetry(false);
-    setSearching(true);
-    setIsLoading(true);
-    setRetryCount(prev => prev + 1);
   };
 
   const destination = params.dropoffName ?? params.destination ?? "your destination";
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <LoadingOverlay visible={isLoading} message="Searching for drivers..." />
-      <ErrorBanner
-        message={errorMessage}
-        visible={showError}
-        onDismiss={() => setShowError(false)}
-      />
       <View style={[styles.content, { paddingTop: (Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top) + 40, paddingHorizontal: isSmall ? 16 : 24 }]}>
         <View style={styles.ringsContainer}>
           {[ring1, ring2, ring3].map((r, i) => (
@@ -225,22 +200,12 @@ export default function MatchingScreen() {
       </View>
 
       <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom + 16, 32), backgroundColor: colors.background }]}>
-        {showRetry ? (
-          <Pressable
-            style={[styles.retryBtn, { backgroundColor: colors.primary }]}
-            onPress={handleRetry}
-          >
-            <Feather name="refresh-cw" size={16} color="#fff" />
-            <Text style={[styles.retryText, { fontFamily: "Inter_600SemiBold" }]}>Try Again</Text>
-          </Pressable>
-        ) : (
-          <Pressable
-            style={[styles.cancelBtn, { borderColor: colors.destructiveLight }]}
-            onPress={handleCancel}
-          >
-            <Text style={[styles.cancelText, { color: colors.destructive, fontFamily: "Inter_500Medium" }]}>Cancel search</Text>
-          </Pressable>
-        )}
+        <Pressable
+          style={[styles.cancelBtn, { borderColor: colors.destructiveLight }]}
+          onPress={handleCancel}
+        >
+          <Text style={[styles.cancelText, { color: colors.destructive, fontFamily: "Inter_500Medium" }]}>Cancel search</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -279,6 +244,4 @@ const styles = StyleSheet.create({
   bottom: { paddingHorizontal: 24 },
   cancelBtn: { height: 50, borderRadius: 14, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
   cancelText: { fontSize: 15 },
-  retryBtn: { height: 50, borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
-  retryText: { color: "#fff", fontSize: 15 },
 });
