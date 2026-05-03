@@ -8,7 +8,7 @@ import { getRoute, projectPointOnPolyline, polylineDistanceKm, haversineKm } fro
 import type { RoutePoint } from "../lib/osrm.js";
 import { z } from "zod/v4";
 import { getIo } from "../lib/io.js";
-import { matchTimeouts } from "../sockets/index.js";
+import { matchTimeouts, declinedPairs } from "../sockets/index.js";
 
 const router = Router();
 
@@ -129,8 +129,11 @@ router.post("/request", requireAuth, async (req, res) => {
   const MATCH_RADIUS_KM = radiusKm ?? 0.3;
   const matches: { routeId: string; driverId: string; pickupSnapped: RoutePoint; dropoffSnapped: RoutePoint; passengerDistKm: number; fare: number; matchingFee: number; pickupEtaMin: number }[] = [];
 
+  const DECLINED_TTL = 60000;
   for (const route of activeRoutes) {
     if (route.driverId === passengerId) continue;
+    const declinedAt = declinedPairs.get(`${route.driverId}:${passengerId}`);
+    if (declinedAt && (Date.now() - declinedAt) < DECLINED_TTL) continue;
     const polyline = route.polyline as RoutePoint[];
     if (!polyline?.length) continue;
 
@@ -208,6 +211,7 @@ router.post("/request", requireAuth, async (req, res) => {
   // 30-second driver response timeout — auto-decline if driver doesn't respond
   const timeoutKey = `${best.routeId}:${passengerId}`;
   const timeout = setTimeout(() => {
+    declinedPairs.set(`${best.driverId}:${passengerId}`, Date.now());
     getIo().to(`user:${passengerId}`).emit("match:declined", {
       message: "No drivers available. Please try again.",
     });

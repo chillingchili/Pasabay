@@ -20,6 +20,7 @@ interface DriverSession {
 const driverSessions = new Map<string, DriverSession>();
 const passengerSockets = new Map<string, string>();
 export const matchTimeouts = new Map<string, NodeJS.Timeout>();
+export const declinedPairs = new Map<string, number>(); // "driverId:passengerId" → timestamp
 
 async function authenticateSocket(socket: Socket): Promise<string | null> {
   try {
@@ -229,6 +230,10 @@ export function registerSocketHandlers(io: Server) {
           vehicle: vehicle ? { make: vehicle.make, model: vehicle.model, color: vehicle.color, plate: vehicle.plate, seats: vehicle.seats } : null,
         } : null;
 
+        for (const [pairKey] of declinedPairs) {
+          if (pairKey.startsWith(`${userId}:`)) declinedPairs.delete(pairKey);
+        }
+
         io.to(`user:${data.passengerId}`).emit("match:confirmed", {
           rideId: ride.id,
           driver: driverInfo,
@@ -251,14 +256,14 @@ export function registerSocketHandlers(io: Server) {
     });
 
     socket.on("match:decline", (data: { passengerId: string }) => {
-      // Clear any timeout that matches this passenger
       for (const [key, timeout] of matchTimeouts.entries()) {
         if (key.includes(data.passengerId)) {
           clearTimeout(timeout);
           matchTimeouts.delete(key);
         }
       }
-      console.log("[MATCH-STAGE-4b] Driver declined:", { passengerId: data.passengerId });
+      declinedPairs.set(`${userId}:${data.passengerId}`, Date.now());
+      console.log("[MATCH-STAGE-4b] Driver declined:", { driverId: userId, passengerId: data.passengerId });
       io.to(`user:${data.passengerId}`).emit("match:declined", {
         message: "Driver declined. Searching for another driver...",
       });
