@@ -18,16 +18,15 @@ export function useLocation() {
         if (Platform.OS === "web") {
           if (typeof window !== 'undefined') {
             const params = new URLSearchParams(window.location.search);
-            const isDemoMode = params.get('demo') === 'true' || window.localStorage?.getItem('pasabay_demo_mode') === 'true';
-            if (isDemoMode) {
-              const role = params.get('role') || 'passenger';
+            if (params.get('demo') === 'true') {
+              const role = params.get('role');
               if (role === 'passenger') {
-                setLocation({ lat: 10.3350, lng: 123.9100, accuracy: null }); // Talamban St heading to Ayala
+                setLocation({ lat: 10.3350, lng: 123.9100, accuracy: null });
                 setLoading(false);
                 return;
               }
               if (role === 'driver') {
-                setLocation({ lat: 10.2800, lng: 123.8850, accuracy: null }); // 2km south of USC
+                setLocation({ lat: 10.2800, lng: 123.8850, accuracy: null });
                 setLoading(false);
                 return;
               }

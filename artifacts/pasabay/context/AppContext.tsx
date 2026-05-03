@@ -318,23 +318,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
         if (params.get('demo') === 'true') {
-          if (params.get('seed') === '1') {
-            try {
-              await apiRequest("/api/demo/seed", { method: "POST" });
-            } catch {}
-            const data = await apiRequest<any>("/auth/login", {
-              method: "POST",
-              body: JSON.stringify({ email: "demo-driver@usc.edu.ph", password: "demodrive123" }),
-            });
-            await setTokens(data.accessToken, data.refreshToken);
-            const profile = mapApiUser(data.user);
-            setUserState(profile);
-            await safeSetItem("pasabay_demo_mode", "true");
-            await safeSetItem("pasabay_school_id_verified", JSON.stringify({ verified: true }));
-            await safeSetItem("pasabay_driver_verified", JSON.stringify({ driverVerified: true, driverStatus: "verified", vehicle: profile.vehicle }));
-            setIsLoading(false);
-            return;
-          }
           setIsLoading(true);
           return;
         }
@@ -549,23 +532,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const loginAsDemo = useCallback(async () => {
     try {
-      await apiRequest("/api/demo/seed", { method: "POST" });
-    } catch { /* demo seed may fail if already seeded — proceed */ }
-
-    if (Platform.OS === "web" && typeof window !== "undefined") {
-      window.open(window.location.origin + "/?demo=true&role=driver&seed=1", "_blank");
+      const data = await apiRequest<any>("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email: "testuser@usc.edu.ph", password: "testuser1" }),
+      });
+      await setTokens(data.accessToken, data.refreshToken);
+      const profile = mapApiUser(data.user);
+      setUserState(profile);
+      await safeSetItem("pasabay_demo_mode", "true");
+      await safeSetItem("pasabay_school_id_verified", JSON.stringify({ verified: true }));
+      await safeSetItem("pasabay_driver_verified", JSON.stringify({ driverVerified: true, driverStatus: "verified", vehicle: profile.vehicle }));
+      loadRideHistory();
+      initSocket();
+    } catch {
+      const signupData = await apiRequest<any>("/auth/signup", {
+        method: "POST",
+        body: JSON.stringify({ email: "testuser@usc.edu.ph", password: "testuser1", name: "Test User" }),
+      });
+      await setTokens(signupData.accessToken, signupData.refreshToken);
+      const profile = mapApiUser(signupData.user);
+      setUserState(profile);
+      await safeSetItem("pasabay_demo_mode", "true");
+      await safeSetItem("pasabay_school_id_verified", JSON.stringify({ verified: true }));
+      await safeSetItem("pasabay_driver_verified", JSON.stringify({ driverVerified: true, driverStatus: "verified", vehicle: profile.vehicle }));
+      loadRideHistory();
+      initSocket();
     }
-
-    const data = await apiRequest<any>("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email: "demo-passenger@usc.edu.ph", password: "demopass123" }),
-    });
-    await setTokens(data.accessToken, data.refreshToken);
-    const profile = mapApiUser(data.user);
-    setUserState(profile);
-    await safeSetItem("pasabay_demo_mode", "true");
-    loadRideHistory();
-    initSocket();
   }, [loadRideHistory, initSocket]);
 
   const handleDemoAuth = useCallback(async (token: string, role: 'driver' | 'passenger', userData: { id: string; name: string; email: string; role: string }) => {
