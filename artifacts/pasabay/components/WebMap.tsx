@@ -159,6 +159,7 @@ function addMarker(L: any, lat: number, lng: number, color: string, size: number
 
     // If user has manually dragged, don't auto-center unless explicit action
     // (fitRouteKey or recenterKey change resets userDragged)
+    if (pickupPoint) addPinMarker(L, pickupPoint.lat, pickupPoint.lng, "#3B82F6");
     if (dropoffPoint) addMarker(L, dropoffPoint.lat, dropoffPoint.lng, "#EF4444", 30, 14, "Dropoff");
     if (driverLocation) addMarker(L, driverLocation.lat, driverLocation.lng, "#0D9E75", 36, 16, "Driver");
     if (userLocation) addPinMarker(L, userLocation.lat, userLocation.lng, "#0D9E75");
