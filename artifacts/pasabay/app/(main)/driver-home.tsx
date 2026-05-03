@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Alert, Animated, Platform, Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { Animated, Platform, Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -46,6 +46,8 @@ export default function DriverHomeScreen() {
   const [selectedPassengerIndex, setSelectedPassengerIndex] = useState(0);
   const [passengerTimers, setPassengerTimers] = useState<Record<string, number>>({});
   const [matchRequestTimer, setMatchRequestTimer] = useState(60);
+  const [showPassengerList, setShowPassengerList] = useState(true);
+  const [chatPassengerName, setChatPassengerName] = useState<string>("Passenger");
 
   const slideAnim = useRef(new Animated.Value(-160)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -89,24 +91,18 @@ export default function DriverHomeScreen() {
   }, [pendingMatchRequest]);
 
   useEffect(() => {
-    if (!activeRide?.passengers) return;
-    const atPickupIds = activeRide.passengers
-      .filter(p => p.status === 'at_pickup' && !passengerTimers[p.passengerId])
-      .map(p => p.passengerId);
-    if (atPickupIds.length === 0 && Object.keys(passengerTimers).length === 0) return;
+    const ids = Object.keys(passengerTimers);
+    if (ids.length === 0) return;
     const interval = setInterval(() => {
       setPassengerTimers(prev => {
         const next = { ...prev };
         let changed = false;
-        for (const pid of atPickupIds) {
-          if (!(pid in next)) { next[pid] = 60; changed = true; }
-        }
         for (const pid of Object.keys(next)) {
-          if (next[pid] <= 1) {
-            delete next[pid];
+          if (next[pid] > 1) {
+            next[pid]--;
             changed = true;
           } else {
-            next[pid]--;
+            delete next[pid];
             changed = true;
           }
         }
@@ -114,7 +110,7 @@ export default function DriverHomeScreen() {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [activeRide?.passengers, passengerTimers]);
+  }, [passengerTimers]);
 
   useEffect(() => {
     if (!isOnline || !userLoc) return;
@@ -291,23 +287,10 @@ export default function DriverHomeScreen() {
   };
 
   const handleNoShow = (passengerId: string) => {
-    Alert.alert(
-      "Passenger No-Show",
-      "Mark this passenger as no-show?",
-      [
-        { text: "Keep Waiting", style: "cancel", onPress: () => { setPassengerTimers(prev => ({ ...prev, [passengerId]: 60 })); } },
-        {
-          text: "Mark No-Show",
-          style: "destructive",
-          onPress: () => {
-            updatePassengerStatus(passengerId, "completed");
-            setPassengerTimers(prev => { const next = { ...prev }; delete next[passengerId]; return next; });
-            const remaining = activeRide?.passengers.filter(p => p.passengerId !== passengerId && p.status !== "completed") ?? [];
-            if (remaining.length === 0) clearActiveRide();
-          },
-        },
-      ]
-    );
+    updatePassengerStatus(passengerId, "completed");
+    setPassengerTimers(prev => { const next = { ...prev }; delete next[passengerId]; return next; });
+    const remaining = activeRide?.passengers.filter(p => p.passengerId !== passengerId && p.status !== "completed") ?? [];
+    if (remaining.length === 0) clearActiveRide();
   };
 
   const handleCompleteRide = () => {
@@ -344,6 +327,7 @@ export default function DriverHomeScreen() {
   const activePassenger = activeRide?.passengers?.[selectedPassengerIndex] ?? null;
   const passengers = activeRide?.passengers ?? [];
   const hasActiveRide = passengers.length > 0;
+  const activeCount = passengers.filter(p => p.status !== "completed").length;
   const etaMin = (selectedDest || activePassenger) ? (routeInfo?.durationMin ?? 18) : null;
   const fuelEst = routeInfo ? `₱${Math.max(Math.round(routeInfo.distanceKm * 60 / 10 / 10) * 10, 20)}` : null;
 
@@ -490,89 +474,42 @@ export default function DriverHomeScreen() {
       <ChatSheet
         visible={showChat}
         onClose={() => setShowChat(false)}
-        driverName={activePassenger?.passengerName ?? passengers[0]?.passengerName ?? "Passenger"}
+        driverName={chatPassengerName}
         userIsPassenger={false}
       />
 
-      {pendingMatchRequest && (
-        <Animated.View
-          style={[
-            styles.requestPopup,
-            { backgroundColor: "rgba(255,255,255,0.97)", top: topPad + (showDestSuggestions ? 200 : 130) },
-            { transform: [{ translateY: slideAnim }] },
-          ]}
-        >
-          <View style={styles.requestHeader}>
-            <Feather name="star" size={12} color={colors.primary} />
-            <Text style={[styles.requestHeaderText, { color: colors.primary, fontFamily: "Inter_600SemiBold" }]}>Pasabay request</Text>
-            {matchRequestTimer > 0 && (
-              <Text style={[styles.requestHeaderText, { color: colors.onSurfaceVariant, fontSize: 12, marginLeft: 'auto' }]}>
-                {matchRequestTimer}s
-              </Text>
-            )}
-          </View>
-          <View style={styles.requestBody}>
-            <View style={[styles.passengerAvatar, { backgroundColor: "#e0885a" }]}>
-              <Text style={[styles.passengerAvatarText, { fontFamily: "Sora_800ExtraBold" }]}>
-                {pendingMatchRequest.passengerName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
-              </Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.passengerName, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>
-                {pendingMatchRequest.passengerName} · ★{pendingMatchRequest.passengerRating.toFixed(1)}
-              </Text>
-              <Text style={[styles.passengerRoute, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>
-                {pendingMatchRequest.pickup.name} → {pendingMatchRequest.dropoff.name}
-              </Text>
-            </View>
-            <View style={[styles.fareAdd, { backgroundColor: colors.tertiaryContainer }]}>
-              <Text style={[styles.fareAddText, { color: colors.onTertiaryContainer, fontFamily: "Sora_800ExtraBold" }]}>
-                + ₱{pendingMatchRequest.total.toFixed(0)}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.requestActions}>
-            <Button
-              mode="outlined"
-              textColor={colors.onSurfaceVariant}
-              onPress={() => handleDecline(pendingMatchRequest)}
-              style={[styles.declineBtn, { borderColor: colors.outline }]}
-              contentStyle={{ height: 44 }}
-              labelStyle={{ fontFamily: "Inter_500Medium", fontSize: 14 }}
-            >
-              Decline
-            </Button>
-            <Button
-              mode="contained"
-              buttonColor={colors.primary}
-              textColor={colors.onPrimary}
-              onPress={() => handleAccept(pendingMatchRequest)}
-              style={styles.acceptBtn}
-              contentStyle={{ height: 44 }}
-              labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 14 }}
-            >
-              Accept
-            </Button>
-          </View>
-        </Animated.View>
-      )}
-
       {(selectedDest || isOnline || hasActiveRide) && (
-        <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 16, 24) + 60 }]} onLayout={(e) => setInfoBarHeight(e.nativeEvent.layout.height)}>
+        <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 8, 16) + 64 }]} onLayout={(e) => setInfoBarHeight(e.nativeEvent.layout.height)}>
           {!isOnline && selectedDest ? (
-            <Button
-              mode="contained"
-              buttonColor={colors.primary}
-              textColor={colors.onPrimary}
-              onPress={handleGoOnline}
-              style={{ borderRadius: 14 }}
-              contentStyle={{ height: 50 }}
-              labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 16 }}
-              icon={() => <Feather name="navigation" size={16} color={colors.onPrimary} />}
-            >
-              Drive to Destination
-            </Button>
-          ) : isOnline && !hasActiveRide ? (
+            <>
+              <View style={styles.routeMeta}>
+                <View style={styles.metaBlock}>
+                  <Feather name="clock" size={12} color={colors.onSurfaceVariant} />
+                  <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>{etaMin != null ? `${etaMin} min` : "—"}</Text>
+                </View>
+                <View style={styles.metaBlock}>
+                  <Feather name="maximize" size={12} color={colors.onSurfaceVariant} />
+                  <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>{routeInfo ? `${routeInfo.distanceKm.toFixed(1)} km` : "—"}</Text>
+                </View>
+                <View style={styles.metaBlock}>
+                  <Feather name="droplet" size={12} color={colors.onSurfaceVariant} />
+                  <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>{fuelEst ?? "—"}</Text>
+                </View>
+              </View>
+              <Button
+                mode="contained"
+                buttonColor={colors.primary}
+                textColor={colors.onPrimary}
+                onPress={handleGoOnline}
+                style={{ borderRadius: 14 }}
+                contentStyle={{ height: 50 }}
+                labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 16 }}
+                icon={() => <Feather name="navigation" size={16} color={colors.onPrimary} />}
+              >
+                Drive to Destination
+              </Button>
+            </>
+          ) : isOnline && activeCount === 0 ? (
             <>
               <Pressable style={[styles.navBar, { backgroundColor: colors.primary }]} onPress={() => setShowRouteInfo(v => !v)}>
                 <View style={[styles.navIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
@@ -588,157 +525,176 @@ export default function DriverHomeScreen() {
                 </View>
                 <Feather name={showRouteInfo ? "chevron-down" : "chevron-up"} size={16} color="#fff" />
               </Pressable>
-              <Text style={[styles.waitingText, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>
-                Looking for riders along your route...
-              </Text>
-            </>
-          ) : passengers.length > 0 ? (
-            <View style={{ gap: 10 }}>
-              {passengers.filter(p => p.status !== "completed").map((p, i) => {
-                const isSelected = i === selectedPassengerIndex;
-                const timer = passengerTimers[p.passengerId];
-                const initials = p.passengerName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
-                const statusColor = p.status === "onboard" ? "#4caf50" :
-                  p.status === "at_pickup" ? "#ff9800" : colors.primary;
-                const statusLabel = p.status === "en_route" ? "En route to pickup" :
-                  p.status === "at_pickup" ? "Waiting at pickup" :
-                  p.status === "onboard" ? "Onboard" : "Completed";
-                return (
-                  <Pressable
-                    key={p.passengerId}
-                    style={[
-                      styles.passengerCard,
-                      { borderColor: isSelected ? colors.primary : colors.outlineVariant, borderWidth: isSelected ? 2 : 1 },
-                    ]}
-                    onPress={() => setSelectedPassengerIndex(i)}
-                  >
-                    <View style={styles.passengerCardHeader}>
-                      <View style={[styles.passengerCardAvatar, { backgroundColor: `hsl(${i * 60}, 60%, 50%)` }]}>
-                        <Text style={[styles.passengerCardAvatarText, { fontFamily: "Sora_800ExtraBold" }]}>{initials}</Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.passengerCardName, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>
-                          {p.passengerName} · ★{p.passengerRating.toFixed(1)}
-                        </Text>
-                        <Text style={[styles.passengerCardRoute, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>
-                          {p.pickup.name} → {p.dropoff.name}
-                        </Text>
-                      </View>
-                      <View style={[styles.statusBadge, { backgroundColor: statusColor + "20" }]}>
-                        <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-                        <Text style={[styles.statusText, { color: statusColor, fontFamily: "Inter_600SemiBold" }]}>{statusLabel}</Text>
-                      </View>
+              {showRouteInfo && selectedDest && (
+                <>
+                  <View style={styles.routeRow}>
+                    <View style={[styles.routeIcon, { backgroundColor: colors.primaryContainer }]}>
+                      <Feather name="map-pin" size={16} color={colors.primary} />
                     </View>
-                    {p.status === "en_route" && (
-                      <View style={styles.passengerCardActions}>
-                        <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>
-                          Pickup: {p.pickup.name} · ₱{p.total.toFixed(0)}
-                        </Text>
-                        <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.primary }]} onPress={() => handleArrived(p.passengerId)}>
-                          <Feather name="check" size={14} color="#fff" />
-                          <Text style={styles.arrivedBtnText}>Arrived</Text>
-                        </Pressable>
-                      </View>
-                    )}
-                    {p.status === "at_pickup" && (
-                      <View style={styles.passengerCardActions}>
-                        {timer != null && timer > 0 ? (
-                          <View style={[styles.timerBadge, { backgroundColor: timer > 30 ? "#4caf50" : timer > 10 ? "#ff9800" : colors.errorContainer }]}>
-                            <Text style={[styles.timerText, { color: timer > 30 ? "#fff" : timer > 10 ? "#fff" : colors.error, fontFamily: "Sora_800ExtraBold" }]}>{timer}s</Text>
-                          </View>
-                        ) : (
-                          <Pressable style={[styles.noShowBtn, { backgroundColor: colors.error }]} onPress={() => handleNoShow(p.passengerId)}>
-                            <Text style={[styles.noShowText, { color: "#fff", fontFamily: "Inter_600SemiBold" }]}>No-Show</Text>
-                          </Pressable>
-                        )}
-                        <View style={{ flex: 1 }} />
-                        <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.primary }]} onPress={() => handleStartTrip(p.passengerId)}>
-                          <Feather name="user-check" size={14} color="#fff" />
-                          <Text style={styles.arrivedBtnText}>Start Trip</Text>
-                        </Pressable>
-                      </View>
-                    )}
-                    {p.status === "onboard" && (
-                      <View style={styles.passengerCardActions}>
-                        <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>
-                          Dropoff: {p.dropoff.name} · ETA ~{routeInfo?.durationMin ?? "—"} min
-                        </Text>
-                        <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.tertiary }]} onPress={() => handleDropOff(p.passengerId)}>
-                          <Feather name="flag" size={14} color="#fff" />
-                          <Text style={styles.arrivedBtnText}>Drop Off</Text>
-                        </Pressable>
-                      </View>
-                    )}
-                  </Pressable>
-                );
-              })}
-              <View style={styles.routeMeta}>
-                <View style={styles.metaBlock}>
-                  <Feather name="clock" size={12} color={colors.onSurfaceVariant} />
-                  <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>
-                    {etaMin != null ? `${etaMin} min` : "—"}
-                  </Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>To</Text>
+                      <Text style={[styles.infoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>{selectedDest?.name ?? "Destination"}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.routeMeta}>
+                    <View style={styles.metaBlock}>
+                      <Feather name="clock" size={12} color={colors.onSurfaceVariant} />
+                      <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>{etaMin != null ? `${etaMin} min` : "—"}</Text>
+                    </View>
+                    <View style={styles.metaBlock}>
+                      <Feather name="maximize" size={12} color={colors.onSurfaceVariant} />
+                      <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>{routeInfo ? `${routeInfo.distanceKm.toFixed(1)} km` : "—"}</Text>
+                    </View>
+                    <View style={styles.metaBlock}>
+                      <Feather name="droplet" size={12} color={colors.onSurfaceVariant} />
+                      <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>{fuelEst ?? "—"}</Text>
+                    </View>
+                  </View>
+                  {!showCancelConfirm && (
+                    <Pressable style={[styles.cancelBtnSmall, { borderColor: colors.error }]} onPress={handleCancelTrip}>
+                      <Feather name="x" size={14} color={colors.error} />
+                      <Text style={[styles.cancelBtnText, { color: colors.error }]}>End Route</Text>
+                    </Pressable>
+                  )}
+                  {showCancelConfirm && (
+                    <View style={styles.actionRow}>
+                      <Pressable style={[styles.cancelBtn, { borderColor: colors.outlineVariant }]} onPress={handleDismissCancel}>
+                        <Text style={[styles.cancelBtnText, { color: colors.onSurfaceVariant }]}>Back</Text>
+                      </Pressable>
+                      <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.error }]} onPress={handleConfirmCancel}>
+                        <Feather name="alert-triangle" size={14} color="#fff" />
+                        <Text style={styles.arrivedBtnText}>Confirm Cancel</Text>
+                      </Pressable>
+                    </View>
+                  )}
+                </>
+              )}
+            </>
+          ) : activeCount > 0 ? (
+            <>
+              <Pressable
+                style={[styles.collapseBar, { backgroundColor: colors.primary }]}
+                onPress={() => setShowPassengerList(v => !v)}
+              >
+                <View style={[styles.navIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
+                  <Feather name="users" size={18} color="#fff" />
                 </View>
-                <View style={styles.metaBlock}>
-                  <Feather name="droplet" size={12} color={colors.onSurfaceVariant} />
-                  <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>
-                    {fuelEst ?? "—"}
-                  </Text>
-                </View>
-                <View style={styles.metaBlock}>
-                  <Feather name="maximize" size={12} color={colors.onSurfaceVariant} />
-                  <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.navDest}>
+                    {activeCount} rider{activeCount !== 1 ? "s" : ""}{" · "}
+                    {etaMin != null ? `${etaMin} min` : "—"}{" · "}
                     {routeInfo ? `${routeInfo.distanceKm.toFixed(1)} km` : "—"}
                   </Text>
                 </View>
-                <View style={styles.metaBlock}>
-                  <Feather name="users" size={12} color={colors.onSurfaceVariant} />
-                  <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>
-                    {passengers.filter(p => p.status !== "completed").length} riders
-                  </Text>
-                </View>
-              </View>
-            </View>
-          ) : null}
-          {(!isOnline || hasActiveRide || showRouteInfo) && selectedDest && (
-              <>
-              <View style={styles.routeRow}>
-                <View style={[styles.routeIcon, { backgroundColor: colors.primaryContainer }]}>
-                  <Feather name="map-pin" size={16} color={colors.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>To</Text>
-                  <Text style={[styles.infoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>{selectedDest?.name ?? "Destination"}</Text>
-                </View>
-              </View>
-            </>
-          )}
-          {((isOnline || hasActiveRide) && !showCancelConfirm) && (
-            <View style={styles.actionRow}>
-              <Pressable style={[styles.cancelBtn, { borderColor: colors.outlineVariant }]} onPress={handleCancelTrip}>
-                <Feather name="x" size={14} color={colors.onSurfaceVariant} />
-                <Text style={[styles.cancelBtnText, { color: colors.onSurfaceVariant }]}>Cancel Ride</Text>
+                <Feather name={showPassengerList ? "chevron-down" : "chevron-up"} size={18} color="#fff" />
               </Pressable>
-              {passengers.filter(p => p.status !== "completed").length === 0 && isOnline && (
-                <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.primary }]} onPress={handleCompleteRide}>
-                  <Feather name="flag" size={14} color="#fff" />
-                  <Text style={styles.arrivedBtnText}>Complete Route</Text>
-                </Pressable>
+              {showPassengerList && (
+                <View style={{ gap: 8 }}>
+                  {passengers.filter(p => p.status !== "completed").map((p, i) => {
+                    const isSelected = i === selectedPassengerIndex;
+                    const timer = passengerTimers[p.passengerId];
+                    const initials = p.passengerName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+                    const statusColor = p.status === "onboard" ? "#4caf50" :
+                      p.status === "at_pickup" ? "#ff9800" : colors.primary;
+                    const statusLabel = p.status === "en_route" ? "En route" :
+                      p.status === "at_pickup" ? "Waiting" :
+                      p.status === "onboard" ? "Onboard" : "Done";
+                    return (
+                      <Pressable
+                        key={p.passengerId}
+                        style={[
+                          styles.passengerCard,
+                          { borderColor: isSelected ? colors.primary : colors.outlineVariant, borderWidth: isSelected ? 2 : 1 },
+                        ]}
+                        onPress={() => setSelectedPassengerIndex(i)}
+                      >
+                        <View style={styles.passengerCardHeader}>
+                          <View style={[styles.passengerCardAvatar, { backgroundColor: `hsl(${i * 80 + 10}, 55%, 45%)` }]}>
+                            <Text style={[styles.passengerCardAvatarText, { fontFamily: "Sora_800ExtraBold" }]}>{initials}</Text>
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                              <Text style={[styles.passengerCardName, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]} numberOfLines={1}>
+                                {p.passengerName}
+                              </Text>
+                              <Text style={{ fontSize: 11, color: colors.primary, fontFamily: "Inter_500Medium" }}>★{p.passengerRating.toFixed(1)}</Text>
+                            </View>
+                            <Text style={[styles.passengerCardRoute, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]} numberOfLines={1}>
+                              {p.pickup.name} → {p.dropoff.name} · ₱{p.total.toFixed(0)}
+                            </Text>
+                          </View>
+                          <View style={[styles.statusBadge, { backgroundColor: statusColor + "20" }]}>
+                            <View style={[styles.statusDotMini, { backgroundColor: statusColor }]} />
+                            <Text style={[styles.statusText, { color: statusColor, fontFamily: "Inter_600SemiBold" }]}>{statusLabel}</Text>
+                          </View>
+                          <Pressable
+                            onPress={() => { setChatPassengerName(p.passengerName); setShowChat(true); }}
+                            hitSlop={8}
+                            style={[styles.chatIconBtn, { backgroundColor: colors.surfaceVariant }]}
+                          >
+                            <Feather name="message-circle" size={14} color={colors.primary} />
+                          </Pressable>
+                        </View>
+                        {p.status === "en_route" && (
+                          <View style={styles.passengerCardActions}>
+                            <Feather name="map-pin" size={12} color={colors.onSurfaceVariant} />
+                            <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular", flex: 1 }]} numberOfLines={1}>
+                              Pickup at {p.pickup.name}
+                            </Text>
+                            <Pressable style={[styles.actionBtn, { backgroundColor: colors.primary }]} onPress={() => handleArrived(p.passengerId)}>
+                              <Feather name="check" size={13} color="#fff" />
+                              <Text style={styles.actionBtnText}>Arrived</Text>
+                            </Pressable>
+                          </View>
+                        )}
+                        {p.status === "at_pickup" && (
+                          <View style={styles.passengerCardActions}>
+                            {timer != null && timer > 0 ? (
+                              <View style={[styles.timerBadge, { backgroundColor: timer > 30 ? "#4caf50" : timer > 10 ? "#ff9800" : colors.errorContainer }]}>
+                                <Text style={[styles.timerText, { color: timer > 30 ? "#fff" : timer > 10 ? "#fff" : colors.error, fontFamily: "Sora_800ExtraBold" }]}>{timer}s</Text>
+                              </View>
+                            ) : (
+                              <Pressable style={[styles.noShowBtn, { backgroundColor: colors.error }]} onPress={() => handleNoShow(p.passengerId)}>
+                                <Text style={[styles.noShowText, { color: "#fff", fontFamily: "Inter_600SemiBold" }]}>No-Show</Text>
+                              </Pressable>
+                            )}
+                            <View style={{ flex: 1 }} />
+                            <Pressable style={[styles.actionBtn, { backgroundColor: colors.primary }]} onPress={() => handleStartTrip(p.passengerId)}>
+                              <Feather name="user-check" size={13} color="#fff" />
+                              <Text style={styles.actionBtnText}>Start Trip</Text>
+                            </Pressable>
+                          </View>
+                        )}
+                        {p.status === "onboard" && (
+                          <View style={styles.passengerCardActions}>
+                            <Feather name="navigation" size={12} color={colors.onSurfaceVariant} />
+                            <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular", flex: 1 }]} numberOfLines={1}>
+                              Dropoff at {p.dropoff.name}
+                            </Text>
+                            <Pressable style={[styles.actionBtn, { backgroundColor: colors.tertiary }]} onPress={() => handleDropOff(p.passengerId)}>
+                              <Feather name="flag" size={13} color="#fff" />
+                              <Text style={styles.actionBtnText}>Drop Off</Text>
+                            </Pressable>
+                          </View>
+                        )}
+                      </Pressable>
+                    );
+                  })}
+                </View>
               )}
-            </View>
-          )}
-          {(isOnline || hasActiveRide) && showCancelConfirm && (
-            <View style={styles.actionRow}>
-              <Pressable style={[styles.cancelBtn, { borderColor: colors.outlineVariant }]} onPress={handleDismissCancel}>
-                <Feather name="arrow-left" size={14} color={colors.onSurfaceVariant} />
-                <Text style={[styles.cancelBtnText, { color: colors.onSurfaceVariant }]}>Back</Text>
-              </Pressable>
-              <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.error }]} onPress={handleConfirmCancel}>
-                <Feather name="alert-triangle" size={14} color="#fff" />
-                <Text style={styles.arrivedBtnText}>Confirm Cancel</Text>
-              </Pressable>
-            </View>
-          )}
+              {showCancelConfirm && (
+                <View style={styles.actionRow}>
+                  <Pressable style={[styles.cancelBtn, { borderColor: colors.outlineVariant }]} onPress={handleDismissCancel}>
+                    <Text style={[styles.cancelBtnText, { color: colors.onSurfaceVariant }]}>Back</Text>
+                  </Pressable>
+                  <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.error }]} onPress={handleConfirmCancel}>
+                    <Feather name="alert-triangle" size={14} color="#fff" />
+                    <Text style={styles.arrivedBtnText}>Confirm Cancel</Text>
+                  </Pressable>
+                </View>
+              )}
+            </>
+          ) : null}
         </View>
       )}
     </View>
@@ -846,11 +802,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontFamily: "Sora_800ExtraBold",
   },
-  waitingText: {
-    fontSize: 13,
-    textAlign: "center",
-    paddingVertical: 8,
-  },
   passengerCard: {
     borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.97)",
@@ -905,5 +856,47 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+  },
+  collapseBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    height: 48,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+  },
+  actionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
+  },
+  actionBtnText: {
+    color: "#fff",
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+  cancelBtnSmall: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1.5,
+  },
+  statusDotMini: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  chatIconBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
