@@ -521,9 +521,42 @@ export default function DriverHomeScreen() {
         driverName={accepted?.passengerName ?? "Passenger"}
       />
 
-      {selectedDest && (
+      {(selectedDest || accepted) && (
         <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 16, 24) + 60 }]} onLayout={(e) => setInfoBarHeight(e.nativeEvent.layout.height)}>
-          {isOnline && !accepted ? (
+          {accepted && !arrived ? (
+            <Pressable style={[styles.navBar, { backgroundColor: colors.primary }]}>
+              <View style={[styles.navIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
+                <Feather name="user" size={20} color="#fff" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.navLabel}>Heading to</Text>
+                <Text style={styles.navDest}>{accepted.pickup.name} · {accepted.passengerName}</Text>
+              </View>
+              <View style={styles.navEta}>
+                <Feather name="clock" size={14} color="#fff" />
+                <Text style={styles.navEtaText}>{routeInfo?.durationMin != null ? `${routeInfo.durationMin} min` : "—"}</Text>
+              </View>
+            </Pressable>
+          ) : accepted && arrived ? (
+            <Pressable style={[styles.navBar, { backgroundColor: colors.tertiary }]}>
+              <View style={[styles.navIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
+                <Feather name="clock" size={20} color="#fff" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.navLabel}>Waiting at pickup</Text>
+                <Text style={styles.navDest}>{selectedDest?.name ?? "Destination"}</Text>
+              </View>
+              {waitTimer > 0 ? (
+                <View style={[styles.timerBadge, { backgroundColor: waitTimer > 30 ? "#4caf50" : waitTimer > 10 ? "#ff9800" : colors.errorContainer }]}>
+                  <Text style={[styles.timerText, { color: waitTimer > 30 ? "#fff" : waitTimer > 10 ? "#fff" : colors.error, fontFamily: "Sora_800ExtraBold" }]}>{waitTimer}s</Text>
+                </View>
+              ) : (
+                <Pressable style={[styles.noShowBtn, { backgroundColor: colors.error }]} onPress={handleNoShow}>
+                  <Text style={[styles.noShowText, { color: "#fff", fontFamily: "Inter_600SemiBold" }]}>No-Show</Text>
+                </Pressable>
+              )}
+            </Pressable>
+          ) : isOnline && !accepted ? (
             <Pressable style={[styles.navBar, { backgroundColor: colors.primary }]} onPress={() => setShowRouteInfo(v => !v)}>
               <View style={[styles.navIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
                 <Feather name="navigation" size={20} color="#fff" />
@@ -560,7 +593,7 @@ export default function DriverHomeScreen() {
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>To</Text>
-                      <Text style={[styles.infoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>{selectedDest.name}</Text>
+                      <Text style={[styles.infoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>{selectedDest?.name ?? "Destination"}</Text>
                     </View>
                   </View>
                   <View style={styles.routeMeta}>
