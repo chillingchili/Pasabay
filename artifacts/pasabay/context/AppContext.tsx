@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { Platform } from "react-native";
 import { router } from "expo-router";
 import type { GoogleUserInfo } from "@/hooks/useGoogleAuth";
 import { apiRequest, clearTokens, setTokens, getTokens, safeSetItem, API_BASE, type ApiError } from "@/lib/api";
@@ -317,8 +318,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
         if (params.get('demo') === 'true') {
-          // Demo mode: skip normal init, wait for PostMessage auth
-          setIsLoading(true); // Keep loading until demo:auth arrives
+          if (params.get('seed') === '1') {
+            try {
+              await apiRequest("/api/demo/seed", { method: "POST" });
+            } catch {}
+            const data = await apiRequest<any>("/auth/login", {
+              method: "POST",
+              body: JSON.stringify({ email: "demo-driver@usc.edu.ph", password: "demodrive123" }),
+            });
+            await setTokens(data.accessToken, data.refreshToken);
+            const profile = mapApiUser(data.user);
+            setUserState(profile);
+            await safeSetItem("pasabay_demo_mode", "true");
+            await safeSetItem("pasabay_school_id_verified", JSON.stringify({ verified: true }));
+            await safeSetItem("pasabay_driver_verified", JSON.stringify({ driverVerified: true, driverStatus: "verified", vehicle: profile.vehicle }));
+            setIsLoading(false);
+            return;
+          }
+          setIsLoading(true);
           return;
         }
       }
@@ -534,6 +551,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       await apiRequest("/api/demo/seed", { method: "POST" });
     } catch { /* demo seed may fail if already seeded — proceed */ }
+
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      window.open(window.location.origin + "/?demo=true&role=driver&seed=1", "_blank");
+    }
 
     const data = await apiRequest<any>("/auth/login", {
       method: "POST",

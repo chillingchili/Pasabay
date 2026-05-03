@@ -119,6 +119,16 @@ export default function DriverHomeScreen() {
     return off;
   }, [socketConnected]);
 
+  const autoGoOnline = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const isDemo = new URLSearchParams(window.location.search).get('seed') === '1';
+    if (!isDemo || !userLoc || !selectedDest || !socketConnected || autoGoOnline.current) return;
+    autoGoOnline.current = true;
+    setTimeout(() => handleGoOnline(), 300);
+  }, [userLoc, selectedDest, socketConnected]);
+
   useEffect(() => {
     if (!socketConnected) return;
     const offRouteSet = onDriverRouteSet((data) => {
@@ -156,6 +166,17 @@ export default function DriverHomeScreen() {
     fetch();
     return () => { cancelled = true; };
   }, [selectedDest, userLoc, accepted]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const isDemoDriver = params.get('demo') === 'true' && params.get('role') === 'driver';
+    if (!isDemoDriver) return;
+
+    const smDest = { name: "SM City Cebu", lat: 10.3112, lng: 123.9172 };
+    setDestQuery(smDest.name);
+    setSelectedDest(smDest);
+  }, []);
 
   useEffect(() => {
     if (!demoDriverDest || selectedDest) return;

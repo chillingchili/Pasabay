@@ -22,6 +22,10 @@ export default function SplashScreen() {
 
   if (!isLoading) {
     if (isAuthenticated && user?.verified) {
+      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      if (params?.get('demo') === 'true' && params?.get('role') === 'driver') {
+        return <Redirect href="/(main)/driver-home" />;
+      }
       return <Redirect href="/(main)/passenger-home" />;
     }
     if (isAuthenticated && !user?.verified) {

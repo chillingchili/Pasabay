@@ -8,7 +8,7 @@ import { getRoute, projectPointOnPolyline, polylineDistanceKm, haversineKm } fro
 import type { RoutePoint } from "../lib/osrm.js";
 import { z } from "zod/v4";
 import { getIo } from "../lib/io.js";
-import { matchTimeouts, declinedPairs } from "../sockets/index.js";
+import { matchTimeouts, declinedPairs, driverSessions } from "../sockets/index.js";
 
 const router = Router();
 
@@ -134,6 +134,7 @@ router.post("/request", requireAuth, async (req, res) => {
     if (route.driverId === passengerId) continue;
     const declinedAt = declinedPairs.get(`${route.driverId}:${passengerId}`);
     if (declinedAt && (Date.now() - declinedAt) < DECLINED_TTL) continue;
+    if (!driverSessions.has(route.driverId)) continue;
     const polyline = route.polyline as RoutePoint[];
     if (!polyline?.length) continue;
 
