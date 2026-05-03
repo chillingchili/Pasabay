@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { router } from "expo-router";
 import type { GoogleUserInfo } from "@/hooks/useGoogleAuth";
-import { apiRequest, clearTokens, setTokens, getTokens, API_BASE, type ApiError } from "@/lib/api";
+import { apiRequest, clearTokens, setTokens, getTokens, safeSetItem, API_BASE, type ApiError } from "@/lib/api";
 import {
   connectSocket, disconnectSocket, reconnectSocket,
   connectSocketWithToken, setDemoToken,
@@ -10,7 +10,7 @@ import {
   onRideCompleted, onRideCanceled,
   onMatchAccepted, onDriverLocationUpdate,
   onDriverArrived,
-  emitDriverOnline, emitDriverArrived, emitMatchAccept,
+  emitDriverOnline, emitDriverArrived, emitDriverLocation, emitMatchAccept, emitRideComplete,
   type MatchRequestPayload, type MatchConfirmedPayload, type RideCompletedPayload, type DriverArrivedPayload,
 } from "@/lib/socket";
 import { useNetworkStatus } from "@/lib/network";
@@ -102,6 +102,8 @@ interface AppContextValue {
   setActiveRide: (ride: ActiveRide | null) => void;
   forceLogout: () => void;
   isDemoMode: boolean;
+  demoDriverDest: { name: string; lat: number; lng: number } | null;
+  demoPassengerDest: string | null;
   handleDemoAuth: (token: string, role: 'driver' | 'passenger', userData: { id: string; name: string; email: string; role: string }) => Promise<void>;
   handleDemoStage: (stage: number, role: 'driver' | 'passenger') => Promise<void>;
   resetDemo: () => Promise<void>;
@@ -172,6 +174,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isDemoMode, setIsDemoMode] = useState(false);
   const demoRoleRef = useRef<'driver' | 'passenger' | null>(null);
   const demoTokenRef = useRef<string | null>(null);
+  const [demoDriverDest, setDemoDriverDest] = useState<{ name: string; lat: number; lng: number } | null>(null);
+  const [demoPassengerDest, setDemoPassengerDest] = useState<string | null>(null);
 
   const setUserState = (profile: UserProfile) => {
     setUser(profile);
@@ -491,7 +495,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // ignore
     }
     setUser({ ...user, verified: true });
-    await AsyncStorage.setItem("pasabay_school_id_verified", JSON.stringify({ verified: true }));
+    await safeSetItem("pasabay_school_id_verified", JSON.stringify({ verified: true }));
   }, [user]);
 
   const setDriverVerified = useCallback(async (vehicle: UserProfile["vehicle"]) => {
@@ -518,7 +522,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     setUser(updated);
     setActiveRole("driver");
-    await AsyncStorage.setItem("pasabay_driver_verified", JSON.stringify({
+    await safeSetItem("pasabay_driver_verified", JSON.stringify({
       driverVerified: true,
       driverStatus: updated.driverStatus,
       vehicle: updated.vehicle,
@@ -529,40 +533,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const loginAsDemo = useCallback(async () => {
     try {
-      const data = await apiRequest<any>("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email: "testuser@usc.edu.ph", password: "testuser1" }),
-      });
-      await setTokens(data.accessToken, data.refreshToken);
-      const profile = mapApiUser(data.user);
-      setUserState(profile);
-      await AsyncStorage.setItem("pasabay_demo_mode", "true");
-      await AsyncStorage.setItem("pasabay_school_id_verified", JSON.stringify({ verified: true }));
-      await AsyncStorage.setItem("pasabay_driver_verified", JSON.stringify({
-        driverVerified: true,
-        driverStatus: "verified",
-        vehicle: profile.vehicle,
-      }));
-      loadRideHistory();
-      initSocket();
-    } catch {
-      const signupData = await apiRequest<any>("/auth/signup", {
-        method: "POST",
-        body: JSON.stringify({ email: "testuser@usc.edu.ph", password: "testuser1", name: "Test User" }),
-      });
-      await setTokens(signupData.accessToken, signupData.refreshToken);
-      const profile = mapApiUser(signupData.user);
-      setUserState(profile);
-      await AsyncStorage.setItem("pasabay_demo_mode", "true");
-      await AsyncStorage.setItem("pasabay_school_id_verified", JSON.stringify({ verified: true }));
-      await AsyncStorage.setItem("pasabay_driver_verified", JSON.stringify({
-        driverVerified: true,
-        driverStatus: "verified",
-        vehicle: profile.vehicle,
-      }));
-      loadRideHistory();
-      initSocket();
-    }
+      await apiRequest("/api/demo/seed", { method: "POST" });
+    } catch { /* demo seed may fail if already seeded — proceed */ }
+
+    const data = await apiRequest<any>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email: "demo-passenger@usc.edu.ph", password: "demopass123" }),
+    });
+    await setTokens(data.accessToken, data.refreshToken);
+    const profile = mapApiUser(data.user);
+    setUserState(profile);
+    await safeSetItem("pasabay_demo_mode", "true");
+    loadRideHistory();
+    initSocket();
   }, [loadRideHistory, initSocket]);
 
   const handleDemoAuth = useCallback(async (token: string, role: 'driver' | 'passenger', userData: { id: string; name: string; email: string; role: string }) => {
@@ -610,11 +593,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     switch (stage) {
       case 1: // Driver goes online
         if (role === 'driver') {
-          router.replace('/(main)' as any);
+          router.replace('/(main)/driver-home' as any);
           setTimeout(() => {
+            setDemoDriverDest({ name: 'SM City Cebu', lat: 10.3112, lng: 123.9172 });
             emitDriverOnline({
               originName: 'USC Main Campus',
-              originLat: 10.2992, originLng: 123.8938,
+              originLat: 10.2980, originLng: 123.8920,
               destName: 'SM City Cebu',
               destLat: 10.3105, destLng: 123.9179,
             });
@@ -624,20 +608,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       case 2: // Passenger picks destination
         if (role === 'passenger') {
-          router.replace('/(main)' as any);
           setActiveRole('passenger');
+          router.replace('/(main)/passenger-home' as any);
+          setTimeout(() => setDemoPassengerDest('IT Park, Lahug'), 300);
         }
         break;
 
       case 3: // Passenger requests ride
         if (role === 'passenger') {
-          router.replace('/(main)/matching' as any);
+          router.replace({
+            pathname: '/(main)/matching' as any,
+            params: {
+              destination: 'IT Park, Lahug',
+              pickupLat: '10.2992',
+              pickupLng: '123.8938',
+              dropoffLat: '10.3308',
+              dropoffLng: '123.9068',
+              pickupName: 'USC Main Campus',
+              dropoffName: 'IT Park, Lahug',
+            },
+          });
         }
         break;
 
       case 4: // Match request appears for driver
         if (role === 'driver') {
-          router.replace('/(main)' as any);
+          router.replace('/(main)/driver-home' as any);
           // Seed a demo match request so the driver popup appears and stage 5 can accept it
           setTimeout(() => {
             setPendingMatchRequest({
@@ -647,7 +643,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               passengerAvatar: null,
               routeId: 'demo-route-id',
               pickup: { lat: 10.2992, lng: 123.8938, name: 'USC Main Gate' },
-              dropoff: { lat: 10.3105, lng: 123.9179, name: 'SM City Cebu' },
+              dropoff: { lat: 10.3308, lng: 123.9068, name: 'IT Park, Lahug' },
               distanceKm: 3.2,
               fare: 35,
               matchingFee: 8,
@@ -658,41 +654,122 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
         break;
 
-      case 5: // Driver accepts + passenger transitions
+      case 5: // Driver accepts + passenger sees match
         if (role === 'driver') {
           emitMatchAccept({
             routeId: 'demo-route-id',
             passengerId: 'demo-passenger',
             pickupLat: 10.2992, pickupLng: 123.8938,
-            dropoffLat: 10.3105, dropoffLng: 123.9179,
-            pickupName: 'USC Main Gate', dropoffName: 'SM City Cebu',
+            dropoffLat: 10.3308, dropoffLng: 123.9068,
+            pickupName: 'USC Main Gate', dropoffName: 'IT Park, Lahug',
             fare: 35, matchingFee: 8, distanceKm: 3.2,
           });
-          clearPendingMatch();
+          setPendingMatchRequest(null);
+          // Set active ride for driver so en-route UI appears
+          setActiveRide({
+            rideId: 'demo-ride-id',
+            driver: {
+              id: 'demo-driver',
+              name: 'Juan Driver',
+              rating: 4.8,
+              vehicle: { make: 'Toyota', model: 'Vios', color: 'White', plate: 'ABC 1234' },
+            },
+            pickup: { lat: 10.2992, lng: 123.8938, name: 'USC Main Gate' },
+            dropoff: { lat: 10.3308, lng: 123.9068, name: 'IT Park, Lahug' },
+            fare: 35, matchingFee: 8, total: 43, distanceKm: 3.2,
+          });
         }
         if (role === 'passenger') {
+          // Simulate match:confirmed state since server broadcast may not reach demo iframes
+          setMatchConfirmed({
+            rideId: 'demo-ride-id',
+            driver: {
+              id: 'demo-driver',
+              name: 'Juan Driver',
+              rating: 4.8,
+              rideCount: 12,
+              avatar: null,
+              vehicle: { make: 'Toyota', model: 'Vios', color: 'White', plate: 'ABC 1234', seats: 4 },
+            },
+            pickup: { lat: 10.2992, lng: 123.8938, name: 'USC Main Gate' },
+            dropoff: { lat: 10.3308, lng: 123.9068, name: 'IT Park, Lahug' },
+            fare: 35, matchingFee: 8, total: 43, distanceKm: 3.2,
+          });
+          setActiveRide({
+            rideId: 'demo-ride-id',
+            driver: {
+              id: 'demo-driver',
+              name: 'Juan Driver',
+              rating: 4.8,
+              vehicle: { make: 'Toyota', model: 'Vios', color: 'White', plate: 'ABC 1234' },
+            },
+            pickup: { lat: 10.2992, lng: 123.8938, name: 'USC Main Gate' },
+            dropoff: { lat: 10.3308, lng: 123.9068, name: 'IT Park, Lahug' },
+            fare: 35, matchingFee: 8, total: 43, distanceKm: 3.2,
+          });
+          // Show driver 2km south on the match-found map immediately
+          setDriverLocation({ lat: 10.2800, lng: 123.8850 });
           router.replace('/(main)/match-found' as any);
         }
         break;
 
-      case 6: // Driver arriving
+      case 6: // Driver approaching pickup
         if (role === 'driver') {
-          router.replace('/(main)' as any);
+          router.replace('/(main)/driver-home' as any);
+          // Progressive location updates showing driver approaching pickup
+          emitDriverLocation(10.2850, 123.8870);
+          setTimeout(() => emitDriverLocation(10.2900, 123.8890), 1000);
+          setTimeout(() => emitDriverLocation(10.2940, 123.8910), 2000);
+          setTimeout(() => emitDriverLocation(10.2970, 123.8925), 3000);
+          setTimeout(() => emitDriverLocation(10.2988, 123.8935), 4000);
+        }
+        if (role === 'passenger') {
+          // Show driver progressively getting closer on the map
+          setDriverLocation({ lat: 10.2850, lng: 123.8870 });
+          setTimeout(() => setDriverLocation({ lat: 10.2900, lng: 123.8890 }), 1000);
+          setTimeout(() => setDriverLocation({ lat: 10.2940, lng: 123.8910 }), 2000);
+          setTimeout(() => setDriverLocation({ lat: 10.2970, lng: 123.8925 }), 3000);
+          setTimeout(() => setDriverLocation({ lat: 10.2988, lng: 123.8935 }), 4000);
+        }
+        break;
+
+      case 7: // Driver arrives at pickup
+        if (role === 'driver') {
+          router.replace('/(main)/driver-home' as any);
           setTimeout(() => {
-            emitDriverArrived('');
+            emitDriverArrived('demo-ride-id');
           }, 500);
         }
-        break;
-
-      case 7: // Passenger sees arrival
         if (role === 'passenger') {
-          router.replace('/(main)/match-found' as any);
+          // Simulate driver arrival notification
+          setDriverArrivedState({
+            rideId: 'demo-ride-id',
+            meetingSpot: { lat: 10.2992, lng: 123.8938, name: 'USC Main Gate' },
+          });
         }
         break;
 
-      case 8: // Timer countdown
-        if (role === 'driver') router.replace('/(main)' as any);
-        if (role === 'passenger') router.replace('/(main)/match-found' as any);
+      case 8: // Ride complete
+        if (role === 'driver') {
+          router.replace('/(main)/driver-home' as any);
+          setTimeout(() => {
+            emitRideComplete('demo-ride-id');
+            // Reset driver state after completion
+            setActiveRide(null);
+            setDriverArrivedState(null);
+          }, 500);
+        }
+        if (role === 'passenger') {
+          // Simulate ride completion — triggers match-found.tsx useEffect that navigates home
+          setCompletedRide({
+            rideId: 'demo-ride-id',
+            fare: 35,
+            matchingFee: 8,
+            total: 43,
+            distanceKm: 3.2,
+            message: 'Ride completed! Please rate your driver.',
+          });
+        }
         break;
 
       default:
@@ -708,6 +785,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     demoRoleRef.current = null;
     setDemoToken(null);
     setIsDemoMode(false);
+    setDemoDriverDest(null);
+    setDemoPassengerDest(null);
     await forceLogout();
     router.replace('/welcome');
     window.parent.postMessage({ type: 'demo:reset-done' }, '*');
@@ -764,6 +843,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setActiveRide: (ride) => setActiveRide(ride),
       forceLogout,
       isDemoMode,
+      demoDriverDest,
+      demoPassengerDest,
       handleDemoAuth,
       handleDemoStage,
       resetDemo,

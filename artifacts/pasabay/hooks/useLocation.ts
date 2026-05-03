@@ -12,17 +12,29 @@ export function useLocation() {
   const [location, setLocation] = useState<LocationData | null>(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [locationError, setLocationError] = useState<string | null>(null);
-
   useEffect(() => {
     (async () => {
       try {
         if (Platform.OS === "web") {
+          if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const isDemoMode = params.get('demo') === 'true' || window.localStorage?.getItem('pasabay_demo_mode') === 'true';
+            if (isDemoMode) {
+              const role = params.get('role') || 'passenger';
+              if (role === 'passenger') {
+                setLocation({ lat: 10.3350, lng: 123.9100, accuracy: null }); // Talamban St heading to Ayala
+                setLoading(false);
+                return;
+              }
+              if (role === 'driver') {
+                setLocation({ lat: 10.2800, lng: 123.8850, accuracy: null }); // 2km south of USC
+                setLoading(false);
+                return;
+              }
+            }
+          }
           const isSecure = window.isSecureContext;
           if (!isSecure) {
-            setLocationError(
-              "Geolocation requires HTTPS. Access this app via HTTPS or localhost.",
-            );
             setLocation({ lat: 10.3535, lng: 123.9135, accuracy: null });
             setLoading(false);
             return;
@@ -32,7 +44,6 @@ export function useLocation() {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
           setPermissionGranted(false);
-          setLocationError("Location permission denied. Enable it in your browser/device settings.");
           setLocation({ lat: 10.3535, lng: 123.9135, accuracy: null });
           setLoading(false);
           return;
@@ -62,7 +73,6 @@ export function useLocation() {
         return () => subscription.remove();
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
-        setLocationError(msg);
         console.error("[useLocation]", msg);
         setLocation({ lat: 10.3535, lng: 123.9135, accuracy: null });
       } finally {
@@ -71,5 +81,5 @@ export function useLocation() {
     })();
   }, []);
 
-  return { location, permissionGranted, loading, locationError };
+  return { location, permissionGranted, loading };
 }
