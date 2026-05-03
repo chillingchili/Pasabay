@@ -127,7 +127,7 @@ export default function VerifyDriverScreen() {
           </>
         )}
         {stage === "success" && (
-          <Button mode="contained" onPress={handleContinue} buttonColor="rgba(255,255,255,0.2)" textColor="#fff" style={styles.btn}>
+          <Button mode="contained" onPress={() => router.replace("/vehicle-details")} buttonColor="rgba(255,255,255,0.2)" textColor="#fff" style={styles.btn}>
             Continue to vehicle details
           </Button>
         )}
