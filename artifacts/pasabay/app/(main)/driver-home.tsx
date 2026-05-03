@@ -276,7 +276,7 @@ export default function DriverHomeScreen() {
   };
 
   const handleArrived = () => {
-    const rideIdToUse = rideId || acceptedRef.current?.rideId;
+    const rideIdToUse = rideId || acceptedRef.current?.rideId || activeRide?.rideId;
     if (!rideIdToUse) {
       emitDriverOffline();
       setIsOnline(false);

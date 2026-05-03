@@ -226,9 +226,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setActiveRide(null);
         setDriverLocation(null);
       });
-      const offMatchAccepted = onMatchAccepted(() => {
-        // Driver side: rideId will be set by driver-home.tsx listening directly.
-        // This listener exists for completeness but driver tracks rideId locally.
+      const offMatchAccepted = onMatchAccepted((data) => {
+        setActiveRide(prev => prev ? { ...prev, rideId: data.rideId } : prev);
       });
       const offDriverLocation = onDriverLocationUpdate((data) => {
         setDriverLocation({ lat: data.lat, lng: data.lng, heading: data.heading });

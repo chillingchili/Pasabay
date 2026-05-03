@@ -142,10 +142,13 @@ export function registerSocketHandlers(io: Server) {
           return;
         }
 
-        // Look up the matched ride for this driver+route
+        if (!data.rideId) {
+          socket.emit("driver:error", { message: "No ride ID provided" });
+          return;
+        }
+
         const [ride] = await db.select().from(ridesTable)
-          .where(and(eq(ridesTable.driverId, userId), eq(ridesTable.status, "matched" as any)))
-          .orderBy(sql`${ridesTable.createdAt} DESC`)
+          .where(and(eq(ridesTable.id, data.rideId), eq(ridesTable.driverId, userId)))
           .limit(1);
 
         if (!ride) {
