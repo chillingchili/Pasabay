@@ -118,7 +118,7 @@ export default function VerifyDriverScreen() {
             <Button mode="contained" onPress={handleScan} buttonColor="rgba(255,255,255,0.2)" textColor="#fff" style={styles.btn} icon="camera">
               Scan license
             </Button>
-            <Button mode="text" onPress={handleContinue} textColor="rgba(255,255,255,0.5)">
+            <Button mode="text" onPress={handleScan} textColor="rgba(255,255,255,0.5)">
               Enter manually instead
             </Button>
             <Button mode="outlined" onPress={() => router.replace("/(main)/passenger-home")} textColor="#fff" style={[styles.btn, { borderColor: "rgba(255,255,255,0.25)" }]} icon="arrow-right">
