@@ -31,6 +31,11 @@ export function useLocation() {
                 return;
               }
             }
+            if (window.localStorage?.getItem('pasabay_demo_mode') === 'true') {
+              setLocation({ lat: 10.3420, lng: 123.9100, accuracy: null });
+              setLoading(false);
+              return;
+            }
           }
           const isSecure = window.isSecureContext;
           if (!isSecure) {
