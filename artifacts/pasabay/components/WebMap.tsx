@@ -117,17 +117,40 @@ export function WebMap({
     if (polylineRef.current) { polylineRef.current.remove(); polylineRef.current = null; }
   }
 
-  function addMarker(L: any, lat: number, lng: number, color: string, size: number, inner: number, label?: string) {
+function addMarker(L: any, lat: number, lng: number, color: string, size: number, inner: number, label?: string) {
     const icon = L.divIcon({
-      html: `<div style="display:flex;flex-direction:column;align-items:center"><div style="background:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.2);margin-bottom:2px">${label ?? ""}</div><div style="width:${size}px;height:${size}px;border-radius:50%;background:${color}33;display:flex;align-items:center;justify-content:center"><div style="width:${inner}px;height:${inner}px;border-radius:50%;background:${color};border:2px solid #fff"></div></div></div>`,
+      html: `<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:${size}px;height:${size}px;border-radius:50%;background:${color}33;display:flex;align-items:center;justify-content:center"><div style="width:${inner}px;height:${inner}px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.3)"></div></div>${label ? `<span style="font-size:10px;font-weight:600;color:#fff;background:${color};padding:1px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.2)">${label}</span>` : ''}</div>`,
       className: "",
-      iconSize: [size, size + 24],
-      iconAnchor: [size / 2, size / 2 + 24],
+      iconSize: [label ? Math.max(size, 64) : size, label ? size + 20 : size],
+      iconAnchor: [label ? Math.max(size, 64) / 2 : size / 2, label ? size + 20 : size / 2],
     });
     const marker = L.marker([lat, lng], { icon }).addTo(mapRef.current);
-    if (label) marker.bindPopup(label);
     markersRef.current.push(marker);
   }
+
+  function addPinMarker(L: any, lat: number, lng: number, color: string) {
+    const icon = L.divIcon({
+      html: `<div style="display:flex;flex-direction:column;align-items:center"><svg width="28" height="38" viewBox="0 0 28 38" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3))"><path d="M14 0C6.3 0 0 6.3 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.3 21.7 0 14 0z" fill="${color}" stroke="#fff" stroke-width="2"/><circle cx="14" cy="13" r="5" fill="#fff"/></svg></div>`,
+      className: "",
+      iconSize: [28, 38],
+      iconAnchor: [14, 38],
+    });
+    const marker = L.marker([lat, lng], { icon }).addTo(mapRef.current);
+    markersRef.current.push(marker);
+  }
+
+  function addSimpleDot(L: any, lat: number, lng: number, color: string, size: number) {
+    const icon = L.divIcon({
+      html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color}"></div>`,
+      className: "",
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+    });
+    const marker = L.marker([lat, lng], { icon }).addTo(mapRef.current);
+    markersRef.current.push(marker);
+  }
+
+
 
   useEffect(() => {
     if (!mapRef.current || !loaded) return;
@@ -136,10 +159,9 @@ export function WebMap({
 
     // If user has manually dragged, don't auto-center unless explicit action
     // (fitRouteKey or recenterKey change resets userDragged)
-    if (pickupPoint) addMarker(L, pickupPoint.lat, pickupPoint.lng, "#3B82F6", 30, 14, pickupPoint.name);
-    if (dropoffPoint) addMarker(L, dropoffPoint.lat, dropoffPoint.lng, "#EF4444", 30, 14, dropoffPoint.name);
+    if (dropoffPoint) addMarker(L, dropoffPoint.lat, dropoffPoint.lng, "#EF4444", 30, 14, "Dropoff");
     if (driverLocation) addMarker(L, driverLocation.lat, driverLocation.lng, "#0D9E75", 36, 16, "Driver");
-    if (userLocation) addMarker(L, userLocation.lat, userLocation.lng, "#6B7280", 24, 10, "You");
+    if (userLocation) addPinMarker(L, userLocation.lat, userLocation.lng, "#0D9E75");
 
     if (showRoute && routePolyline && routePolyline.length > 1) {
       polylineRef.current = L.polyline(
