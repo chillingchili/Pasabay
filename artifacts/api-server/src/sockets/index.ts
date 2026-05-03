@@ -143,7 +143,7 @@ export function registerSocketHandlers(io: Server) {
       logger.info({ userId }, "Driver went offline");
     });
 
-    socket.on("driver:arrived", async (data: { rideId: string }) => {
+    socket.on("driver:arrived", async (data: { rideId: string; passengerId?: string }) => {
       try {
         const session = driverSessions.get(userId);
         if (!session) {
@@ -165,27 +165,36 @@ export function registerSocketHandlers(io: Server) {
           return;
         }
 
-        // Update ride status to driver_en_route
         await db.update(ridesTable)
           .set({ status: "driver_en_route" as any })
           .where(eq(ridesTable.id, ride.id));
 
-        // Get passenger info for the meeting spot
-        const [passenger] = await db.select().from(ridePassengersTable)
-          .where(eq(ridePassengersTable.rideId, ride.id));
-
-        if (passenger) {
-          // Broadcast arrival to passenger's room
-          io.to(`user:${passenger.passengerId}`).emit("driver:arrived", {
-            rideId: ride.id,
-            meetingSpot: { lat: passenger.pickupLat, lng: passenger.pickupLng, name: passenger.pickupName },
-          });
+        if (data.passengerId) {
+          const [passenger] = await db.select().from(ridePassengersTable)
+            .where(and(eq(ridePassengersTable.rideId, ride.id), eq(ridePassengersTable.passengerId, data.passengerId)));
+          if (passenger) {
+            await db.update(ridePassengersTable)
+              .set({ status: "at_pickup" })
+              .where(eq(ridePassengersTable.id, passenger.id));
+            io.to(`user:${passenger.passengerId}`).emit("driver:arrived", {
+              rideId: ride.id,
+              meetingSpot: { lat: passenger.pickupLat, lng: passenger.pickupLng, name: passenger.pickupName },
+            });
+          }
+          socket.emit("driver:arrived_confirmed", { rideId: ride.id, passengerId: data.passengerId });
+          console.log("[MATCH-STAGE-5] Driver arrived:", { rideId: ride.id, passengerId: data.passengerId });
+        } else {
+          const passengers = await db.select().from(ridePassengersTable)
+            .where(eq(ridePassengersTable.rideId, ride.id));
+          for (const passenger of passengers) {
+            io.to(`user:${passenger.passengerId}`).emit("driver:arrived", {
+              rideId: ride.id,
+              meetingSpot: { lat: passenger.pickupLat, lng: passenger.pickupLng, name: passenger.pickupName },
+            });
+          }
+          socket.emit("driver:arrived_confirmed", { rideId: ride.id });
+          console.log("[MATCH-STAGE-5] Driver arrived (all):", { rideId: ride.id, passengerCount: passengers.length });
         }
-
-        // Emit confirmation to driver
-        socket.emit("driver:arrived_confirmed", { rideId: ride.id });
-
-        console.log("[MATCH-STAGE-5] Driver arrived:", { rideId: ride.id, passengerId: passenger?.passengerId });
 
         logger.info({ rideId: ride.id, userId }, "Driver arrived at meeting spot");
       } catch (err) {
@@ -194,7 +203,7 @@ export function registerSocketHandlers(io: Server) {
       }
     });
 
-    socket.on("driver:start-trip", async (data: { rideId: string }) => {
+    socket.on("driver:start-trip", async (data: { rideId: string; passengerId?: string }) => {
       try {
         if (!data.rideId) {
           socket.emit("driver:error", { message: "No ride ID provided" });
@@ -210,18 +219,31 @@ export function registerSocketHandlers(io: Server) {
           return;
         }
 
-        // Get passenger info to broadcast
-        const [passenger] = await db.select().from(ridePassengersTable)
-          .where(eq(ridePassengersTable.rideId, ride.id));
-
-        if (passenger) {
-          io.to(`user:${passenger.passengerId}`).emit("driver:start-trip", {
-            rideId: ride.id,
-          });
+        if (data.passengerId) {
+          const [passenger] = await db.select().from(ridePassengersTable)
+            .where(and(eq(ridePassengersTable.rideId, ride.id), eq(ridePassengersTable.passengerId, data.passengerId)));
+          if (passenger) {
+            await db.update(ridePassengersTable)
+              .set({ status: "onboard" })
+              .where(eq(ridePassengersTable.id, passenger.id));
+            io.to(`user:${passenger.passengerId}`).emit("driver:start-trip", {
+              rideId: ride.id,
+            });
+          }
+          socket.emit("driver:start-trip_confirmed", { rideId: ride.id, passengerId: data.passengerId });
+          console.log("[MATCH-STAGE-7] Driver started trip:", { rideId: ride.id, passengerId: data.passengerId });
+        } else {
+          const passengers = await db.select().from(ridePassengersTable)
+            .where(eq(ridePassengersTable.rideId, ride.id));
+          for (const passenger of passengers) {
+            io.to(`user:${passenger.passengerId}`).emit("driver:start-trip", {
+              rideId: ride.id,
+            });
+          }
+          socket.emit("driver:start-trip_confirmed", { rideId: ride.id });
+          console.log("[MATCH-STAGE-7] Driver started trip (all):", { rideId: ride.id, passengerCount: passengers.length });
         }
 
-        socket.emit("driver:start-trip_confirmed", { rideId: ride.id });
-        console.log("[MATCH-STAGE-7] Driver started trip:", { rideId: ride.id });
         logger.info({ rideId: ride.id, userId }, "Driver started trip");
       } catch (err) {
         logger.error({ err, userId }, "driver:start-trip error");

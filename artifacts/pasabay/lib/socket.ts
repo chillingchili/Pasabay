@@ -167,12 +167,12 @@ export function emitDriverOffline() {
   socket?.emit("driver:offline");
 }
 
-export function emitDriverArrived(rideId: string) {
-  socket?.emit("driver:arrived", { rideId });
+export function emitDriverArrived(rideId: string, passengerId?: string) {
+  socket?.emit("driver:arrived", { rideId, passengerId });
 }
 
-export function emitDriverStartedTrip(rideId: string) {
-  socket?.emit("driver:start-trip", { rideId });
+export function emitDriverStartedTrip(rideId: string, passengerId?: string) {
+  socket?.emit("driver:start-trip", { rideId, passengerId });
 }
 
 export function emitMatchAccept(data: {

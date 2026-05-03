@@ -55,6 +55,20 @@ export interface RideHistory {
   cancelReason?: string;
 }
 
+export interface RidePassenger {
+  passengerId: string;
+  passengerName: string;
+  passengerRating: number;
+  passengerAvatar?: string | null;
+  pickup: { lat: number; lng: number; name: string };
+  dropoff: { lat: number; lng: number; name: string };
+  fare: number;
+  matchingFee: number;
+  total: number;
+  distanceKm: number;
+  status: "matched" | "en_route" | "at_pickup" | "onboard" | "completed";
+}
+
 export interface ActiveRide {
   rideId: string;
   driver: {
@@ -64,12 +78,7 @@ export interface ActiveRide {
     avatar?: string;
     vehicle?: { make: string; model: string; color: string; plate: string; fuelEfficiency?: number } | null;
   };
-  pickup: { lat: number; lng: number; name: string };
-  dropoff: { lat: number; lng: number; name: string };
-  fare: number;
-  matchingFee: number;
-  total: number;
-  distanceKm: number;
+  passengers: RidePassenger[];
 }
 
 interface AppContextValue {
@@ -104,6 +113,8 @@ interface AppContextValue {
   clearCompletedRide: () => void;
   clearActiveRide: () => void;
   setActiveRide: (ride: ActiveRide | null) => void;
+  addPassengerToRide: (passenger: RidePassenger) => void;
+  updatePassengerStatus: (passengerId: string, status: RidePassenger["status"]) => void;
   paymentMethod: PaymentMethod;
   setPaymentMethod: (method: PaymentMethod) => Promise<void>;
   forceLogout: () => void;
@@ -213,12 +224,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               ? { make: data.driver.vehicle.make, model: data.driver.vehicle.model, color: data.driver.vehicle.color, plate: data.driver.vehicle.plate }
               : null,
           },
-          pickup: data.pickup,
-          dropoff: data.dropoff,
-          fare: data.fare,
-          matchingFee: data.matchingFee,
-          total: data.total,
-          distanceKm: data.distanceKm,
+          passengers: [{
+            passengerId: "", // Will be set by the server match:accepted_confirmed
+            passengerName: "", // Not needed on passenger side
+            passengerRating: data.driver.rating,
+            pickup: data.pickup,
+            dropoff: data.dropoff,
+            fare: data.fare,
+            matchingFee: data.matchingFee,
+            total: data.total,
+            distanceKm: data.distanceKm,
+            status: "matched",
+          }],
         });
       });
       const offMatchDeclined = onMatchDeclined(() => {
@@ -235,7 +252,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setDriverLocation(null);
       });
       const offMatchAccepted = onMatchAccepted((data) => {
-        setActiveRide(prev => prev ? { ...prev, rideId: data.rideId } : prev);
+        setActiveRide(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            rideId: data.rideId || prev.rideId,
+          };
+        });
       });
       const offDriverLocation = onDriverLocationUpdate((data) => {
         setDriverLocation({ lat: data.lat, lng: data.lng, heading: data.heading });
@@ -708,9 +731,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               rating: 4.8,
               vehicle: { make: 'Toyota', model: 'Vios', color: 'White', plate: 'ABC 1234' },
             },
-            pickup: { lat: 10.2992, lng: 123.8938, name: 'USC Main Gate' },
-            dropoff: { lat: 10.3308, lng: 123.9068, name: 'IT Park, Lahug' },
-            fare: 35, matchingFee: 8, total: 43, distanceKm: 3.2,
+            passengers: [{
+              passengerId: 'demo-passenger',
+              passengerName: 'Maria Passenger',
+              passengerRating: 4.8,
+              pickup: { lat: 10.2992, lng: 123.8938, name: 'USC Main Gate' },
+              dropoff: { lat: 10.3308, lng: 123.9068, name: 'IT Park, Lahug' },
+              fare: 35, matchingFee: 8, total: 43, distanceKm: 3.2,
+              status: 'matched',
+            }],
           });
         }
         if (role === 'passenger') {
@@ -737,9 +766,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               rating: 4.8,
               vehicle: { make: 'Toyota', model: 'Vios', color: 'White', plate: 'ABC 1234' },
             },
-            pickup: { lat: 10.2992, lng: 123.8938, name: 'USC Main Gate' },
-            dropoff: { lat: 10.3308, lng: 123.9068, name: 'IT Park, Lahug' },
-            fare: 35, matchingFee: 8, total: 43, distanceKm: 3.2,
+            passengers: [{
+              passengerId: 'demo-passenger',
+              passengerName: 'Maria Passenger',
+              passengerRating: 4.8,
+              pickup: { lat: 10.2992, lng: 123.8938, name: 'USC Main Gate' },
+              dropoff: { lat: 10.3308, lng: 123.9068, name: 'IT Park, Lahug' },
+              fare: 35, matchingFee: 8, total: 43, distanceKm: 3.2,
+              status: 'matched',
+            }],
           });
           // Show driver 2km south on the match-found map immediately
           setDriverLocation({ lat: 10.2800, lng: 123.8850 });
@@ -882,6 +917,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       clearCompletedRide: () => setCompletedRide(null),
       clearActiveRide: () => { setActiveRide(null); setDriverLocation(null); setDriverArrivedState(null); setDriverStartedTrip(null); },
       setActiveRide: (ride) => setActiveRide(ride),
+      addPassengerToRide: (passenger) => {
+        setActiveRide(prev => {
+          if (!prev) {
+            return {
+              rideId: "",
+              driver: { id: "", name: "", rating: 0, vehicle: null },
+              passengers: [passenger],
+            };
+          }
+          const exists = prev.passengers.some(p => p.passengerId === passenger.passengerId);
+          if (exists) return prev;
+          return { ...prev, passengers: [...prev.passengers, passenger] };
+        });
+      },
+      updatePassengerStatus: (passengerId, status) => {
+        setActiveRide(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            passengers: prev.passengers.map(p =>
+              p.passengerId === passengerId ? { ...p, status } : p
+            ),
+          };
+        });
+      },
       paymentMethod,
       setPaymentMethod,
       forceLogout,

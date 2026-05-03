@@ -124,9 +124,14 @@ router.post("/request", requireAuth, async (req, res) => {
   const activeRoutes = await db.select().from(activeRoutesTable)
     .where(eq(activeRoutesTable.status, "active"));
 
+  console.log("[MATCH-STAGE-2] Total active routes (before capacity filter):", activeRoutes.length);
+  if (activeRoutes.length > 0) {
+    console.log("[MATCH-STAGE-2] availableSeats values:", activeRoutes.map(r => `${r.driverId}:${r.availableSeats}`));
+  }
+
   const activeRoutesWithCapacity = activeRoutes.filter(r => parseInt(r.availableSeats) > 0);
 
-  console.log("[MATCH-STAGE-2] Active drivers found:", activeRoutesWithCapacity.length);
+  console.log("[MATCH-STAGE-2] Active routes after capacity filter:", activeRoutesWithCapacity.length);
 
   const MATCH_RADIUS_KM = radiusKm ?? 0.3;
   const matches: { routeId: string; driverId: string; pickupSnapped: RoutePoint; dropoffSnapped: RoutePoint; passengerDistKm: number; fare: number; matchingFee: number; pickupEtaMin: number }[] = [];

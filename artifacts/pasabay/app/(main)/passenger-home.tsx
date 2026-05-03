@@ -132,7 +132,7 @@ export default function PassengerHomeScreen() {
   }, [destination, pickupPoint, dropoffPoint]);
 
   useEffect(() => {
-    if (!userLoc || !activeRide?.pickup) {
+    if (!userLoc || !activeRide?.passengers?.[0]?.pickup) {
       setWalkingPolyline(null);
       setWalkToPickupM(0);
       return;
@@ -140,24 +140,24 @@ export default function PassengerHomeScreen() {
     let cancelled = false;
     const fetch = async () => {
       try {
-        const walk = await getWalkingRoute(userLoc, activeRide.pickup);
+        const walk = await getWalkingRoute(userLoc, activeRide.passengers[0].pickup);
         if (cancelled) return;
         if (walk) {
           setWalkingPolyline(walk.polyline);
           setWalkToPickupM(Math.round(walk.distanceKm * 1000));
         } else {
-          const dist = haversineKm(userLoc, activeRide.pickup);
+          const dist = haversineKm(userLoc, activeRide.passengers[0].pickup);
           setWalkToPickupM(Math.round(dist * 1000));
         }
       } catch {
         if (cancelled) return;
-        const dist = haversineKm(userLoc, activeRide.pickup);
+        const dist = haversineKm(userLoc, activeRide.passengers[0].pickup);
         setWalkToPickupM(Math.round(dist * 1000));
       }
     };
     fetch();
     return () => { cancelled = true; };
-  }, [userLoc, activeRide?.pickup]);
+  }, [userLoc, activeRide?.passengers?.[0]?.pickup]);
 
   useEffect(() => {
     if (!demoPassengerDest || destination) return;
@@ -223,8 +223,8 @@ export default function PassengerHomeScreen() {
       <RealMap
         showRoute={activeRide ? !!walkingPolyline : !!routePolyline}
         routePolyline={activeRide ? (walkingPolyline ?? undefined) : (routePolyline ?? undefined)}
-        pickupPoint={activeRide ? activeRide.pickup : (pickupPoint ?? undefined)}
-        dropoffPoint={activeRide ? activeRide.dropoff : (dropoffPoint ?? undefined)}
+        pickupPoint={activeRide ? activeRide.passengers[0].pickup : (pickupPoint ?? undefined)}
+        dropoffPoint={activeRide ? activeRide.passengers[0].dropoff : (dropoffPoint ?? undefined)}
         userLocation={userLoc ?? undefined}
         driverLocation={driverLocation ?? undefined}
         fitRouteKey={fitRouteKey}
@@ -394,7 +394,7 @@ export default function PassengerHomeScreen() {
               </View>
               <View style={styles.metaBlock}>
                 <Feather name="dollar-sign" size={12} color={colors.onSurfaceVariant} />
-                <Text style={[styles.metaText, { color: colors.onSurface }]}>₱{activeRide.total.toFixed(0)}</Text>
+                <Text style={[styles.metaText, { color: colors.onSurface }]}>₱{activeRide.passengers[0].total.toFixed(0)}</Text>
               </View>
             </View>
           </View>
