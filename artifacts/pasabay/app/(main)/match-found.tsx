@@ -1,17 +1,19 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Alert, Animated, Platform, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Alert, Animated, Image, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "react-native-paper";
 import { Card, Button, Text, Surface, Chip } from "react-native-paper";
 import { useApp } from "@/context/AppContext";
+
 import { useScale } from "@/hooks/useScale";
 import { emitRideCancel, onRideCanceled } from "@/lib/socket";
 import { getWalkingRoute, haversineKm, getRoute } from "@/lib/osrm";
 import type { OSRMRoute } from "@/lib/osrm";
 import { useLocation } from "@/hooks/useLocation";
 import { RealMap } from "@/components/RealMap";
+import { ChatSheet } from "@/components/ChatSheet";
 
 function _calcEtaMin(
   driverLoc: { lat: number; lng: number },
@@ -28,7 +30,7 @@ export default function MatchFoundScreen() {
   const { colors } = useTheme();
   const { fs, isSmall } = useScale();
   const dimensions = useWindowDimensions();
-  const { matchConfirmed, clearMatchConfirmed, completedRide, clearCompletedRide, addRideHistory, activeRide, driverLocation, clearActiveRide, networkStatus, driverArrived, clearDriverArrived, driverStartedTrip } = useApp();
+  const { matchConfirmed, clearMatchConfirmed, completedRide, clearCompletedRide, addRideHistory, activeRide, driverLocation, clearActiveRide, networkStatus, driverArrived, clearDriverArrived, driverStartedTrip, paymentMethod } = useApp();
   const { location: userLoc } = useLocation();
   const slideAnim = useRef(new Animated.Value(60)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -44,6 +46,7 @@ export default function MatchFoundScreen() {
   const [showCompletion, setShowCompletion] = useState(false);
   const [completionData, setCompletionData] = useState<{ rideId: string; fare: number; matchingFee: number; total: number; distanceKm: number; message: string } | null>(null);
 
+  const [showChat, setShowChat] = useState(false);
   const drivingToDest = !!driverStartedTrip;
 
   useEffect(() => { setMapFitKey(k => k + 1); }, []);
@@ -224,12 +227,16 @@ export default function MatchFoundScreen() {
           </Surface>
 
           <Surface style={{ backgroundColor: colors.surfaceVariant, borderRadius: 16, padding: 16, marginTop: 16, width: "100%", flexDirection: "row", alignItems: "center", gap: 12 }}>
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}>
-              <Feather name="credit-card" size={18} color={colors.onPrimary} />
+            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: paymentMethod === "gcash" ? "#007DFE" : colors.primary, alignItems: "center", justifyContent: "center" }}>
+              {paymentMethod === "gcash" ? (
+                <Image source={require("../../assets/images/gcash.png")} style={{ width: 24, height: 24 }} />
+              ) : (
+                <Feather name="credit-card" size={18} color={colors.onPrimary} />
+              )}
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: colors.onSurface, fontSize: 14, fontFamily: "Inter_600SemiBold" }}>Payment via Pasabay Wallet</Text>
-              <Text style={{ color: colors.onSurfaceVariant, fontSize: 12, fontFamily: "Inter_400Regular" }}>Automatically settled after ride</Text>
+              <Text style={{ color: colors.onSurface, fontSize: 14, fontFamily: "Inter_600SemiBold" }}>Paid via {paymentMethod === "gcash" ? "GCash" : paymentMethod === "card" ? "Card" : "Pasabay Wallet"}</Text>
+              <Text style={{ color: colors.onSurfaceVariant, fontSize: 12, fontFamily: "Inter_400Regular" }}>Payment settled after ride</Text>
             </View>
             <Feather name="check" size={16} color={colors.primary} />
           </Surface>
@@ -485,6 +492,9 @@ export default function MatchFoundScreen() {
       </ScrollView>
 
       <View style={[styles.actionBar, { backgroundColor: colors.surface, borderTopColor: colors.outlineVariant, paddingBottom: Math.max(insets.bottom + 24, 40) }]}>
+        <Pressable style={[styles.chatBtn, { backgroundColor: colors.surfaceVariant }]} onPress={() => setShowChat(true)}>
+          <Feather name="message-circle" size={20} color={colors.primary} />
+        </Pressable>
         {!rideAccepted ? (
           <>
             <Button
@@ -511,18 +521,26 @@ export default function MatchFoundScreen() {
             </Button>
           </>
         ) : (
-          <Button
-            mode="outlined"
-            textColor={colors.error}
-            onPress={handleDecline}
-            style={{ flex: 1, borderRadius: 14, borderColor: `${colors.error}40` }}
-            contentStyle={{ height: 52 }}
-            labelStyle={{ fontFamily: "Inter_500Medium", fontSize: 15 }}
-          >
-            Cancel Ride
-          </Button>
+          <>
+            <Button
+              mode="outlined"
+              textColor={colors.error}
+              onPress={handleDecline}
+              style={{ flex: 1, borderRadius: 14, borderColor: `${colors.error}40` }}
+              contentStyle={{ height: 52 }}
+              labelStyle={{ fontFamily: "Inter_500Medium", fontSize: 15 }}
+            >
+              Cancel Ride
+            </Button>
+          </>
         )}
       </View>
+
+      <ChatSheet
+        visible={showChat}
+        onClose={() => setShowChat(false)}
+        driverName={matchConfirmed?.driver?.name ?? "Driver"}
+      />
     </Surface>
   );
 }
@@ -566,4 +584,5 @@ const styles = StyleSheet.create({
   btnAccept: { flex: 2, borderRadius: 14 },
   arrivalBanner: { borderRadius: 14, padding: 14, gap: 8 },
   hurryBanner: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 12, padding: 12, marginTop: 4 },
+  chatBtn: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },
 });

@@ -1,16 +1,17 @@
 import React, { useState } from "react";
-import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { Alert, Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
 
+
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const dimensions = useWindowDimensions();
-  const { user, logout, activeRole, switchRole, networkStatus } = useApp();
+  const { user, logout, activeRole, switchRole, networkStatus, paymentMethod, setPaymentMethod } = useApp();
   const isRegisteredDriver = user?.driverVerified || user?.vehicle || !!user?.driverStatus;
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -18,6 +19,7 @@ export default function ProfileScreen() {
   const [editNameValue, setEditNameValue] = useState(user?.name ?? "");
   const [showHelp, setShowHelp] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
 
   const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
   const isWeb = Platform.OS === "web";
@@ -86,12 +88,13 @@ export default function ProfileScreen() {
             <InfoRow icon="truck" label="Car" value={`${user.vehicle.make} ${user.vehicle.model} ${user.vehicle.year}`} colors={colors} />
             <InfoRow icon="credit-card" label="Plate" value={user.vehicle.plate} colors={colors} />
             <InfoRow icon="users" label="Seats" value={String(user.vehicle.seats)} colors={colors} />
+            <InfoRow icon="zap" label="Fuel Eff." value={`${user.vehicle.fuelEfficiency ?? 20} km/L`} colors={colors} />
           </Section>
         )}
 
         <Section title="Account" colors={colors}>
           <MenuItem icon="user" label="Edit profile" colors={colors} onPress={() => { setEditNameValue(user?.name ?? ""); setShowEditName(true); }} />
-          <MenuItem icon="credit-card" label="Payment methods" colors={colors} onPress={() => Alert.alert("Coming Soon", "Payment methods will be available in a future update.")} />
+          <MenuItem icon="credit-card" label="Payment methods" colors={colors} onPress={() => setShowPayment(true)} value={paymentMethod ? paymentMethod === "gcash" ? "GCash" : "Card" : undefined} />
           <MenuItem icon="shield" label="Verification status" colors={colors} onPress={() => {}} badge="Done" badgeColor={colors.successLight} badgeTextColor={colors.success} />
         </Section>
 
@@ -114,6 +117,51 @@ export default function ProfileScreen() {
           Pasabay v1.0.0 · USC Talamban Pilot
         </Text>
       </ScrollView>
+
+      {/* Payment Method Modal */}
+      <Modal visible={showPayment} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.alertBox, webAlertBoxStyle, { backgroundColor: colors.background, gap: 4 }]}>
+            <Text style={[styles.alertTitle, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>Payment method</Text>
+            <Text style={[styles.alertMsg, { color: colors.textSecondary, fontFamily: "Inter_400Regular", marginBottom: 4 }]}>
+              Select your preferred payment method for rides.
+            </Text>
+            <Pressable
+              style={[styles.paymentOption, { backgroundColor: paymentMethod === "gcash" ? colors.primaryLight : colors.card, borderColor: colors.border }]}
+              onPress={async () => {
+                setShowPayment(false);
+                await setPaymentMethod("gcash");
+                Alert.alert("Payment set to GCash");
+              }}
+            >
+              <View style={[styles.paymentIcon, { backgroundColor: "#007DFE" }]}>
+                <Image source={require("../../assets/images/gcash.png")} style={{ width: 24, height: 24 }} />
+              </View>
+              <Text style={[styles.paymentOptionLabel, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>GCash</Text>
+              {paymentMethod === "gcash" && <Feather name="check-circle" size={18} color={colors.primary} />}
+            </Pressable>
+            <Pressable
+              style={[styles.paymentOption, { backgroundColor: paymentMethod === "card" ? colors.primaryLight : colors.card, borderColor: colors.border }]}
+              onPress={async () => {
+                setShowPayment(false);
+                await setPaymentMethod("card");
+                Alert.alert("Payment set to Card");
+              }}
+            >
+              <View style={[styles.paymentIcon, { backgroundColor: "#1A1A2E" }]}>
+                <Feather name="credit-card" size={18} color="#fff" />
+              </View>
+              <Text style={[styles.paymentOptionLabel, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>Card</Text>
+              {paymentMethod === "card" && <Feather name="check-circle" size={18} color={colors.primary} />}
+            </Pressable>
+            <View style={[styles.alertBtns, { marginTop: 12 }]}>
+              <Pressable style={[styles.alertBtnCancel, { borderColor: colors.border }]} onPress={() => setShowPayment(false)}>
+                <Text style={[styles.alertBtnCancelText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>Cancel</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Edit Name Modal */}
       <Modal visible={showEditName} transparent animationType="fade">
@@ -242,7 +290,7 @@ function Section({ title, children, colors, titleColor }: { title: string; child
   );
 }
 
-function MenuItem({ icon, label, colors, onPress, badge, badgeColor, badgeTextColor, danger }: {
+function MenuItem({ icon, label, colors, onPress, badge, badgeColor, badgeTextColor, danger, value }: {
   icon: keyof typeof Feather.glyphMap;
   label: string;
   colors: ReturnType<typeof useColors>;
@@ -251,6 +299,7 @@ function MenuItem({ icon, label, colors, onPress, badge, badgeColor, badgeTextCo
   badgeColor?: string;
   badgeTextColor?: string;
   danger?: boolean;
+  value?: string;
 }) {
   return (
     <Pressable
@@ -265,6 +314,9 @@ function MenuItem({ icon, label, colors, onPress, badge, badgeColor, badgeTextCo
         <View style={[styles.menuBadge, { backgroundColor: badgeColor }]}>
           <Text style={[styles.menuBadgeText, { color: badgeTextColor, fontFamily: "Inter_500Medium" }]}>{badge}</Text>
         </View>
+      )}
+      {value && (
+        <Text style={[styles.menuValue, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>{value}</Text>
       )}
       <Feather name="chevron-right" size={16} color={danger ? colors.destructive : colors.textMuted} />
     </Pressable>
@@ -322,4 +374,7 @@ const styles = StyleSheet.create({
   alertBtnConfirm: { flex: 1, height: 48, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   alertBtnConfirmText: { color: "#fff", fontSize: 15 },
   nameInput: { width: "100%", height: 44, borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, fontSize: 14, marginTop: 4 },
+  paymentOption: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderRadius: 12, borderWidth: 1, marginTop: 6 },
+  paymentIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  paymentOptionLabel: { fontSize: 15, flex: 1 },
 });

@@ -16,6 +16,7 @@ interface ChatSheetProps {
   visible: boolean;
   onClose: () => void;
   driverName: string;
+  userIsPassenger?: boolean;
 }
 
 const MOCK_MESSAGES: Message[] = [
@@ -24,7 +25,7 @@ const MOCK_MESSAGES: Message[] = [
   { id: "3", text: "Almost there, about 2 minutes", sender: "driver", time: "2:37 PM" },
 ];
 
-export function ChatSheet({ visible, onClose, driverName }: ChatSheetProps) {
+export function ChatSheet({ visible, onClose, driverName, userIsPassenger = true }: ChatSheetProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(300)).current;
@@ -44,7 +45,7 @@ export function ChatSheet({ visible, onClose, driverName }: ChatSheetProps) {
     const newMsg: Message = {
       id: Date.now().toString(),
       text: inputText.trim(),
-      sender: "passenger",
+      sender: userIsPassenger ? "passenger" : "driver",
       time: new Date().toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" }),
     };
     setMessages(prev => [...prev, newMsg]);

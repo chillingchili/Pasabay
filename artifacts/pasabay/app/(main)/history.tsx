@@ -63,7 +63,7 @@ export default function HistoryScreen() {
           <Card mode="outlined" style={{ borderRadius: 14, marginBottom: 16 }}>
             <Card.Content style={{ padding: 16 }}>
               <Text variant="headlineSmall" style={[styles.summaryStat, { color: colors.onSurface }]}>
-                {tripCount}<Text variant="labelLarge" style={{ color: colors.onSurfaceVariant }}> trips · ₱</Text>{totalSaved}<Text variant="labelLarge" style={{ color: colors.onSurfaceVariant }}> saved</Text>
+                {tripCount}<Text variant="labelLarge" style={{ color: colors.onSurfaceVariant }}> trips · ₱</Text>{totalSaved.toFixed(2)}
               </Text>
               <Text variant="labelLarge" style={[styles.summarySub, { color: colors.onSurfaceVariant }]}>This month</Text>
             </Card.Content>
@@ -98,7 +98,7 @@ export default function HistoryScreen() {
                   </View>
                   <View style={styles.rideRight}>
                     <Text variant="labelLarge" style={[styles.rideFare, { color: ride.status === "canceled" ? colors.onSurfaceDisabled : colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>
-                      {ride.status === "canceled" ? "—" : `₱${ride.fare}`}
+                      {ride.status === "canceled" ? "—" : `₱${ride.fare.toFixed(2)}`}
                     </Text>
                     <Text variant="labelLarge" style={[styles.rideStatus, { color: ride.status === "completed" ? colors.primary : colors.error, fontSize: 11 }]}>
                       {ride.status === "completed" ? "Completed" : "Canceled"}
@@ -135,7 +135,7 @@ export default function HistoryScreen() {
                 <DetailRow
                   icon="dollar-sign"
                   label="Fare"
-                  value={selectedRide.status === "canceled" ? "—" : `${selectedRide.fare}`}
+                  value={selectedRide.status === "canceled" ? "—" : `${selectedRide.fare.toFixed(2)}`}
                   valueSymbol={selectedRide.status !== "canceled" ? "₱" : undefined}
                   colors={colors}
                   valueColor={selectedRide.status === "completed" ? colors.onSurface : colors.onSurfaceDisabled}

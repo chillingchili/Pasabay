@@ -17,6 +17,7 @@ import {
 import { useNetworkStatus } from "@/lib/network";
 
 export type UserRole = "passenger" | "driver";
+export type PaymentMethod = "gcash" | "card" | null;
 
 export interface UserProfile {
   id: string;
@@ -103,6 +104,8 @@ interface AppContextValue {
   clearCompletedRide: () => void;
   clearActiveRide: () => void;
   setActiveRide: (ride: ActiveRide | null) => void;
+  paymentMethod: PaymentMethod;
+  setPaymentMethod: (method: PaymentMethod) => Promise<void>;
   forceLogout: () => void;
   isDemoMode: boolean;
   demoDriverDest: { name: string; lat: number; lng: number } | null;
@@ -173,6 +176,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number; heading?: number } | null>(null);
   const [driverArrived, setDriverArrivedState] = useState<{ rideId: string; meetingSpot: { lat: number; lng: number; name: string } } | null>(null);
   const [driverStartedTrip, setDriverStartedTrip] = useState<{ rideId: string } | null>(null);
+  const [paymentMethod, setPaymentMethodState] = useState<PaymentMethod>(null);
 
   // Demo mode state
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -379,6 +383,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         } catch {
           // ignore stale data
         }
+        // Restore payment method from AsyncStorage
+        try {
+          const stored = await AsyncStorage.getItem("pasabay_payment_method");
+          if (stored === "gcash" || stored === "card") {
+            setPaymentMethodState(stored);
+          }
+        } catch {
+          // ignore stale data
+        }
         loadRideHistory();
         initSocket();
       } catch {
@@ -467,6 +480,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.removeItem("pasabay_driver_verified");
     await AsyncStorage.removeItem("pasabay_school_id_verified");
     await AsyncStorage.removeItem("pasabay_demo_mode");
+    await AsyncStorage.removeItem("pasabay_payment_method");
     setUser(null);
     setActiveRole("passenger");
     setRideHistory([]);
@@ -830,6 +844,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setRideHistory(prev => [ride, ...prev]);
   }, []);
 
+  const setPaymentMethod = useCallback(async (method: PaymentMethod) => {
+    setPaymentMethodState(method);
+    await safeSetItem("pasabay_payment_method", method ?? "");
+  }, []);
+
   return (
     <AppContext.Provider value={{
       user,
@@ -863,6 +882,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       clearCompletedRide: () => setCompletedRide(null),
       clearActiveRide: () => { setActiveRide(null); setDriverLocation(null); setDriverArrivedState(null); setDriverStartedTrip(null); },
       setActiveRide: (ride) => setActiveRide(ride),
+      paymentMethod,
+      setPaymentMethod,
       forceLogout,
       isDemoMode,
       demoDriverDest,

@@ -33,7 +33,7 @@ export default function PassengerHomeScreen() {
   const { colors } = useTheme();
   const { fs, isSmall } = useScale();
   const dimensions = useWindowDimensions();
-  const { user, driverLocation, switchRole, activeRide, demoPassengerDest, matchConfirmed } = useApp();
+  const { user, driverLocation, switchRole, activeRide, demoPassengerDest, matchConfirmed, paymentMethod } = useApp();
   const { location: userLoc } = useLocation();
   const isRegisteredDriver = user?.driverVerified || user?.vehicle || !!user?.driverStatus;
   const [destination, setDestination] = useState("");
@@ -63,7 +63,7 @@ export default function PassengerHomeScreen() {
   const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
 
   const pickupPoint = useMemo(() =>
-    userLoc ? { lat: userLoc.lat, lng: userLoc.lng, name: "Your location" } : null,
+    userLoc ? { lat: userLoc.lat, lng: userLoc.lng, name: "Pickup location" } : null,
     [userLoc?.lat, userLoc?.lng]
   );
   const destCoords = useMemo(() =>
@@ -178,6 +178,17 @@ export default function PassengerHomeScreen() {
 
   const handleFindRide = () => {
     if (!destination) return;
+    if (!paymentMethod) {
+      Alert.alert(
+        "Set up payment",
+        "You need to set up a payment method before requesting a ride.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Set up", onPress: () => router.push("/(main)/profile") },
+        ]
+      );
+      return;
+    }
     setShowPreMatch(true);
   };
 
