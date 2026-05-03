@@ -8,7 +8,8 @@ import { Card, Button, Text, Surface, Chip } from "react-native-paper";
 import { useApp } from "@/context/AppContext";
 import { useScale } from "@/hooks/useScale";
 import { emitRideCancel, onRideCanceled } from "@/lib/socket";
-import { getWalkingRoute, haversineKm } from "@/lib/osrm";
+import { getWalkingRoute, haversineKm, getRoute } from "@/lib/osrm";
+import type { OSRMRoute } from "@/lib/osrm";
 import { useLocation } from "@/hooks/useLocation";
 import { RealMap } from "@/components/RealMap";
 
@@ -36,11 +37,14 @@ export default function MatchFoundScreen() {
   const [walkingDistance, setWalkingDistance] = useState<number | null>(null);
   const [walkingEtaMin, setWalkingEtaMin] = useState<number | null>(null);
   const [walkingPolyline, setWalkingPolyline] = useState<{ lat: number; lng: number }[] | null>(null);
+  const [drivingRoute, setDrivingRoute] = useState<OSRMRoute | null>(null);
   const [showHurry, setShowHurry] = useState(false);
   const [mapFitKey, setMapFitKey] = useState(0);
   const [rideAccepted, setRideAccepted] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
   const [completionData, setCompletionData] = useState<{ rideId: string; fare: number; matchingFee: number; total: number; distanceKm: number; message: string } | null>(null);
+
+  const drivingToDest = !!driverStartedTrip;
 
   useEffect(() => { setMapFitKey(k => k + 1); }, []);
 
@@ -100,6 +104,7 @@ export default function MatchFoundScreen() {
   // Fetch walking route whenever userLoc + pickup available (for pre-arrival walking line)
   // Also refetch when driverArrived changes (meeting spot may differ)
   useEffect(() => {
+    if (drivingToDest) return; // Don't fetch walking route — passenger is already in the car
     const dest = driverArrived?.meetingSpot ?? matchConfirmed?.pickup;
     if (!userLoc || !dest) return;
     let cancelled = false;
@@ -119,7 +124,24 @@ export default function MatchFoundScreen() {
     };
     fetchWalk();
     return () => { cancelled = true; };
-  }, [!!userLoc, matchConfirmed?.pickup?.lat, matchConfirmed?.pickup?.lng, driverArrived]);
+  }, [!!userLoc, matchConfirmed?.pickup?.lat, matchConfirmed?.pickup?.lng, driverArrived, drivingToDest]);
+
+  // Fetch driving route to destination when driver starts the trip
+  useEffect(() => {
+    if (!drivingToDest || !userLoc || !matchConfirmed?.dropoff) {
+      setDrivingRoute(null);
+      return;
+    }
+    let cancelled = false;
+    const fetchRoute = async () => {
+      const route = await getRoute(userLoc, matchConfirmed.dropoff);
+      if (cancelled) return;
+      setDrivingRoute(route);
+      setMapFitKey(k => k + 1); // Trigger map refit with the new route
+    };
+    fetchRoute();
+    return () => { cancelled = true; };
+  }, [drivingToDest]);
 
   // Show hurry warning 30s after driver arrival
   useEffect(() => {
@@ -166,8 +188,6 @@ export default function MatchFoundScreen() {
   const driverInitials = driver?.name
     ? driver.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
     : "DR";
-
-  const drivingToDest = !!driverStartedTrip;
 
   if (showCompletion && completionData) {
     return (
@@ -373,9 +393,10 @@ export default function MatchFoundScreen() {
           <Card mode="outlined" style={{ borderRadius: 14, overflow: "hidden" }}>
             <View style={{ height: 180, position: "relative" }}>
               <RealMap
-                showRoute={!!walkingPolyline}
-                routePolyline={walkingPolyline ?? undefined}
+                showRoute={drivingToDest ? !!drivingRoute : !!walkingPolyline}
+                routePolyline={drivingToDest ? (drivingRoute?.polyline ?? undefined) : (walkingPolyline ?? undefined)}
                 pickupPoint={pickup ? { lat: pickup.lat, lng: pickup.lng, name: pickup.name } : undefined}
+                dropoffPoint={matchConfirmed?.dropoff ? { lat: matchConfirmed.dropoff.lat, lng: matchConfirmed.dropoff.lng, name: matchConfirmed.dropoff.name } : undefined}
                 userLocation={userLoc ?? undefined}
                 driverLocation={driverLocation ?? undefined}
                 fitRouteKey={mapFitKey}
@@ -384,7 +405,7 @@ export default function MatchFoundScreen() {
           </Card>
 
           {/* Pre-arrival walking info — shown before driver arrives */}
-          {walkingPolyline && !driverArrived && (
+          {walkingPolyline && !driverArrived && !drivingToDest && (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 4 }}>
               <Feather name="navigation" size={14} color={colors.primary} />
               <Text variant="labelMedium" style={{ color: colors.onSurfaceVariant, fontFamily: "Inter_500Medium" }}>
