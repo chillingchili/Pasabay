@@ -27,7 +27,7 @@ export default function MatchFoundScreen() {
   const { colors } = useTheme();
   const { fs, isSmall } = useScale();
   const dimensions = useWindowDimensions();
-  const { matchConfirmed, clearMatchConfirmed, completedRide, clearCompletedRide, addRideHistory, activeRide, driverLocation, clearActiveRide, networkStatus, driverArrived, clearDriverArrived } = useApp();
+  const { matchConfirmed, clearMatchConfirmed, completedRide, clearCompletedRide, addRideHistory, activeRide, driverLocation, clearActiveRide, networkStatus, driverArrived, clearDriverArrived, driverStartedTrip } = useApp();
   const { location: userLoc } = useLocation();
   const slideAnim = useRef(new Animated.Value(60)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -38,6 +38,7 @@ export default function MatchFoundScreen() {
   const [walkingPolyline, setWalkingPolyline] = useState<{ lat: number; lng: number }[] | null>(null);
   const [showHurry, setShowHurry] = useState(false);
   const [mapFitKey, setMapFitKey] = useState(0);
+  const [rideAccepted, setRideAccepted] = useState(false);
 
   useEffect(() => { setMapFitKey(k => k + 1); }, []);
 
@@ -143,7 +144,7 @@ export default function MatchFoundScreen() {
   };
 
   const handleAccept = () => {
-    router.replace("/(main)/passenger-home");
+    setRideAccepted(true);
   };
 
   const driver = matchConfirmed?.driver;
@@ -158,6 +159,8 @@ export default function MatchFoundScreen() {
     ? driver.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
     : "DR";
 
+  const drivingToDest = !!driverStartedTrip;
+
   return (
     <Surface style={[styles.container, { backgroundColor: colors.surface }]}>
       <ScrollView
@@ -170,8 +173,25 @@ export default function MatchFoundScreen() {
             <Text variant="labelLarge" style={[styles.matchBadgeText, { color: colors.primary, fontFamily: "Inter_600SemiBold" }]}>Match found!</Text>
           </Animated.View>
 
-          {/* Driver arrival banner */}
-          {driverArrived && (
+          {/* Driver arrival banner / driving mode */}
+          {drivingToDest ? (
+            <View style={[styles.arrivalBanner, { backgroundColor: colors.primary, borderRadius: 14, padding: 14, gap: 8 }]}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Feather name="navigation" size={20} color={colors.onPrimary} />
+                <Text variant="titleMedium" style={{ color: colors.onPrimary, fontFamily: "Inter_600SemiBold" }}>
+                  Driving to your destination
+                </Text>
+              </View>
+              <View style={{ flexDirection: "row", gap: 16, paddingLeft: 28 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                  <Feather name="map-pin" size={12} color="rgba(255,255,255,0.8)" />
+                  <Text variant="bodySmall" style={{ color: "rgba(255,255,255,0.9)", fontFamily: "Inter_500Medium" }}>
+                    {matchConfirmed?.dropoff?.name ?? "Destination"}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ) : driverArrived && (
             <View style={[styles.arrivalBanner, { backgroundColor: colors.primary, borderRadius: 14, padding: 14, gap: 8 }]}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <Feather name="check-circle" size={20} color={colors.onPrimary} />
@@ -299,16 +319,16 @@ export default function MatchFoundScreen() {
           )}
 
           {/* Ride status indicator */}
-          <View style={[styles.rideStatusCard, { backgroundColor: driverArrived ? colors.primaryContainer : colors.surfaceVariant }]}>
+          <View style={[styles.rideStatusCard, { backgroundColor: (driverArrived || drivingToDest) ? colors.primaryContainer : colors.surfaceVariant }]}>
             <Animated.View style={[styles.statusDot, { 
               backgroundColor: colors.primary, 
-              transform: driverArrived ? undefined : [{ scale: pulseAnim }] 
+              transform: (driverArrived || drivingToDest) ? undefined : [{ scale: pulseAnim }] 
             }]} />
             <Text variant="labelLarge" style={[styles.rideStatusText, { 
-              color: driverArrived ? colors.primary : colors.onSurfaceVariant, 
+              color: (driverArrived || drivingToDest) ? colors.primary : colors.onSurfaceVariant, 
               fontFamily: "Inter_500Medium" 
             }]}>
-              {driverArrived ? "Driver has arrived at meeting spot" : driverLocation ? "Driver is nearby" : "Driver is heading to pickup"}
+              {drivingToDest ? "Driving you to your destination" : driverArrived ? "Driver has arrived at meeting spot" : driverLocation ? "Driver is nearby" : "Driver is heading to pickup"}
             </Text>
           </View>
 
@@ -369,28 +389,43 @@ export default function MatchFoundScreen() {
       </ScrollView>
 
       <View style={[styles.actionBar, { backgroundColor: colors.surface, borderTopColor: colors.outlineVariant, paddingBottom: Math.max(insets.bottom + 24, 40) }]}>
-        <Button
-          mode="outlined"
-          textColor={colors.error}
-          onPress={handleDecline}
-          style={[styles.btnDecline, { borderColor: `${colors.error}40` }]}
-          contentStyle={{ height: 52 }}
-          labelStyle={{ fontFamily: "Inter_500Medium", fontSize: 15 }}
-        >
-          Decline
-        </Button>
-        <Button
-          mode="contained"
-          buttonColor={colors.primary}
-          textColor={colors.onPrimary}
-          onPress={handleAccept}
-          style={styles.btnAccept}
-          contentStyle={{ height: 52 }}
-          labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 16 }}
-          icon={() => <Feather name={driverArrived ? "clock" : "check"} size={18} color={colors.onPrimary} />}
-        >
-          {driverArrived ? "Accept — driver is waiting" : "Accept ride"}
-        </Button>
+        {!rideAccepted ? (
+          <>
+            <Button
+              mode="outlined"
+              textColor={colors.error}
+              onPress={handleDecline}
+              style={[styles.btnDecline, { borderColor: `${colors.error}40` }]}
+              contentStyle={{ height: 52 }}
+              labelStyle={{ fontFamily: "Inter_500Medium", fontSize: 15 }}
+            >
+              Decline
+            </Button>
+            <Button
+              mode="contained"
+              buttonColor={colors.primary}
+              textColor={colors.onPrimary}
+              onPress={handleAccept}
+              style={styles.btnAccept}
+              contentStyle={{ height: 52 }}
+              labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 16 }}
+              icon={() => <Feather name={driverArrived ? "clock" : "check"} size={18} color={colors.onPrimary} />}
+            >
+              {driverArrived ? "Accept — driver is waiting" : "Accept ride"}
+            </Button>
+          </>
+        ) : (
+          <Button
+            mode="outlined"
+            textColor={colors.error}
+            onPress={handleDecline}
+            style={{ flex: 1, borderRadius: 14, borderColor: `${colors.error}40` }}
+            contentStyle={{ height: 52 }}
+            labelStyle={{ fontFamily: "Inter_500Medium", fontSize: 15 }}
+          >
+            Cancel Ride
+          </Button>
+        )}
       </View>
     </Surface>
   );

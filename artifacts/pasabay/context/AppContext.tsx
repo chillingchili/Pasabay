@@ -10,9 +10,9 @@ import {
   onMatchRequest, onMatchConfirmed, onMatchDeclined,
   onRideCompleted, onRideCanceled,
   onMatchAccepted, onDriverLocationUpdate,
-  onDriverArrived,
+  onDriverArrived, onDriverStartedTrip,
   emitDriverOnline, emitDriverArrived, emitDriverLocation, emitMatchAccept, emitRideComplete,
-  type MatchRequestPayload, type MatchConfirmedPayload, type RideCompletedPayload, type DriverArrivedPayload,
+  type MatchRequestPayload, type MatchConfirmedPayload, type RideCompletedPayload, type DriverArrivedPayload, type DriverStartedTripPayload,
 } from "@/lib/socket";
 import { useNetworkStatus } from "@/lib/network";
 
@@ -86,6 +86,8 @@ interface AppContextValue {
   driverLocation: { lat: number; lng: number; heading?: number } | null;
   driverArrived: { rideId: string; meetingSpot: { lat: number; lng: number; name: string } } | null;
   clearDriverArrived: () => void;
+  driverStartedTrip: { rideId: string } | null;
+  clearDriverStartedTrip: () => void;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: (googleUser: GoogleUserInfo) => Promise<{ isNew: boolean }>;
   logout: () => void;
@@ -170,6 +172,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [activeRide, setActiveRide] = useState<ActiveRide | null>(null);
   const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number; heading?: number } | null>(null);
   const [driverArrived, setDriverArrivedState] = useState<{ rideId: string; meetingSpot: { lat: number; lng: number; name: string } } | null>(null);
+  const [driverStartedTrip, setDriverStartedTrip] = useState<{ rideId: string } | null>(null);
 
   // Demo mode state
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -238,6 +241,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setDriverArrivedState({ rideId: data.rideId, meetingSpot: data.meetingSpot });
         console.log("[MATCH-STAGE-5] Driver arrival notification:", { rideId: data.rideId });
       });
+      const offDriverStartedTrip = onDriverStartedTrip((data) => {
+        setDriverStartedTrip(data);
+        console.log("[MATCH-STAGE-7] Driver started trip:", { rideId: data.rideId });
+      });
 
       return () => {
         offMatchRequest();
@@ -248,6 +255,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         offMatchAccepted();
         offDriverLocation();
         offDriverArrived();
+        offDriverStartedTrip();
       };
     } catch {
       setSocketConnected(false);
@@ -838,6 +846,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       driverLocation,
       driverArrived,
       clearDriverArrived: () => setDriverArrivedState(null),
+      driverStartedTrip,
+      clearDriverStartedTrip: () => setDriverStartedTrip(null),
       login,
       loginWithGoogle,
       logout,
@@ -849,9 +859,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addRideHistory,
       refreshUser,
       clearPendingMatch: () => setPendingMatchRequest(null),
-      clearMatchConfirmed: () => { setMatchConfirmed(null); setDriverArrivedState(null); },
+      clearMatchConfirmed: () => { setMatchConfirmed(null); setDriverArrivedState(null); setDriverStartedTrip(null); },
       clearCompletedRide: () => setCompletedRide(null),
-      clearActiveRide: () => { setActiveRide(null); setDriverLocation(null); setDriverArrivedState(null); },
+      clearActiveRide: () => { setActiveRide(null); setDriverLocation(null); setDriverArrivedState(null); setDriverStartedTrip(null); },
       setActiveRide: (ride) => setActiveRide(ride),
       forceLogout,
       isDemoMode,

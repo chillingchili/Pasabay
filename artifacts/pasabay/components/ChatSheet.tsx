@@ -147,11 +147,12 @@ export function ChatSheet({ visible, onClose, driverName }: ChatSheetProps) {
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: "flex-end" },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.4)" },
-  keyboardView: { justifyContent: "flex-end" },
+  keyboardView: { justifyContent: "flex-end", alignSelf: "center", width: "100%", maxWidth: Platform.OS === "web" ? 420 : undefined },
   sheet: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     height: "92%",
+    width: "100%",
     display: "flex",
     flexDirection: "column",
   },

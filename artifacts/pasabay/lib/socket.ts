@@ -126,6 +126,10 @@ export type DriverArrivedPayload = {
   meetingSpot: { lat: number; lng: number; name: string };
 };
 
+export type DriverStartedTripPayload = {
+  rideId: string;
+};
+
 let demoToken: string | null = null;
 
 export function setDemoToken(token: string | null) {
@@ -165,6 +169,10 @@ export function emitDriverOffline() {
 
 export function emitDriverArrived(rideId: string) {
   socket?.emit("driver:arrived", { rideId });
+}
+
+export function emitDriverStartedTrip(rideId: string) {
+  socket?.emit("driver:start-trip", { rideId });
 }
 
 export function emitMatchAccept(data: {
@@ -223,6 +231,11 @@ export function onRideCanceled(cb: (data: { rideId: string; canceledBy: string; 
 export function onDriverArrived(cb: (data: DriverArrivedPayload) => void) {
   socket?.on("driver:arrived", cb);
   return () => { socket?.off("driver:arrived", cb); };
+}
+
+export function onDriverStartedTrip(cb: (data: DriverStartedTripPayload) => void) {
+  socket?.on("driver:start-trip", cb);
+  return () => { socket?.off("driver:start-trip", cb); };
 }
 
 export function onDriverLocationUpdate(cb: (data: DriverLocationPayload) => void) {

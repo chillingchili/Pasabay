@@ -186,6 +186,41 @@ export function registerSocketHandlers(io: Server) {
       }
     });
 
+    socket.on("driver:start-trip", async (data: { rideId: string }) => {
+      try {
+        if (!data.rideId) {
+          socket.emit("driver:error", { message: "No ride ID provided" });
+          return;
+        }
+
+        const [ride] = await db.select().from(ridesTable)
+          .where(and(eq(ridesTable.id, data.rideId), eq(ridesTable.driverId, userId)))
+          .limit(1);
+
+        if (!ride) {
+          socket.emit("driver:error", { message: "No matched ride found" });
+          return;
+        }
+
+        // Get passenger info to broadcast
+        const [passenger] = await db.select().from(ridePassengersTable)
+          .where(eq(ridePassengersTable.rideId, ride.id));
+
+        if (passenger) {
+          io.to(`user:${passenger.passengerId}`).emit("driver:start-trip", {
+            rideId: ride.id,
+          });
+        }
+
+        socket.emit("driver:start-trip_confirmed", { rideId: ride.id });
+        console.log("[MATCH-STAGE-7] Driver started trip:", { rideId: ride.id });
+        logger.info({ rideId: ride.id, userId }, "Driver started trip");
+      } catch (err) {
+        logger.error({ err, userId }, "driver:start-trip error");
+        socket.emit("driver:error", { message: "Failed to confirm trip start" });
+      }
+    });
+
     socket.on("match:accept", async (data: { routeId: string; passengerId: string; pickupLat: number; pickupLng: number; dropoffLat: number; dropoffLng: number; pickupName: string; dropoffName: string; fare: number; matchingFee: number; distanceKm: number }) => {
       try {
         // Clear any pending timeout for this match

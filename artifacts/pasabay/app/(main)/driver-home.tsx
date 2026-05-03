@@ -10,7 +10,7 @@ import { Card, Button, Surface } from "react-native-paper";
 import { useLocation } from "@/hooks/useLocation";
 import { useApp } from "@/context/AppContext";
 import { useScale } from "@/hooks/useScale";
-import { emitDriverOnline, emitDriverOffline, emitDriverArrived, emitMatchAccept, emitMatchDecline,
+import { emitDriverOnline, emitDriverOffline, emitDriverArrived, emitDriverStartedTrip, emitMatchAccept, emitMatchDecline,
   emitRideComplete, emitRideCancel, onDriverRouteSet, onDriverError,
   onMatchAccepted, emitDriverLocation,
 } from "@/lib/socket";
@@ -35,6 +35,7 @@ export default function DriverHomeScreen() {
   const [timer, setTimer] = useState(60);
   const [arrived, setArrived] = useState(false);
   const [waitTimer, setWaitTimer] = useState(60);
+  const [passengerOnboard, setPassengerOnboard] = useState(false);
   const [destQuery, setDestQuery] = useState("");
   const [showDestSuggestions, setShowDestSuggestions] = useState(false);
   const [selectedDest, setSelectedDest] = useState<{ lat: number; lng: number; name: string } | null>(null);
@@ -139,10 +140,10 @@ export default function DriverHomeScreen() {
   useEffect(() => {
     if (!selectedDest && !accepted) return;
     setFitRouteKey((k) => k + 1);
-  }, [selectedDest, accepted]);
+  }, [selectedDest, accepted, passengerOnboard]);
 
   useEffect(() => {
-    const dest = accepted ? accepted.pickup : selectedDest;
+    const dest = accepted && !passengerOnboard ? accepted.pickup : selectedDest;
     if (!userLoc || !dest) return;
     let cancelled = false;
     const fetch = async () => {
@@ -155,7 +156,7 @@ export default function DriverHomeScreen() {
     };
     fetch();
     return () => { cancelled = true; };
-  }, [selectedDest, userLoc, accepted]);
+  }, [selectedDest, userLoc, accepted, passengerOnboard]);
 
   useEffect(() => {
     if (!demoDriverDest || selectedDest) return;
@@ -247,6 +248,7 @@ export default function DriverHomeScreen() {
       setTimer(60);
       setArrived(false);
       setWaitTimer(60);
+      setPassengerOnboard(false);
       clearActiveRide();
       acceptedRef.current = null;
     } else {
@@ -268,6 +270,7 @@ export default function DriverHomeScreen() {
     setDriverError(null);
     setShowRouteInfo(false);
     setShowCancelConfirm(false);
+    setPassengerOnboard(false);
     setInfoBarHeight(0);
   };
 
@@ -296,6 +299,15 @@ export default function DriverHomeScreen() {
     // Keep isOnline, routeInfo, selectedDest etc — driver stays online
   };
 
+  const handlePassengerOnboard = () => {
+    const rideIdToUse = rideId || acceptedRef.current?.rideId;
+    if (rideIdToUse) {
+      emitDriverStartedTrip(rideIdToUse);
+    }
+    setPassengerOnboard(true);
+    setArrived(true);
+  };
+
   const handleNoShow = () => {
     Alert.alert(
       "Passenger No-Show",
@@ -312,12 +324,13 @@ export default function DriverHomeScreen() {
               setAccepted(null);
               setRideId(null);
               setTimer(60);
-              setArrived(false);
-              setWaitTimer(60);
-              clearActiveRide();
-              setActiveRide(null);
-              clearMatchConfirmed();
-              acceptedRef.current = null;
+      setArrived(false);
+      setWaitTimer(60);
+      setPassengerOnboard(false);
+      clearActiveRide();
+      setActiveRide(null);
+      clearMatchConfirmed();
+      acceptedRef.current = null;
             }
           },
         },
@@ -468,53 +481,6 @@ export default function DriverHomeScreen() {
         </Animated.View>
       )}
 
-      {accepted && !arrived && (
-        <View style={[styles.acceptedInfo, { backgroundColor: "rgba(255,255,255,0.97)", top: topPad + 130 }]}>
-          <View style={styles.acceptedHeader}>
-            <View style={[styles.acceptedIcon, { backgroundColor: colors.primaryContainer }]}>
-              <Feather name="user" size={16} color={colors.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.acceptedTitle, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>Heading to pickup</Text>
-              <Text style={[styles.acceptedSubtitle, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>
-                {accepted.pickup.name} · {accepted.passengerName}
-              </Text>
-            </View>
-            <Pressable style={[styles.chatBtn, { backgroundColor: colors.primaryContainer }]} onPress={() => setShowChat(true)}>
-              <Feather name="message-circle" size={16} color={colors.primary} />
-            </Pressable>
-          </View>
-        </View>
-      )}
-
-      {accepted && arrived && (
-        <View style={[styles.acceptedInfo, { backgroundColor: "rgba(255,255,255,0.97)", top: topPad + 130 }]}>
-          <View style={styles.acceptedHeader}>
-            <View style={[styles.acceptedIcon, { backgroundColor: colors.primaryContainer }]}>
-              <Feather name="user" size={16} color={colors.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.acceptedTitle, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>Waiting for passenger</Text>
-              <Text style={[styles.acceptedSubtitle, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>
-                {accepted.pickup.name} · {accepted.passengerName}
-              </Text>
-            </View>
-            <Pressable style={[styles.chatBtn, { backgroundColor: colors.primaryContainer }]} onPress={() => setShowChat(true)}>
-              <Feather name="message-circle" size={16} color={colors.primary} />
-            </Pressable>
-            {waitTimer > 0 ? (
-              <View style={[styles.timerBadge, { backgroundColor: waitTimer > 30 ? "#4caf50" : waitTimer > 10 ? "#ff9800" : colors.errorContainer }]}>
-                <Text style={[styles.timerText, { color: waitTimer > 30 ? "#fff" : waitTimer > 10 ? "#fff" : colors.error, fontFamily: "Sora_800ExtraBold" }]}>{waitTimer}s</Text>
-              </View>
-            ) : (
-              <Pressable style={[styles.noShowBtn, { backgroundColor: colors.error }]} onPress={handleNoShow}>
-                <Text style={[styles.noShowText, { color: "#fff", fontFamily: "Inter_600SemiBold" }]}>Passenger No-Show</Text>
-              </Pressable>
-            )}
-          </View>
-        </View>
-      )}
-
       <ChatSheet
         visible={showChat}
         onClose={() => setShowChat(false)}
@@ -532,12 +498,15 @@ export default function DriverHomeScreen() {
                 <Text style={styles.navLabel}>Heading to</Text>
                 <Text style={styles.navDest}>{accepted.pickup.name} · {accepted.passengerName}</Text>
               </View>
+              <Pressable style={[styles.navChatBtn, { backgroundColor: "rgba(255,255,255,0.2)" }]} onPress={() => setShowChat(true)}>
+                <Feather name="message-circle" size={18} color="#fff" />
+              </Pressable>
               <View style={styles.navEta}>
                 <Feather name="clock" size={14} color="#fff" />
                 <Text style={styles.navEtaText}>{routeInfo?.durationMin != null ? `${routeInfo.durationMin} min` : "—"}</Text>
               </View>
             </Pressable>
-          ) : accepted && arrived ? (
+          ) : accepted && arrived && !passengerOnboard ? (
             <Pressable style={[styles.navBar, { backgroundColor: colors.tertiary }]}>
               <View style={[styles.navIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
                 <Feather name="clock" size={20} color="#fff" />
@@ -546,6 +515,9 @@ export default function DriverHomeScreen() {
                 <Text style={styles.navLabel}>Waiting at pickup</Text>
                 <Text style={styles.navDest}>{selectedDest?.name ?? "Destination"}</Text>
               </View>
+              <Pressable style={[styles.navChatBtn, { backgroundColor: "rgba(255,255,255,0.2)" }]} onPress={() => setShowChat(true)}>
+                <Feather name="message-circle" size={18} color="#fff" />
+              </Pressable>
               {waitTimer > 0 ? (
                 <View style={[styles.timerBadge, { backgroundColor: waitTimer > 30 ? "#4caf50" : waitTimer > 10 ? "#ff9800" : colors.errorContainer }]}>
                   <Text style={[styles.timerText, { color: waitTimer > 30 ? "#fff" : waitTimer > 10 ? "#fff" : colors.error, fontFamily: "Sora_800ExtraBold" }]}>{waitTimer}s</Text>
@@ -555,6 +527,20 @@ export default function DriverHomeScreen() {
                   <Text style={[styles.noShowText, { color: "#fff", fontFamily: "Inter_600SemiBold" }]}>No-Show</Text>
                 </Pressable>
               )}
+            </Pressable>
+          ) : accepted && arrived && passengerOnboard ? (
+            <Pressable style={[styles.navBar, { backgroundColor: colors.primary }]}>
+              <View style={[styles.navIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
+                <Feather name="navigation" size={20} color="#fff" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.navLabel}>Driving to</Text>
+                <Text style={styles.navDest}>{selectedDest?.name ?? "Destination"}</Text>
+              </View>
+              <View style={styles.navEta}>
+                <Feather name="clock" size={14} color="#fff" />
+                <Text style={styles.navEtaText}>{routeInfo?.durationMin != null ? `${routeInfo.durationMin} min` : "—"}</Text>
+              </View>
             </Pressable>
           ) : isOnline && !accepted ? (
             <Pressable style={[styles.navBar, { backgroundColor: colors.primary }]} onPress={() => setShowRouteInfo(v => !v)}>
@@ -599,6 +585,11 @@ export default function DriverHomeScreen() {
                         </View>
                         <Text style={[styles.infoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>{accepted.pickup.name} · {accepted.passengerName}</Text>
                       </View>
+                    ) : accepted && arrived && passengerOnboard ? (
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>Driving to</Text>
+                        <Text style={[styles.infoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>{selectedDest?.name ?? "Destination"}</Text>
+                      </View>
                     ) : accepted && arrived ? (
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>To (after pickup)</Text>
@@ -637,10 +628,22 @@ export default function DriverHomeScreen() {
                         <Feather name="x" size={14} color={colors.onSurfaceVariant} />
                         <Text style={[styles.cancelBtnText, { color: colors.onSurfaceVariant }]}>Cancel</Text>
                       </Pressable>
-                      <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.primary }]} onPress={handleArrived}>
-                        <Feather name="check" size={14} color="#fff" />
-                        <Text style={styles.arrivedBtnText}>Arrived</Text>
-                      </Pressable>
+                      {accepted && arrived && !passengerOnboard ? (
+                        <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.primary }]} onPress={handlePassengerOnboard}>
+                          <Feather name="user-check" size={14} color="#fff" />
+                          <Text style={styles.arrivedBtnText}>Start Trip</Text>
+                        </Pressable>
+                      ) : accepted && arrived && passengerOnboard ? (
+                        <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.primary }]} onPress={handleCompleteRide}>
+                          <Feather name="flag" size={14} color="#fff" />
+                          <Text style={styles.arrivedBtnText}>Complete Ride</Text>
+                        </Pressable>
+                      ) : (
+                        <Pressable style={[styles.arrivedBtn, { backgroundColor: colors.primary }]} onPress={handleArrived}>
+                          <Feather name="check" size={14} color="#fff" />
+                          <Text style={styles.arrivedBtnText}>Arrived</Text>
+                        </Pressable>
+                      )}
                     </View>
                   )}
                   {(accepted || isOnline) && showCancelConfirm && (
@@ -690,12 +693,7 @@ const styles = StyleSheet.create({
   requestActions: { flexDirection: "row", gap: 8 },
   declineBtn: { flex: 1, borderRadius: 12 },
   acceptBtn: { flex: 2, borderRadius: 12 },
-  acceptedInfo: { position: "absolute", left: 16, right: 16, borderRadius: 16, padding: 14, zIndex: 200, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 5 },
-  acceptedHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
-  acceptedIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
-  acceptedTitle: { fontSize: 14 },
-  acceptedSubtitle: { fontSize: 12, marginTop: 2 },
-  chatBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  navChatBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   timerBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   timerText: { fontSize: 16 },
   noShowBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },

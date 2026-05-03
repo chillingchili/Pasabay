@@ -33,7 +33,7 @@ export default function PassengerHomeScreen() {
   const { colors } = useTheme();
   const { fs, isSmall } = useScale();
   const dimensions = useWindowDimensions();
-  const { user, driverLocation, switchRole, activeRide, demoPassengerDest } = useApp();
+  const { user, driverLocation, switchRole, activeRide, demoPassengerDest, matchConfirmed } = useApp();
   const { location: userLoc } = useLocation();
   const isRegisteredDriver = user?.driverVerified || user?.vehicle || !!user?.driverStatus;
   const [destination, setDestination] = useState("");
@@ -74,6 +74,12 @@ export default function PassengerHomeScreen() {
     destCoords ? { lat: destCoords.lat, lng: destCoords.lng, name: destination } : null,
     [destCoords?.lat, destCoords?.lng, destination]
   );
+
+  useEffect(() => {
+    if (matchConfirmed) {
+      router.replace("/(main)/match-found");
+    }
+  }, [matchConfirmed]);
 
   useEffect(() => {
     const pulse = Animated.loop(
@@ -204,10 +210,10 @@ export default function PassengerHomeScreen() {
   return (
     <View style={styles.container}>
       <RealMap
-        showRoute={!!routePolyline}
-        routePolyline={routePolyline ?? undefined}
-        pickupPoint={pickupPoint ?? undefined}
-        dropoffPoint={dropoffPoint ?? undefined}
+        showRoute={activeRide ? !!walkingPolyline : !!routePolyline}
+        routePolyline={activeRide ? (walkingPolyline ?? undefined) : (routePolyline ?? undefined)}
+        pickupPoint={activeRide ? activeRide.pickup : (pickupPoint ?? undefined)}
+        dropoffPoint={activeRide ? activeRide.dropoff : (dropoffPoint ?? undefined)}
         userLocation={userLoc ?? undefined}
         driverLocation={driverLocation ?? undefined}
         fitRouteKey={fitRouteKey}
