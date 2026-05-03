@@ -325,7 +325,7 @@ export default function DriverHomeScreen() {
     );
   };
 
-  const etaMin = selectedDest ? (routeInfo?.durationMin ?? 18) : null;
+  const etaMin = (accepted || selectedDest) ? (routeInfo?.durationMin ?? 18) : null;
   const fuelEst = routeInfo ? `₱${Math.max(Math.round(routeInfo.distanceKm * 60 / 10 / 10) * 10, 20)}` : null;
 
   return (
@@ -591,10 +591,25 @@ export default function DriverHomeScreen() {
                     <View style={[styles.routeIcon, { backgroundColor: colors.primaryContainer }]}>
                       <Feather name="map-pin" size={16} color={colors.primary} />
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>To</Text>
-                      <Text style={[styles.infoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>{selectedDest?.name ?? "Destination"}</Text>
-                    </View>
+                    {accepted && !arrived ? (
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                          <View style={[styles.destDot, { backgroundColor: colors.primary }]} />
+                          <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>Pickup at</Text>
+                        </View>
+                        <Text style={[styles.infoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>{accepted.pickup.name} · {accepted.passengerName}</Text>
+                      </View>
+                    ) : accepted && arrived ? (
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>To (after pickup)</Text>
+                        <Text style={[styles.infoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>{selectedDest?.name ?? "Destination"}</Text>
+                      </View>
+                    ) : (
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>To</Text>
+                        <Text style={[styles.infoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>{selectedDest?.name ?? "Destination"}</Text>
+                      </View>
+                    )}
                   </View>
                   <View style={styles.routeMeta}>
                     <View style={styles.metaBlock}>
@@ -616,7 +631,7 @@ export default function DriverHomeScreen() {
                       </Text>
                     </View>
                   </View>
-                  {isOnline && !showCancelConfirm && (
+                  {(accepted || isOnline) && !showCancelConfirm && (
                     <View style={styles.actionRow}>
                       <Pressable style={[styles.cancelBtn, { borderColor: colors.outlineVariant }]} onPress={handleCancelTrip}>
                         <Feather name="x" size={14} color={colors.onSurfaceVariant} />
@@ -628,7 +643,7 @@ export default function DriverHomeScreen() {
                       </Pressable>
                     </View>
                   )}
-                  {isOnline && showCancelConfirm && (
+                  {(accepted || isOnline) && showCancelConfirm && (
                     <View style={styles.actionRow}>
                       <Pressable style={[styles.cancelBtn, { borderColor: colors.outlineVariant }]} onPress={handleDismissCancel}>
                         <Feather name="arrow-left" size={14} color={colors.onSurfaceVariant} />
