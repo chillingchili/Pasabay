@@ -39,6 +39,8 @@ export default function MatchFoundScreen() {
   const [showHurry, setShowHurry] = useState(false);
   const [mapFitKey, setMapFitKey] = useState(0);
   const [rideAccepted, setRideAccepted] = useState(false);
+  const [showCompletion, setShowCompletion] = useState(false);
+  const [completionData, setCompletionData] = useState<{ rideId: string; fare: number; matchingFee: number; total: number; distanceKm: number; message: string } | null>(null);
 
   useEffect(() => { setMapFitKey(k => k + 1); }, []);
 
@@ -64,7 +66,7 @@ export default function MatchFoundScreen() {
   }, [pulseAnim]);
 
   useEffect(() => {
-    if (completedRide) {
+    if (completedRide && !showCompletion) {
       addRideHistory({
         id: completedRide.rideId,
         route: `${matchConfirmed?.pickup.name ?? "–"} → ${matchConfirmed?.dropoff.name ?? "–"}`,
@@ -75,11 +77,10 @@ export default function MatchFoundScreen() {
         status: "completed",
         withName: matchConfirmed?.driver.name,
       });
-      clearCompletedRide();
-      clearMatchConfirmed();
-      router.replace("/(main)/passenger-home");
+      setCompletionData(completedRide);
+      setShowCompletion(true);
     }
-  }, [completedRide]);
+  }, [completedRide, showCompletion]);
 
   // Detect ride cancellation via socket event (not state mismatch)
   const didCancelRef = useRef(false);
@@ -147,6 +148,13 @@ export default function MatchFoundScreen() {
     setRideAccepted(true);
   };
 
+  const handleDone = () => {
+    clearActiveRide();
+    clearCompletedRide();
+    clearMatchConfirmed();
+    router.replace("/(main)/passenger-home");
+  };
+
   const driver = matchConfirmed?.driver;
   const vehicle = driver?.vehicle;
   const pickup = matchConfirmed?.pickup;
@@ -160,6 +168,73 @@ export default function MatchFoundScreen() {
     : "DR";
 
   const drivingToDest = !!driverStartedTrip;
+
+  if (showCompletion && completionData) {
+    return (
+      <Surface style={[styles.container, { backgroundColor: colors.surface }]}>
+        <ScrollView
+          contentContainerStyle={[styles.scroll, { paddingHorizontal: isSmall ? 16 : 20, paddingTop: topPad + 48, paddingBottom: Math.max(insets.bottom + 120, 140), alignItems: "center" }]}
+          showsVerticalScrollIndicator={false}
+        >
+          <Feather name="check-circle" size={56} color={colors.primary} />
+          <Text variant="headlineSmall" style={{ color: colors.onSurface, fontFamily: "Sora_800ExtraBold", marginTop: 16, textAlign: "center" }}>Ride Complete!</Text>
+          <Text variant="bodyMedium" style={{ color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular", marginTop: 4, textAlign: "center" }}>
+            You arrived at {matchConfirmed?.dropoff?.name ?? "your destination"}
+          </Text>
+
+          <Surface style={{ backgroundColor: colors.primary, borderRadius: 16, padding: 20, marginTop: 24, width: "100%", gap: 12 }}>
+            <Text variant="titleSmall" style={{ color: colors.onPrimary, fontFamily: "Inter_600SemiBold" }}>Fare Summary</Text>
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, fontFamily: "Inter_400Regular" }}>Distance</Text>
+              <Text style={{ color: colors.onPrimary, fontSize: 13, fontFamily: "Inter_500Medium" }}>{completionData.distanceKm.toFixed(1)} km</Text>
+            </View>
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, fontFamily: "Inter_400Regular" }}>Fuel share</Text>
+              <Text style={{ color: colors.onPrimary, fontSize: 13, fontFamily: "Inter_500Medium" }}>₱{completionData.fare.toFixed(2)}</Text>
+            </View>
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, fontFamily: "Inter_400Regular" }}>Service fee</Text>
+              <Text style={{ color: colors.onPrimary, fontSize: 13, fontFamily: "Inter_500Medium" }}>₱{completionData.matchingFee.toFixed(2)}</Text>
+            </View>
+            <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.2)" }} />
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={{ color: colors.onPrimary, fontSize: 16, fontFamily: "Inter_600SemiBold" }}>Total</Text>
+              <Text style={{ color: colors.onPrimary, fontSize: 18, fontFamily: "Sora_800ExtraBold" }}>₱{completionData.total.toFixed(0)}</Text>
+            </View>
+          </Surface>
+
+          <Surface style={{ backgroundColor: colors.surfaceVariant, borderRadius: 16, padding: 16, marginTop: 16, width: "100%", flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}>
+              <Feather name="credit-card" size={18} color={colors.onPrimary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.onSurface, fontSize: 14, fontFamily: "Inter_600SemiBold" }}>Payment via Pasabay Wallet</Text>
+              <Text style={{ color: colors.onSurfaceVariant, fontSize: 12, fontFamily: "Inter_400Regular" }}>Automatically settled after ride</Text>
+            </View>
+            <Feather name="check" size={16} color={colors.primary} />
+          </Surface>
+
+          <Text style={{ color: colors.onSurfaceVariant, fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 12, textAlign: "center", lineHeight: 16 }}>
+            This is a simulated payment. Actual payment will be processed via your selected method once launched.
+          </Text>
+
+          <View style={{ marginTop: 32, width: "100%" }}>
+            <Button
+              mode="contained"
+              buttonColor={colors.primary}
+              textColor={colors.onPrimary}
+              onPress={handleDone}
+              style={{ borderRadius: 14 }}
+              contentStyle={{ height: 52 }}
+              labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 16 }}
+            >
+              Done
+            </Button>
+          </View>
+        </ScrollView>
+      </Surface>
+    );
+  }
 
   return (
     <Surface style={[styles.container, { backgroundColor: colors.surface }]}>
