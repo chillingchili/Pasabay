@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
-import { Platform, StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT, type Region } from "react-native-maps";
+import Svg, { Path, Circle } from "react-native-svg";
 import { useColors } from "@/hooks/useColors";
 
 export interface MapPoint {
@@ -162,7 +163,7 @@ export function RealMap({
         initialRegion={DEFAULT_REGION}
         onRegionChangeComplete={handleRegionChangeComplete}
         onPress={onMapPress}
-        showsUserLocation={!!userLocation}
+        showsUserLocation={false}
         showsMyLocationButton={false}
         showsCompass={false}
         showsScale={false}
@@ -191,11 +192,8 @@ export function RealMap({
             coordinate={{ latitude: pickupPoint.lat, longitude: pickupPoint.lng }}
             title={pickupPoint.name ?? "Pickup"}
           >
-            <View style={styles.markerWithLabel}>
-              <Text style={styles.markerLabel}>{pickupPoint.name ?? "PICKUP"}</Text>
-              <View style={styles.pickupMarker}>
-                <View style={styles.pickupMarkerInner} />
-              </View>
+            <View style={styles.pickupMarker}>
+              <View style={styles.pickupMarkerInner} />
             </View>
           </Marker>
         )}
@@ -205,11 +203,8 @@ export function RealMap({
             coordinate={{ latitude: dropoffPoint.lat, longitude: dropoffPoint.lng }}
             title={dropoffPoint.name ?? "Dropoff"}
           >
-            <View style={styles.markerWithLabel}>
-              <Text style={styles.markerLabel}>{dropoffPoint.name ?? "DROPOFF"}</Text>
-              <View style={styles.dropoffMarker}>
-                <View style={styles.dropoffMarkerInner} />
-              </View>
+            <View style={styles.dropoffMarker}>
+              <View style={styles.dropoffMarkerInner} />
             </View>
           </Marker>
         )}
@@ -221,6 +216,25 @@ export function RealMap({
           >
             <View style={styles.driverMarker}>
               <View style={styles.driverMarkerInner} />
+            </View>
+          </Marker>
+        )}
+
+        {userLocation && (
+          <Marker
+            coordinate={{ latitude: userLocation.lat, longitude: userLocation.lng }}
+            anchor={{ x: 0.5, y: 1 }}
+          >
+            <View style={styles.userLocationPinContainer}>
+              <Svg width="28" height="38" viewBox="0 0 28 38">
+                <Path
+                  d="M14 0C6.3 0 0 6.3 0 14c0 10.5 14 24 14 24s14-13.5 14-24C28 6.3 21.7 0 14 0z"
+                  fill="#0D9E75"
+                  stroke="#fff"
+                  strokeWidth={2}
+                />
+                <Circle cx="14" cy="13" r="5" fill="#fff" />
+              </Svg>
             </View>
           </Marker>
         )}
@@ -278,22 +292,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#fff",
   },
-  markerWithLabel: {
+  userLocationPinContainer: {
+    width: 28,
+    height: 38,
     alignItems: "center",
-  },
-  markerLabel: {
-    backgroundColor: "#fff",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    fontSize: 11,
-    fontWeight: "600",
-    marginBottom: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 3,
-    overflow: "hidden",
+    justifyContent: "center",
   },
 });
