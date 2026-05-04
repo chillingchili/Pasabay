@@ -101,6 +101,12 @@ export default function PassengerHomeScreen() {
   }, [destination]);
 
   useEffect(() => {
+    if (!destination && !activeRide) {
+      setSheetContentHeight(0);
+    }
+  }, [destination, activeRide]);
+
+  useEffect(() => {
     if (!pickupPoint || !dropoffPoint) {
       setRoutePolyline(null);
       setFareEstimate(0);
@@ -410,7 +416,7 @@ export default function PassengerHomeScreen() {
               </View>
               <View style={styles.metaBlock}>
                 <Feather name="dollar-sign" size={12} color={colors.onSurfaceVariant} />
-                <Text style={[styles.metaText, { color: colors.onSurface }]}>₱{activeRide.passengers[0].total.toFixed(0)}</Text>
+                <Text style={[styles.metaText, { color: colors.onSurface }]}>₱{activeRide.passengers[0].total.toFixed(2)}</Text>
               </View>
             </View>
           </View>

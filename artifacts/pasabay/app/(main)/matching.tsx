@@ -187,7 +187,7 @@ export default function MatchingScreen() {
             <View style={styles.fareCardHeader}>
               <Text style={[styles.fareCardLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Estimated fare</Text>
               <View style={[styles.farePill, { backgroundColor: colors.accentBg }]}>
-                <Text style={[styles.farePillText, { color: colors.accentDark, fontFamily: "Sora_800ExtraBold" }]}>₱{fareEst.toFixed(0)}</Text>
+                <Text style={[styles.farePillText, { color: colors.accentDark, fontFamily: "Sora_800ExtraBold" }]}>₱{fareEst.toFixed(2)}</Text>
               </View>
             </View>
             <View style={styles.fareStats}>

@@ -451,6 +451,40 @@ export function registerSocketHandlers(io: Server) {
       }
     });
 
+    socket.on("ride:no_show", async (data: { rideId: string; passengerId: string }) => {
+      try {
+        const [ride] = await db.select().from(ridesTable).where(eq(ridesTable.id, data.rideId)).limit(1);
+        if (!ride || ride.driverId !== userId) return;
+
+        const [rp] = await db.select().from(ridePassengersTable)
+          .where(and(eq(ridePassengersTable.rideId, data.rideId), eq(ridePassengersTable.passengerId, data.passengerId)))
+          .limit(1);
+        if (!rp) return;
+
+        await db.update(ridePassengersTable)
+          .set({ status: "no_show" })
+          .where(eq(ridePassengersTable.id, rp.id));
+
+        const [route] = await db.select().from(activeRoutesTable)
+          .where(eq(activeRoutesTable.id, ride.routeId));
+        if (route) {
+          const seats = parseInt(route.availableSeats, 10);
+          await db.update(activeRoutesTable)
+            .set({ availableSeats: String(seats + 1), updatedAt: new Date() })
+            .where(eq(activeRoutesTable.id, ride.routeId));
+        }
+
+        io.to(`user:${data.passengerId}`).emit("ride:no_show", {
+          rideId: data.rideId,
+          message: "The driver has marked you as a no-show. Please request a new ride.",
+        });
+        socket.emit("ride:no_show_confirmed", { rideId: data.rideId, passengerId: data.passengerId });
+        logger.info({ rideId: data.rideId, driverId: userId, passengerId: data.passengerId }, "Passenger marked no-show");
+      } catch (err) {
+        logger.error({ err }, "ride:no_show error");
+      }
+    });
+
     socket.on("disconnect", async () => {
       // Clear timeouts for this user
       for (const [key, timeout] of matchTimeouts.entries()) {

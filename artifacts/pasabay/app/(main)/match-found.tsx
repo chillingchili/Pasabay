@@ -2,13 +2,13 @@ import React, { useEffect, useRef, useState } from "react";
 import { Alert, Animated, Image, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { useTheme } from "react-native-paper";
 import { Card, Button, Text, Surface, Chip } from "react-native-paper";
 import { useApp } from "@/context/AppContext";
 
 import { useScale } from "@/hooks/useScale";
-import { emitRideCancel, onRideCanceled } from "@/lib/socket";
+import { emitRideCancel, onRideCanceled, onNoShow } from "@/lib/socket";
 import { getWalkingRoute, haversineKm, getRoute } from "@/lib/osrm";
 import type { OSRMRoute } from "@/lib/osrm";
 import { useLocation } from "@/hooks/useLocation";
@@ -45,6 +45,7 @@ export default function MatchFoundScreen() {
   const [rideAccepted, setRideAccepted] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
   const [completionData, setCompletionData] = useState<{ rideId: string; fare: number; matchingFee: number; total: number; distanceKm: number; message: string } | null>(null);
+  const [rating, setRating] = useState(0);
 
   const [showChat, setShowChat] = useState(false);
   const drivingToDest = !!driverStartedTrip;
@@ -108,6 +109,20 @@ export default function MatchFoundScreen() {
       if (didCancelRef.current) return;
       didCancelRef.current = true;
       Alert.alert("Ride Canceled", data.reason ?? "The driver canceled this ride. Please request a new ride.");
+      clearMatchConfirmed();
+      clearActiveRide();
+      clearDriverArrived();
+      router.replace("/(main)/passenger-home");
+    });
+    return off;
+  }, []);
+
+  // Handle driver no-show marking
+  useEffect(() => {
+    const off = onNoShow((data) => {
+      if (didCancelRef.current) return;
+      didCancelRef.current = true;
+      Alert.alert("Marked as No-Show", data.message);
       clearMatchConfirmed();
       clearActiveRide();
       clearDriverArrived();
@@ -217,6 +232,27 @@ export default function MatchFoundScreen() {
               You arrived at {dropoffNameRef.current ?? "your destination"}
           </Text>
 
+          <View style={{ alignItems: "center", marginTop: 20 }}>
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}>
+              <Feather name="user" size={24} color={colors.onPrimary} />
+            </View>
+            <Text style={{ color: colors.onSurface, fontFamily: "Inter_600SemiBold", fontSize: 16, marginTop: 12, textAlign: "center" }}>
+              How was your ride with {driverNameRef.current ?? "your driver"}?
+            </Text>
+          </View>
+
+          <View style={{ flexDirection: "row", justifyContent: "center", gap: 10, marginTop: 12 }}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Pressable key={star} onPress={() => setRating(star)} hitSlop={8}>
+                <Ionicons
+                  name={star <= rating ? "star" : "star-outline"}
+                  size={36}
+                  color={star <= rating ? "#F5A623" : (colors.onSurfaceVariant as string)}
+                />
+              </Pressable>
+            ))}
+          </View>
+
           <Surface style={{ backgroundColor: colors.primary, borderRadius: 16, padding: 20, marginTop: 24, width: "100%", gap: 12 }}>
             <Text variant="titleSmall" style={{ color: colors.onPrimary, fontFamily: "Inter_600SemiBold" }}>Fare Summary</Text>
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
@@ -234,7 +270,7 @@ export default function MatchFoundScreen() {
             <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.2)" }} />
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
               <Text style={{ color: colors.onPrimary, fontSize: 16, fontFamily: "Inter_600SemiBold" }}>Total</Text>
-              <Text style={{ color: colors.onPrimary, fontSize: 18, fontFamily: "Sora_800ExtraBold" }}>₱{completionData.total.toFixed(0)}</Text>
+              <Text style={{ color: colors.onPrimary, fontSize: 18, fontFamily: "Sora_800ExtraBold" }}>₱{completionData.total.toFixed(2)}</Text>
             </View>
           </Surface>
 
@@ -494,7 +530,7 @@ export default function MatchFoundScreen() {
             <View style={[styles.fareBreakdownDivider, { borderBottomColor: "rgba(255,255,255,0.2)" }]} />
             <View style={styles.fareBreakdownRow}>
               <Text variant="labelLarge" style={{ color: colors.onPrimary, fontFamily: "Inter_600SemiBold" }}>Total</Text>
-              <Text variant="labelLarge" style={{ color: colors.onPrimary, fontFamily: "Sora_800ExtraBold" }}>₱{total.toFixed(0)}</Text>
+              <Text variant="labelLarge" style={{ color: colors.onPrimary, fontFamily: "Sora_800ExtraBold" }}>₱{total.toFixed(2)}</Text>
             </View>
             <Text variant="labelSmall" style={{ fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.6)", fontSize: 11, marginTop: 8, lineHeight: 14 }}>
               Fuel share based on distance, fuel price (₱65/L), and driver's vehicle efficiency. All rides comply with LTFRB cost-sharing guidelines.

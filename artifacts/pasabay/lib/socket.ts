@@ -252,3 +252,12 @@ export function onDriverError(cb: (data: { message: string }) => void) {
   socket?.on("driver:error", cb);
   return () => { socket?.off("driver:error", cb); };
 }
+
+export function emitNoShow(rideId: string, passengerId: string) {
+  socket?.emit("ride:no_show", { rideId, passengerId });
+}
+
+export function onNoShow(cb: (data: { rideId: string; message: string }) => void) {
+  socket?.on("ride:no_show", cb);
+  return () => { socket?.off("ride:no_show", cb); };
+}

@@ -33,7 +33,7 @@ export function calculatePassengerFare(input: PassengerFareInput): {
 
   const totalFuelCost = (totalRouteDistanceKm * fuelPricePhp) / fuelEfficiencyKmPerL;
   const fare = Math.round(passengerShare * totalFuelCost * 100) / 100;
-  const total = fare + MATCHING_FEE_PHP;
+  const total = Math.round((fare + MATCHING_FEE_PHP) * 100) / 100;
 
   return {
     fare,

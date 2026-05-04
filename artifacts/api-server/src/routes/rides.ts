@@ -204,8 +204,7 @@ router.post("/request", requireAuth, async (req, res) => {
     distanceKm: best.passengerDistKm,
     fare: best.fare,
     matchingFee: best.matchingFee,
-    total: best.fare + best.matchingFee,
-    pickupEtaMin: best.pickupEtaMin,
+    total: Math.round((best.fare + best.matchingFee) * 100) / 100,
   };
 
   try {
@@ -238,7 +237,7 @@ router.post("/request", requireAuth, async (req, res) => {
     distanceKm: best.passengerDistKm,
     fare: best.fare,
     matchingFee: best.matchingFee,
-    total: best.fare + best.matchingFee,
+    total: Math.round((best.fare + best.matchingFee) * 100) / 100,
     pickupEtaMin: best.pickupEtaMin,
   });
 });

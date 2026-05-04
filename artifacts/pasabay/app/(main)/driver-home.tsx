@@ -13,7 +13,7 @@ import type { RidePassenger } from "@/context/AppContext";
 import { useScale } from "@/hooks/useScale";
 import { emitDriverOnline, emitDriverOffline, emitDriverArrived, emitDriverStartedTrip, emitMatchAccept, emitMatchDecline,
   emitRideComplete, onDriverRouteSet, onDriverError,
-  onMatchAccepted, emitDriverLocation,
+  onMatchAccepted, emitDriverLocation, emitNoShow,
 } from "@/lib/socket";
 import { ChatSheet } from "@/components/ChatSheet";
 import type { MatchRequestPayload } from "@/lib/socket";
@@ -164,6 +164,7 @@ export default function DriverHomeScreen() {
                  activePassenger && activePassenger.status === 'onboard' ? activePassenger.dropoff : 
                  selectedDest;
     if (!userLoc || !dest) return;
+    setRoutePolyline(null);
     let cancelled = false;
     const fetch = async () => {
       const route = await getRoute(userLoc, dest);
@@ -307,6 +308,8 @@ export default function DriverHomeScreen() {
   };
 
   const handleNoShow = (passengerId: string) => {
+    const rideId = activeRide?.rideId;
+    if (rideId) emitNoShow(rideId, passengerId);
     updatePassengerStatus(passengerId, "completed");
     setPassengerTimers(prev => { const next = { ...prev }; delete next[passengerId]; return next; });
     const remaining = activeRide?.passengers.filter(p => p.passengerId !== passengerId && p.status !== "completed") ?? [];
@@ -457,7 +460,7 @@ export default function DriverHomeScreen() {
             </View>
             <View style={[styles.fareAdd, { backgroundColor: colors.tertiaryContainer }]}>
               <Text style={[styles.fareAddText, { color: colors.onTertiaryContainer, fontFamily: "Sora_800ExtraBold" }]}>
-                + ₱{pendingMatchRequest.total.toFixed(0)}
+                + ₱{pendingMatchRequest.total.toFixed(2)}
               </Text>
             </View>
           </View>
@@ -488,10 +491,10 @@ export default function DriverHomeScreen() {
       )}
 
       {(isOnline || activeCount > 0) && (
-        <View style={[styles.wazeNav, { backgroundColor: colors.primary, top: topPad + 4 }]}>
+        <View style={[styles.wazeNav, { backgroundColor: colors.primary, top: topPad - 4 }]}>
           <View style={styles.wazeNavBox}>
             <View style={[styles.wazeNavIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
-              <Feather name={WAZE_NAV_STEPS[navStep].icon} size={24} color="#fff" />
+              <Feather name={WAZE_NAV_STEPS[navStep].icon} size={20} color="#fff" />
             </View>
             <View style={styles.wazeNavText}>
               <Text style={styles.wazeNavDist}>{WAZE_NAV_STEPS[navStep].dist}</Text>
@@ -626,7 +629,7 @@ export default function DriverHomeScreen() {
                                   <Text style={{ fontSize: 11, color: colors.primary, fontFamily: "Inter_500Medium" }}>★{p.passengerRating.toFixed(1)}</Text>
                                 </View>
                                 <Text style={[styles.passengerCardRoute, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]} numberOfLines={1}>
-                                  {p.pickup.name} → {p.dropoff.name} · ₱{p.total.toFixed(0)}
+                                  {p.pickup.name} → {p.dropoff.name} · ₱{p.total.toFixed(2)}
                                 </Text>
                               </View>
                               <View style={[styles.statusBadge, { backgroundColor: statusColor + "20" }]}>
@@ -854,9 +857,9 @@ const styles = StyleSheet.create({
     left: 12,
     right: 12,
     zIndex: 50,
-    borderRadius: 14,
-    padding: 14,
-    gap: 10,
+    borderRadius: 12,
+    padding: 10,
+    gap: 6,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -868,12 +871,12 @@ const styles = StyleSheet.create({
   wazeNavBox: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: 10,
   },
   wazeNavIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -881,13 +884,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   wazeNavDist: {
-    fontSize: 26,
+    fontSize: 20,
     color: "#fff",
     fontFamily: "Sora_800ExtraBold",
     letterSpacing: -0.5,
   },
   wazeNavInst: {
-    fontSize: 14,
+    fontSize: 12,
     color: "rgba(255,255,255,0.85)",
     fontFamily: "Inter_600SemiBold",
   },

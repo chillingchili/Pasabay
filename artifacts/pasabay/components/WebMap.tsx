@@ -76,6 +76,7 @@ export function WebMap({
   fitRouteKey,
   recenterKey,
   initialRegion,
+  heading,
   onUserDrag,
 }: WebMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
