@@ -72,7 +72,23 @@ export default function ProfileScreen() {
             </Text>
             <Text style={[styles.roleLabel, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>Current role</Text>
           </View>
-          {activeRole === "passenger" && !isRegisteredDriver && (
+          {activeRole === "driver" ? (
+            <Pressable
+              style={[styles.roleSwitchBtn, { backgroundColor: colors.accentBg }]}
+              onPress={() => { switchRole("passenger"); router.replace("/(main)/passenger-home"); }}
+            >
+              <Feather name="refresh-cw" size={12} color={colors.accentDark} />
+              <Text style={[styles.roleSwitchText, { color: colors.accentDark, fontFamily: "Inter_500Medium" }]}>Switch to Passenger</Text>
+            </Pressable>
+          ) : activeRole === "passenger" && isRegisteredDriver ? (
+            <Pressable
+              style={[styles.roleSwitchBtn, { backgroundColor: colors.accentBg }]}
+              onPress={() => { switchRole("driver"); router.replace("/(main)/driver-home"); }}
+            >
+              <Feather name="refresh-cw" size={12} color={colors.accentDark} />
+              <Text style={[styles.roleSwitchText, { color: colors.accentDark, fontFamily: "Inter_500Medium" }]}>Switch to Driver</Text>
+            </Pressable>
+          ) : (
             <Pressable
               style={[styles.roleSwitchBtn, { backgroundColor: colors.accentBg }]}
               onPress={() => router.push("/vehicle-details")}

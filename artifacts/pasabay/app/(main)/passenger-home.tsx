@@ -284,7 +284,7 @@ export default function PassengerHomeScreen() {
         >
           <View style={[styles.glassOverlay, { backgroundColor: colors.primary }]} pointerEvents="none" />
           <View style={styles.sheetInner}>
-            <View style={styles.routeStack}>
+            <View style={[styles.routeStack, { marginBottom: 10 }]}>
               <View style={styles.routeRow}>
                 <View style={styles.routeDotsColumn}>
                   <View style={[styles.routeDot, { backgroundColor: colors.tertiary }]} />
@@ -303,16 +303,11 @@ export default function PassengerHomeScreen() {
                     <Text style={[styles.infoValue, { color: colors.onSurface }]}>{destination}</Text>
                   </View>
                 </View>
-                <View style={[styles.fareChip, { backgroundColor: colors.tertiaryContainer }]}>
-                  <Text style={[styles.fareLabel, { color: colors.onTertiaryContainer }]}>{activeRide ? "fare" : "est"}</Text>
-                  <Text style={[styles.fareAmount, { color: colors.onTertiaryContainer }]}>₱{totalFare}</Text>
-                </View>
               </View>
             </View>
 
-            <View style={styles.bentoGrid}>
+            <View style={[styles.bentoGrid, { marginBottom: 10 }]}>
               <Surface style={[styles.bentoBox, styles.bentoBoxFare, { backgroundColor: colors.tertiaryContainer }]}>
-                <Feather name="dollar-sign" size={20} color={colors.onTertiaryContainer} />
                 <Text style={[styles.bentoValue, { color: colors.onTertiaryContainer, fontFamily: "Sora_800ExtraBold" }]}>
                   ₱{totalFare.toFixed(2)}
                 </Text>
@@ -367,7 +362,7 @@ export default function PassengerHomeScreen() {
               </>
             )}
 
-            <Animated.View style={{ transform: [{ scale: ctaScale }] }}>
+            <Animated.View style={{ transform: [{ scale: ctaScale }], marginTop: 10 }}>
               <Button
                 mode="contained"
                 buttonColor={colors.primary}
@@ -446,9 +441,6 @@ const styles = StyleSheet.create({
   suggestions: { borderRadius: 12, overflow: "hidden", zIndex: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 5 },
   suggestionItem: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#f5f5f5" },
   suggestionText: { fontSize: 14 },
-  fareChip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  fareLabel: { fontSize: 10 },
-  fareAmount: { fontSize: 14 },
   sheetOuter: { position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 5, borderTopLeftRadius: 20, borderTopRightRadius: 20, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 10 },
   glassOverlay: {
     position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
@@ -470,9 +462,9 @@ const styles = StyleSheet.create({
   routeMeta: { flexDirection: "row", gap: 20, paddingLeft: 46 },
   metaBlock: { flexDirection: "row", alignItems: "center", gap: 4 },
   metaText: { fontSize: 13, fontFamily: "Inter_500Medium" },
-  bentoGrid: { flexDirection: "row", gap: 10, paddingLeft: 0 },
+  bentoGrid: { flexDirection: "row", gap: 10, paddingLeft: 0, alignItems: "stretch" },
   bentoBox: { flex: 1, borderRadius: 16, padding: 16, alignItems: "center", gap: 6 },
-  bentoBoxFare: { flex: 1.5 },
+  bentoBoxFare: { flex: 1.5, justifyContent: "center" },
   bentoBoxSmall: { flex: 1 },
   bentoSubRow: { flex: 1, flexDirection: "column", gap: 10 },
   bentoValue: { fontSize: 18 },

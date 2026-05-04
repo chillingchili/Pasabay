@@ -361,16 +361,6 @@ export default function DriverHomeScreen() {
       )}
 
       <View style={[styles.topBar, { paddingTop: topPad - 4 }]}>
-        <View style={styles.greetingRow}>
-          <Pressable
-            style={[styles.roleSwitchBtn, { backgroundColor: colors.primary }]}
-            onPress={() => { switchRole("passenger"); router.replace("/(main)/passenger-home"); }}
-          >
-            <Feather name="refresh-cw" size={12} color="#fff" />
-            <Text style={[styles.roleSwitchText, { fontFamily: "Inter_500Medium" }]}>Switch to Passenger</Text>
-          </Pressable>
-        </View>
-
         <View style={[styles.destBar, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
           <View style={[styles.destDot, { backgroundColor: colors.primary }]} />
           <TextInput
@@ -704,9 +694,7 @@ export default function DriverHomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   topBar: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, paddingHorizontal: 16, gap: 8 },
-  greetingRow: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center", marginBottom: 2 },
-  roleSwitchBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  roleSwitchText: { fontSize: 12, color: "#fff", textShadowColor: "rgba(0,0,0,0.75)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
+
   destBar: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 10, paddingLeft: 16, gap: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   destDot: { width: 8, height: 8, borderRadius: 4 },
   destInput: { flex: 1, fontSize: 14, minHeight: 34 },
