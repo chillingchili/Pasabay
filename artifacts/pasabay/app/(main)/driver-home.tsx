@@ -359,8 +359,8 @@ export default function DriverHomeScreen() {
     }, 7000);
     return () => clearInterval(timer);
   }, [activeCount]);
+  const estEarnings = routeInfo ? `₱${Math.round(routeInfo.distanceKm * 8)}` : null;
   const etaMin = (selectedDest || activePassenger) ? (routeInfo?.durationMin ?? 18) : null;
-  const fuelEst = routeInfo ? `₱${Math.max(Math.round(routeInfo.distanceKm * 60 / 10 / 10) * 10, 20)}` : null;
 
   return (
     <View style={styles.container}>
@@ -404,8 +404,11 @@ export default function DriverHomeScreen() {
             placeholder="Set destination..."
             placeholderTextColor={colors.onSurfaceDisabled}
           />
-          <Pressable style={[styles.searchBtn, { backgroundColor: colors.primary }]}>
-            <Feather name="search" size={16} color="#fff" />
+          <Pressable
+            style={[styles.searchBtn, { backgroundColor: selectedDest ? colors.error : colors.primary }]}
+            onPress={selectedDest ? () => { setSelectedDest(null); setDestQuery(""); setRoutePolyline(null); setRouteInfo(null); } : undefined}
+          >
+            <Feather name={selectedDest ? "x" : "search"} size={16} color="#fff" />
           </Pressable>
         </View>
 
@@ -523,18 +526,27 @@ export default function DriverHomeScreen() {
         <View style={[styles.infoBar, { backgroundColor: "rgba(255,255,255,0.97)", paddingBottom: Math.max(insets.bottom + 8, 16) + 64 }]} onLayout={(e) => setInfoBarHeight(e.nativeEvent.layout.height)}>
           {!isOnline && selectedDest ? (
             <>
-              <View style={styles.routeMeta}>
-                <View style={styles.metaBlock}>
-                  <Feather name="clock" size={12} color={colors.onSurfaceVariant} />
-                  <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>{etaMin != null ? `${etaMin} min` : "—"}</Text>
+              <View style={styles.wazeBentoRow}>
+                <View style={[styles.wazeBentoBox, { backgroundColor: colors.tertiaryContainer }]}>
+                  <Feather name="clock" size={16} color={colors.onTertiaryContainer} />
+                  <Text style={[styles.wazeBentoValue, { color: colors.onTertiaryContainer, fontFamily: "Sora_800ExtraBold" }]}>
+                    {etaMin != null ? `${etaMin}` : "—"}
+                  </Text>
+                  <Text style={[styles.wazeBentoLabel, { color: colors.onTertiaryContainer }]}>min</Text>
                 </View>
-                <View style={styles.metaBlock}>
-                  <Feather name="maximize" size={12} color={colors.onSurfaceVariant} />
-                  <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>{routeInfo ? `${routeInfo.distanceKm.toFixed(1)} km` : "—"}</Text>
+                <View style={[styles.wazeBentoBox, { backgroundColor: colors.surfaceVariant }]}>
+                  <Feather name="maximize" size={16} color={colors.onSurfaceVariant} />
+                  <Text style={[styles.wazeBentoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>
+                    {routeInfo ? `${routeInfo.distanceKm.toFixed(1)}` : "—"}
+                  </Text>
+                  <Text style={[styles.wazeBentoLabel, { color: colors.onSurfaceVariant }]}>km</Text>
                 </View>
-                <View style={styles.metaBlock}>
-                  <Feather name="droplet" size={12} color={colors.onSurfaceVariant} />
-                  <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>{fuelEst ?? "—"}</Text>
+                <View style={[styles.wazeBentoBox, { backgroundColor: colors.primaryContainer }]}>
+                  <Feather name="trending-up" size={16} color={colors.primary} />
+                  <Text style={[styles.wazeBentoValue, { color: colors.primary, fontFamily: "Sora_800ExtraBold" }]}>
+                    {estEarnings ?? "—"}
+                  </Text>
+                  <Text style={[styles.wazeBentoLabel, { color: colors.primary }]}>Est. Earnings</Text>
                 </View>
               </View>
               <Button

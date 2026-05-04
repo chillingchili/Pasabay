@@ -110,7 +110,7 @@ export function WebMap({
       : DEFAULT_ZOOM;
 
     const map = L.map(containerRef.current, { zoomControl: false }).setView(center, zoom);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png", {
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
     }).addTo(map);
 
@@ -166,6 +166,22 @@ export function WebMap({
       className: "",
       iconSize: [size, size],
       iconAnchor: [size / 2, size * 0.85],
+    });
+    const marker = L.marker([lat, lng], { icon }).addTo(mapRef.current);
+    markersRef.current.push(marker);
+  }
+
+  function addPassengerMarker(L: any, lat: number, lng: number) {
+    const svg = `
+      <svg width="28" height="36" viewBox="0 0 28 36">
+        <circle cx="14" cy="10" r="6" fill="#0D9E75" stroke="#fff" stroke-width="1.5"/>
+        <path d="M5 30 Q14 34 23 30 L21 20 Q14 17 7 20 Z" fill="#0D9E75" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>`;
+    const icon = L.divIcon({
+      html: svg,
+      className: "",
+      iconSize: [28, 36],
+      iconAnchor: [14, 36],
     });
     const marker = L.marker([lat, lng], { icon }).addTo(mapRef.current);
     markersRef.current.push(marker);
@@ -236,6 +252,17 @@ export function WebMap({
       }).addTo(mapRef.current);
     }
   }, [loaded, userLocation, pickupPoint, dropoffPoint, driverLocation, routePolyline, showRoute]);
+
+  // Render passenger markers separately (not on every marker clear cycle)
+  useEffect(() => {
+    if (!mapRef.current || !loaded || !showRoute) return;
+    const L = (window as any).L;
+    if (!routePolyline || routePolyline.length < 2) return;
+    const step = Math.max(1, Math.floor(routePolyline.length / 5));
+    for (let i = step; i < routePolyline.length - 1; i += step) {
+      addPassengerMarker(L, routePolyline[i].lat, routePolyline[i].lng);
+    }
+  }, [loaded, routePolyline, showRoute]);
 
   // Fit map to show route when fitRouteKey changes
   useEffect(() => {
