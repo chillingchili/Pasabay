@@ -21,7 +21,6 @@ interface WebMapProps {
   onMapPress?: (event: any) => void;
   onUserDrag?: () => void;
   style?: object;
-  bottomInset?: number;
   heading?: number;
 }
 
@@ -78,8 +77,6 @@ export function WebMap({
   recenterKey,
   initialRegion,
   onUserDrag,
-  bottomInset,
-  heading,
 }: WebMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -194,17 +191,15 @@ export function WebMap({
     }
   }
 
-  // Fit bounds helper with bottom-third offset padding
   function fitWithOffset(points: MapPoint[]) {
     if (!mapRef.current || points.length < 2) return;
     const L = (window as any).L;
     const lats = points.map((p) => p.lat);
     const lngs = points.map((p) => p.lng);
     const bounds = L.latLngBounds(lats.map((lat, i) => [lat, lngs[i]]));
-    const h = containerRef.current?.offsetHeight ?? 600;
     mapRef.current.fitBounds(bounds, {
-      paddingTopLeft: [50, h * 0.3],
-      paddingBottomRight: [50, 50 + (bottomInset ?? 0)],
+      paddingTopLeft: [50, 100],
+      paddingBottomRight: [50, 50],
     });
   }
 

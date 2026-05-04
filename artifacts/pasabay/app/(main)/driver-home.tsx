@@ -41,7 +41,6 @@ export default function DriverHomeScreen() {
   const [showRecenter, setShowRecenter] = useState(false);
   const [infoBarHeight, setInfoBarHeight] = useState(0);
   const [driverError, setDriverError] = useState<string | null>(null);
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [selectedPassengerIndex, setSelectedPassengerIndex] = useState(0);
   const [passengerTimers, setPassengerTimers] = useState<Record<string, number>>({});
   const [matchRequestTimer, setMatchRequestTimer] = useState(60);
@@ -322,10 +321,6 @@ export default function DriverHomeScreen() {
     setPassengerTimers({});
   };
 
-  const handleCancelTrip = () => {
-    setShowCancelConfirm(true);
-  };
-
   const handleConfirmCancel = () => {
     emitDriverOffline();
     setIsOnline(false);
@@ -335,14 +330,9 @@ export default function DriverHomeScreen() {
     setDestQuery("");
     setDriverError(null);
     setDriverError(null);
-    setShowCancelConfirm(false);
     setInfoBarHeight(0);
     clearActiveRide();
     setPassengerTimers({});
-  };
-
-  const handleDismissCancel = () => {
-    setShowCancelConfirm(false);
   };
 
   const activePassenger = activeRide?.passengers?.[selectedPassengerIndex] ?? null;
@@ -507,7 +497,7 @@ export default function DriverHomeScreen() {
               <Text style={styles.wazeNavDist}>{WAZE_NAV_STEPS[navStep].dist}</Text>
               <Text style={styles.wazeNavInst} numberOfLines={1}>{WAZE_NAV_STEPS[navStep].text}</Text>
             </View>
-            <Pressable onPress={handleCancelTrip} hitSlop={8} style={styles.wazeNavClose}>
+            <Pressable onPress={handleConfirmCancel} hitSlop={8} style={styles.wazeNavClose}>
               <Feather name="x" size={20} color="#fff" />
             </Pressable>
           </View>
@@ -698,7 +688,7 @@ export default function DriverHomeScreen() {
                       })}
                     </View>
                   ) : (
-                    <Pressable style={[styles.cancelBtnSmall, { borderColor: colors.error }]} onPress={handleCancelTrip}>
+                    <Pressable style={[styles.cancelBtnSmall, { borderColor: colors.error }]} onPress={handleConfirmCancel}>
                       <Feather name="x" size={14} color={colors.error} />
                       <Text style={[styles.cancelBtnText, { color: colors.error }]}>End Route</Text>
                     </Pressable>
