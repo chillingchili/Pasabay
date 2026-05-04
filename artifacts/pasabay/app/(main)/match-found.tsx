@@ -49,6 +49,18 @@ export default function MatchFoundScreen() {
   const [showChat, setShowChat] = useState(false);
   const drivingToDest = !!driverStartedTrip;
 
+  const dropoffNameRef = useRef<string | null>(null);
+  const driverNameRef = useRef<string | null>(null);
+  const pickupNameRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (matchConfirmed) {
+      dropoffNameRef.current = matchConfirmed.dropoff?.name ?? null;
+      driverNameRef.current = matchConfirmed.driver?.name ?? null;
+      pickupNameRef.current = matchConfirmed.pickup?.name ?? null;
+    }
+  }, [matchConfirmed]);
+
   useEffect(() => { setMapFitKey(k => k + 1); }, []);
 
   const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
@@ -76,13 +88,13 @@ export default function MatchFoundScreen() {
     if (completedRide && !showCompletion) {
       addRideHistory({
         id: completedRide.rideId,
-        route: `${matchConfirmed?.pickup.name ?? "–"} → ${matchConfirmed?.dropoff.name ?? "–"}`,
-        from: matchConfirmed?.pickup.name ?? "–",
-        to: matchConfirmed?.dropoff.name ?? "–",
+        route: `${pickupNameRef.current ?? "–"} → ${dropoffNameRef.current ?? "–"}`,
+        from: pickupNameRef.current ?? "–",
+        to: dropoffNameRef.current ?? "–",
         date: `Today, ${new Date().toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" })}`,
         fare: completedRide.total,
         status: "completed",
-        withName: matchConfirmed?.driver.name,
+        withName: driverNameRef.current ?? undefined,
       });
       setCompletionData(completedRide);
       setShowCompletion(true);
@@ -202,7 +214,7 @@ export default function MatchFoundScreen() {
           <Feather name="check-circle" size={56} color={colors.primary} />
           <Text variant="headlineSmall" style={{ color: colors.onSurface, fontFamily: "Sora_800ExtraBold", marginTop: 16, textAlign: "center" }}>Ride Complete!</Text>
           <Text variant="bodyMedium" style={{ color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular", marginTop: 4, textAlign: "center" }}>
-            You arrived at {matchConfirmed?.dropoff?.name ?? "your destination"}
+              You arrived at {dropoffNameRef.current ?? "your destination"}
           </Text>
 
           <Surface style={{ backgroundColor: colors.primary, borderRadius: 16, padding: 20, marginTop: 24, width: "100%", gap: 12 }}>

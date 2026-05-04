@@ -245,6 +245,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
       const offRideCompleted = onRideCompleted((data) => {
         setCompletedRide(data);
+        setMatchConfirmed(null);
+        setActiveRide(null);
+        setDriverLocation(null);
+        setDriverArrivedState(null);
+        setDriverStartedTrip(null);
       });
       const offRideCanceled = onRideCanceled(() => {
         setMatchConfirmed(null);
