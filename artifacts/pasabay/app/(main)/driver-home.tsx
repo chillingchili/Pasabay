@@ -600,7 +600,7 @@ export default function DriverHomeScreen() {
                     </View>
                     <View style={styles.metaBlock}>
                       <Feather name="droplet" size={12} color={colors.onSurfaceVariant} />
-                      <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>{fuelEst ?? "—"}</Text>
+                      <Text style={[styles.metaText, { color: colors.onSurface, fontFamily: "Inter_500Medium" }]}>{estEarnings ?? "—"}</Text>
                     </View>
                   </View>
                   {!showCancelConfirm && (
