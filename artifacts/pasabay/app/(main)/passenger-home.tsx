@@ -303,17 +303,29 @@ export default function PassengerHomeScreen() {
           style={[styles.sheetOuter, { paddingBottom: Math.max(insets.bottom + 16, 24) + 60, backgroundColor: "rgba(255,255,255,0.97)" }]}
         >
           <View style={styles.sheetInner}>
-            <View style={styles.routeRow}>
-              <View style={[styles.routeIcon, { backgroundColor: colors.primaryContainer }]}>
-                <Feather name="map-pin" size={16} color={colors.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant }]}>Drop-off</Text>
-                <Text style={[styles.infoValue, { color: colors.onSurface }]}>{destination}</Text>
-              </View>
-              <View style={[styles.fareChip, { backgroundColor: colors.tertiaryContainer }]}>
-                <Text style={[styles.fareLabel, { color: colors.onTertiaryContainer }]}>{activeRide ? "fare" : "est"}</Text>
-                <Text style={[styles.fareAmount, { color: colors.onTertiaryContainer }]}>₱{totalFare}</Text>
+            <View style={styles.routeStack}>
+              <View style={styles.routeRow}>
+                <View style={styles.routeDotsColumn}>
+                  <View style={[styles.routeDot, { backgroundColor: colors.tertiary }]} />
+                  <View style={[styles.routeDash, { borderColor: colors.outlineVariant }]} />
+                  <View style={[styles.routeDot, { backgroundColor: colors.primary, width: 10, height: 10 }]} />
+                </View>
+                <View style={styles.routeRowContent}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant }]}>Pickup</Text>
+                    <Text style={[styles.infoValue, { color: colors.onSurface }]}>
+                      {pickupPoint?.name ?? "Your location"}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.infoLabel, { color: colors.onSurfaceVariant }]}>Drop-off</Text>
+                    <Text style={[styles.infoValue, { color: colors.onSurface }]}>{destination}</Text>
+                  </View>
+                </View>
+                <View style={[styles.fareChip, { backgroundColor: colors.tertiaryContainer }]}>
+                  <Text style={[styles.fareLabel, { color: colors.onTertiaryContainer }]}>{activeRide ? "fare" : "est"}</Text>
+                  <Text style={[styles.fareAmount, { color: colors.onTertiaryContainer }]}>₱{totalFare}</Text>
+                </View>
               </View>
             </View>
 
@@ -437,6 +449,11 @@ const styles = StyleSheet.create({
   infoLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
   infoValue: { fontSize: 16, fontFamily: "Inter_600SemiBold" },
   routeRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  routeStack: { gap: 0 },
+  routeDotsColumn: { width: 24, alignItems: "center", alignSelf: "stretch" },
+  routeDot: { width: 10, height: 10, borderRadius: 5 },
+  routeDash: { flex: 1, width: 0, borderLeftWidth: 2, borderStyle: "dashed", marginVertical: 4 },
+  routeRowContent: { flex: 1, gap: 4 },
   routeIcon: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   routeMeta: { flexDirection: "row", gap: 20, paddingLeft: 46 },
   metaBlock: { flexDirection: "row", alignItems: "center", gap: 4 },
