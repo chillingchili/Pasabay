@@ -171,22 +171,6 @@ export function WebMap({
     markersRef.current.push(marker);
   }
 
-  function addPassengerMarker(L: any, lat: number, lng: number) {
-    const svg = `
-      <svg width="28" height="36" viewBox="0 0 28 36">
-        <circle cx="14" cy="10" r="6" fill="#0D9E75" stroke="#fff" stroke-width="1.5"/>
-        <path d="M5 30 Q14 34 23 30 L21 20 Q14 17 7 20 Z" fill="#0D9E75" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/>
-      </svg>`;
-    const icon = L.divIcon({
-      html: svg,
-      className: "",
-      iconSize: [28, 36],
-      iconAnchor: [14, 36],
-    });
-    const marker = L.marker([lat, lng], { icon }).addTo(mapRef.current);
-    markersRef.current.push(marker);
-  }
-
   function addMarker(L: any, lat: number, lng: number, color: string, size: number, inner: number, label?: string) {
     const icon = L.divIcon({
       html: `<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:${size}px;height:${size}px;border-radius:50%;background:${color}33;display:flex;align-items:center;justify-content:center"><div style="width:${inner}px;height:${inner}px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.3)"></div></div>${label ? `<span style="font-size:10px;font-weight:600;color:#fff;background:${color};padding:1px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.2)">${label}</span>` : ''}</div>`,
@@ -252,17 +236,6 @@ export function WebMap({
       }).addTo(mapRef.current);
     }
   }, [loaded, userLocation, pickupPoint, dropoffPoint, driverLocation, routePolyline, showRoute]);
-
-  // Render passenger markers separately (not on every marker clear cycle)
-  useEffect(() => {
-    if (!mapRef.current || !loaded || !showRoute) return;
-    const L = (window as any).L;
-    if (!routePolyline || routePolyline.length < 2) return;
-    const step = Math.max(1, Math.floor(routePolyline.length / 5));
-    for (let i = step; i < routePolyline.length - 1; i += step) {
-      addPassengerMarker(L, routePolyline[i].lat, routePolyline[i].lng);
-    }
-  }, [loaded, routePolyline, showRoute]);
 
   // Fit map to show route when fitRouteKey changes
   useEffect(() => {
