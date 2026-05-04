@@ -86,7 +86,6 @@ export function WebMap({
   const markersRef = useRef<any[]>([]);
   const polylineBgRef = useRef<any>(null);
   const polylineFgRef = useRef<any>(null);
-  const tiltStyleRef = useRef<HTMLStyleElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const userDraggedRef = useRef(false);
@@ -99,24 +98,6 @@ export function WebMap({
       .then(() => setLoaded(true))
       .catch((err) => setError(err.message));
   }, []);
-
-  // Inject Waze-style 3D tilt CSS
-  useEffect(() => {
-    if (!loaded || tiltStyleRef.current) return;
-    const style = document.createElement("style");
-    style.textContent = `
-      .leaflet-container {
-        perspective: 600px;
-      }
-      .leaflet-map-pane {
-        transform: rotateX(35deg) !important;
-        transform-origin: bottom center !important;
-      }
-    `;
-    document.head.appendChild(style);
-    tiltStyleRef.current = style;
-    return () => { style.remove(); tiltStyleRef.current = null; };
-  }, [loaded]);
 
   useEffect(() => {
     if (!loaded || !containerRef.current || mapRef.current) return;
@@ -313,11 +294,12 @@ export function WebMap({
     setTimeout(offsetMapForBottomThird, 100);
   }, [loaded, recenterKey]);
 
-  // Offset map when userLocation updates during active navigation
+  // Offset map when userLocation updates during active navigation — only if not dragged
   useEffect(() => {
     if (!mapRef.current || !loaded || !userLocation || userDraggedRef.current) return;
     offsetMapForBottomThird();
-  }, [loaded, userLocation?.lat, userLocation?.lng]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, fitRouteKey]);
 
   if (error) {
     return (
