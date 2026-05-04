@@ -34,11 +34,10 @@ const DEFAULT_REGION: Region = {
   longitudeDelta: 0.02,
 };
 
-/** Fit map to show all given points, accounting for bottom sheet overlay */
+/** Fit map to show all given points */
 function fitMapToPoints(
   mapRef: React.MutableRefObject<any>,
   points: MapPoint[],
-  bottomInset: number = 0,
 ) {
   if (points.length === 0) return;
   if (points.length === 1) {
@@ -49,12 +48,7 @@ function fitMapToPoints(
     return;
   }
   const coords = points.map((p) => ({ latitude: p.lat, longitude: p.lng }));
-  const edgePadding = {
-    top: 50,
-    right: 50,
-    bottom: bottomInset + 50,
-    left: 50,
-  };
+  const edgePadding = { top: 50, right: 50, bottom: 50, left: 50 };
   mapRef.current?.fitToCoordinates(coords, { edgePadding, animated: true });
 }
 
@@ -105,7 +99,7 @@ export function RealMap({
     if (points.length === 0) return;
 
     isAnimating.current = true;
-    fitMapToPoints(mapRef, points, bottomInset ?? 0);
+    fitMapToPoints(mapRef, points);
     setTimeout(() => { isAnimating.current = false; }, 600);
   }, [fitRouteKey]);
 
@@ -121,7 +115,7 @@ export function RealMap({
     if (dropoffPoint) allPoints.push(dropoffPoint);
 
     isAnimating.current = true;
-    fitMapToPoints(mapRef, allPoints, bottomInset ?? 0);
+    fitMapToPoints(mapRef, allPoints);
     setTimeout(() => { isAnimating.current = false; }, 600);
   }, [routePolyline, pickupPoint, dropoffPoint, fitRouteKey]);
 
@@ -137,7 +131,7 @@ export function RealMap({
 
     isAnimating.current = true;
     if (routePoints.length >= 2) {
-      fitMapToPoints(mapRef, routePoints, bottomInset ?? 0);
+      fitMapToPoints(mapRef, routePoints);
     } else if (userLocation) {
       mapRef.current?.animateToRegion(
         { latitude: userLocation.lat, longitude: userLocation.lng, latitudeDelta: 0.015, longitudeDelta: 0.015 },

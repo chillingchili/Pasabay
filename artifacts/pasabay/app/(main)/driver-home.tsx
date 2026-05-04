@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Animated, Platform, Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
+import { Feather, FontAwesome } from "@expo/vector-icons";
 import { RealMap } from "@/components/RealMap";
 import LoadingOverlay from "@/components/LoadingOverlay";
 import { useTheme } from "react-native-paper";
@@ -568,8 +568,11 @@ export default function DriverHomeScreen() {
             </>
           ) : (isOnline || hasActiveRide) ? (
             <>
-              <View style={styles.dragHandle}>
-                <View style={[styles.dragHandleBar, { backgroundColor: colors.outlineVariant }]} />
+              <View style={styles.destIndicator}>
+                <Feather name="map-pin" size={12} color={colors.primary} />
+                <Text style={[styles.destIndicatorText, { color: colors.onSurfaceVariant, fontFamily: "Inter_500Medium" }]} numberOfLines={1}>
+                  Heading to {selectedDest?.name ?? "Destination"}
+                </Text>
               </View>
               <Pressable onPress={() => setShowPassengerList(v => !v)} style={{ gap: 10 }}>
                 <View style={styles.wazeBentoRow}>
@@ -588,7 +591,7 @@ export default function DriverHomeScreen() {
                     <Text style={[styles.wazeBentoLabel, { color: colors.onSurfaceVariant }]}>km</Text>
                   </View>
                   <View style={[styles.wazeBentoBox, { backgroundColor: colors.surfaceVariant }]}>
-                    <Feather name="users" size={16} color={colors.onSurfaceVariant} />
+                    <FontAwesome name="users" size={14} color={colors.onSurfaceVariant} />
                     <Text style={[styles.wazeBentoValue, { color: colors.onSurface, fontFamily: "Sora_800ExtraBold" }]}>
                       {activeCount}
                     </Text>
@@ -933,13 +936,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: "Inter_400Regular",
   },
-  dragHandle: {
+  destIndicator: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 8,
+    gap: 6,
   },
-  dragHandleBar: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
+  destIndicatorText: {
+    fontSize: 12,
   },
 });
