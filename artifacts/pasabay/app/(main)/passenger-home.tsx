@@ -329,14 +329,29 @@ export default function PassengerHomeScreen() {
               </View>
             </View>
 
-            <View style={styles.routeMeta}>
-              <View style={styles.metaBlock}>
-                <Feather name="maximize" size={12} color={colors.onSurfaceVariant} />
-                <Text style={[styles.metaText, { color: colors.onSurface }]}>{distanceKm.toFixed(1)} km</Text>
-              </View>
-              <View style={styles.metaBlock}>
-                <Feather name="clock" size={12} color={colors.onSurfaceVariant} />
-                <Text style={[styles.metaText, { color: colors.onSurface }]}>{etaMin} min</Text>
+            <View style={styles.bentoGrid}>
+              <Surface style={[styles.bentoBox, styles.bentoBoxFare, { backgroundColor: colors.tertiaryContainer }]}>
+                <Feather name="dollar-sign" size={20} color={colors.onTertiaryContainer} />
+                <Text style={[styles.bentoValue, { color: colors.onTertiaryContainer, fontFamily: "Sora_800ExtraBold" }]}>
+                  ₱{totalFare.toFixed(2)}
+                </Text>
+                <Text style={[styles.bentoLabel, { color: colors.onTertiaryContainer }]}>Est. Fare</Text>
+              </Surface>
+              <View style={styles.bentoSubRow}>
+                <Surface style={[styles.bentoBox, styles.bentoBoxSmall, { backgroundColor: colors.surfaceVariant }]}>
+                  <Feather name="maximize" size={16} color={colors.onSurfaceVariant} />
+                  <Text style={[styles.bentoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>
+                    {distanceKm.toFixed(1)} km
+                  </Text>
+                  <Text style={[styles.bentoLabel, { color: colors.onSurfaceVariant }]}>Distance</Text>
+                </Surface>
+                <Surface style={[styles.bentoBox, styles.bentoBoxSmall, { backgroundColor: colors.surfaceVariant }]}>
+                  <Feather name="clock" size={16} color={colors.onSurfaceVariant} />
+                  <Text style={[styles.bentoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>
+                    {etaMin} min
+                  </Text>
+                  <Text style={[styles.bentoLabel, { color: colors.onSurfaceVariant }]}>ETA</Text>
+                </Surface>
               </View>
             </View>
 
@@ -351,8 +366,13 @@ export default function PassengerHomeScreen() {
               <>
                 <View style={[styles.fareDivider, { backgroundColor: colors.outline }]} />
                 <Text style={[styles.fareTitle, { color: colors.onSurfaceVariant, fontFamily: "Inter_600SemiBold" }]}>Estimated fare</Text>
+                <View style={[styles.formulaPill, { backgroundColor: colors.surfaceVariant }]}>
+                  <Text style={[styles.formulaText, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>
+                    {distanceKm.toFixed(1)}km × ₱{FUEL_PRICE}/L ÷ {eff}km/L
+                  </Text>
+                </View>
                 <View style={styles.fareRow}>
-                  <Text style={[styles.fareRowLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>Fuel ({distanceKm.toFixed(1)}km × ₱{FUEL_PRICE}/L ÷ {eff}km/L)</Text>
+                  <Text style={[styles.fareRowLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>Fuel</Text>
                   <Text style={[styles.fareRowValue, { color: colors.onSurface, fontFamily: "Inter_400Regular" }]}>₱{fuelCost.toFixed(2)}</Text>
                 </View>
                 <View style={styles.fareRow}>
@@ -458,11 +478,20 @@ const styles = StyleSheet.create({
   routeMeta: { flexDirection: "row", gap: 20, paddingLeft: 46 },
   metaBlock: { flexDirection: "row", alignItems: "center", gap: 4 },
   metaText: { fontSize: 13, fontFamily: "Inter_500Medium" },
+  bentoGrid: { flexDirection: "row", gap: 10, paddingLeft: 0 },
+  bentoBox: { flex: 1, borderRadius: 16, padding: 16, alignItems: "center", gap: 6 },
+  bentoBoxFare: { flex: 1.5 },
+  bentoBoxSmall: { flex: 1 },
+  bentoSubRow: { flex: 1, flexDirection: "column", gap: 10 },
+  bentoValue: { fontSize: 18 },
+  bentoLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  formulaPill: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, alignSelf: "flex-start" },
+  formulaText: { fontSize: 12, fontFamily: "Inter_400Regular" },
   fareDivider: { height: 1, marginTop: 4 },
   fareTitle: { fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 },
   fareRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   fareRowLabel: { fontSize: 13 },
-  fareRowValue: { fontSize: 13 },
+  fareRowValue: { fontSize: 13, textAlign: "right" },
   fareTotalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1, paddingTop: 8 },
   recenterBtn: {
     position: "absolute",
