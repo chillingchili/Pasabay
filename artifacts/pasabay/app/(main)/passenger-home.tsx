@@ -52,6 +52,7 @@ export default function PassengerHomeScreen() {
   const [sheetContentHeight, setSheetContentHeight] = useState(0);
   const [showFare, setShowFare] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const ctaScale = useRef(new Animated.Value(1)).current;
 
   const FUEL_PRICE = 65;
   const DEF_FUEL_EFF = 20;
@@ -244,27 +245,6 @@ export default function PassengerHomeScreen() {
       )}
 
       <View style={[styles.topArea, { paddingTop: topPad - 4 }]}>
-        <View style={styles.greetingRow}>
-
-          {user?.role === "driver" || isRegisteredDriver ? (
-            <Pressable
-              style={[styles.roleSwitchBtn, { backgroundColor: colors.primary }]}
-              onPress={() => { switchRole("driver"); router.replace("/(main)/driver-home"); }}
-            >
-              <Feather name="refresh-cw" size={12} color="#fff" />
-              <Text style={[styles.roleSwitchText, { fontFamily: "Inter_500Medium" }]}>Switch to Driver</Text>
-            </Pressable>
-          ) : (
-            <Pressable
-              style={[styles.roleSwitchBtn, { backgroundColor: colors.primary }]}
-              onPress={() => router.push("/vehicle-details")}
-            >
-              <Feather name="truck" size={12} color="#fff" />
-              <Text style={[styles.roleSwitchText, { fontFamily: "Inter_500Medium" }]}>Become a driver</Text>
-            </Pressable>
-          )}
-        </View>
-
         <View style={[styles.searchContainer, { backgroundColor: "rgba(255,255,255,0.97)" }]}>
           <View style={[styles.searchDot, { backgroundColor: colors.primary }]} />
           <TextInput
@@ -300,8 +280,9 @@ export default function PassengerHomeScreen() {
       {destination && !activeRide && (
         <View
           onLayout={(e) => setSheetContentHeight(e.nativeEvent.layout.height)}
-          style={[styles.sheetOuter, { paddingBottom: Math.max(insets.bottom + 16, 24) + 60, backgroundColor: "rgba(255,255,255,0.97)" }]}
+          style={[styles.sheetOuter, { paddingBottom: Math.max(insets.bottom + 16, 24) + 60, backgroundColor: "rgba(255,255,255,0.95)" }]}
         >
+          <View style={[styles.glassOverlay, { backgroundColor: colors.primary }]} pointerEvents="none" />
           <View style={styles.sheetInner}>
             <View style={styles.routeStack}>
               <View style={styles.routeRow}>
@@ -386,18 +367,26 @@ export default function PassengerHomeScreen() {
               </>
             )}
 
-            <Button
-              mode="contained"
-              buttonColor={colors.primary}
-              textColor={colors.onPrimary}
-              onPress={handleFindRide}
-              style={{ borderRadius: 14 }}
-              contentStyle={{ height: 50 }}
-              labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 16 }}
-              icon={() => <Feather name="search" size={16} color={colors.onPrimary} />}
-            >
-              Find a Pasabay
-            </Button>
+            <Animated.View style={{ transform: [{ scale: ctaScale }] }}>
+              <Button
+                mode="contained"
+                buttonColor={colors.primary}
+                textColor={colors.onPrimary}
+                onPress={() => {
+                  Animated.sequence([
+                    Animated.spring(ctaScale, { toValue: 0.96, useNativeDriver: true, tension: 150, friction: 5 }),
+                    Animated.spring(ctaScale, { toValue: 1, useNativeDriver: true, tension: 150, friction: 5 }),
+                  ]).start();
+                  handleFindRide();
+                }}
+                style={{ borderRadius: 16, elevation: 10, shadowColor: colors.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12 }}
+                contentStyle={{ height: 50 }}
+                labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 16 }}
+                icon={() => <Feather name="search" size={16} color={colors.onPrimary} />}
+              >
+                Find a Pasabay
+              </Button>
+            </Animated.View>
           </View>
         </View>
       )}
@@ -449,9 +438,7 @@ export default function PassengerHomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   topArea: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, paddingHorizontal: 16, gap: 8 },
-  greetingRow: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center", marginBottom: 2 },
-  roleSwitchBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  roleSwitchText: { fontSize: 12, color: "#fff", textShadowColor: "rgba(0,0,0,0.75)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
+
   searchContainer: { flexDirection: "row", alignItems: "center", borderRadius: 14, padding: 10, paddingLeft: 16, gap: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
   searchDot: { width: 8, height: 8, borderRadius: 4 },
   searchInput: { flex: 1, fontSize: 14, minHeight: 34 },
@@ -462,7 +449,12 @@ const styles = StyleSheet.create({
   fareChip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   fareLabel: { fontSize: 10 },
   fareAmount: { fontSize: 14 },
-  sheetOuter: { position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 5, borderTopLeftRadius: 20, borderTopRightRadius: 20, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 10 },
+  sheetOuter: { position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 5, borderTopLeftRadius: 20, borderTopRightRadius: 20, shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 10 },
+  glassOverlay: {
+    position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+    borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    opacity: 0.03,
+  },
   sheetInner: { paddingHorizontal: 20, paddingTop: 16, gap: 10 },
   fareToggle: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4, paddingVertical: 4 },
   fareToggleText: { fontSize: 12 },
