@@ -33,7 +33,7 @@ export default function PassengerHomeScreen() {
   const { colors } = useTheme();
   const { fs, isSmall } = useScale();
   const dimensions = useWindowDimensions();
-  const { user, driverLocation, switchRole, activeRide, demoPassengerDest, matchConfirmed, paymentMethod } = useApp();
+  const { user, driverLocation, switchRole, activeRide, demoPassengerDest, matchConfirmed, paymentMethod, completedRide } = useApp();
   const { location: userLoc } = useLocation();
   const isRegisteredDriver = user?.driverVerified || user?.vehicle || !!user?.driverStatus;
   const [destination, setDestination] = useState("");
@@ -77,10 +77,10 @@ export default function PassengerHomeScreen() {
   );
 
   useEffect(() => {
-    if (matchConfirmed) {
+    if (matchConfirmed && !completedRide) {
       router.replace("/(main)/match-found");
     }
-  }, [matchConfirmed]);
+  }, [matchConfirmed, completedRide]);
 
   useEffect(() => {
     const pulse = Animated.loop(

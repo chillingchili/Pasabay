@@ -48,6 +48,14 @@ export default function DriverHomeScreen() {
   const [matchRequestTimer, setMatchRequestTimer] = useState(60);
   const [showPassengerList, setShowPassengerList] = useState(true);
   const [chatPassengerName, setChatPassengerName] = useState<string>("Passenger");
+  const [heading, setHeading] = useState(0);
+  const [navStep, setNavStep] = useState(0);
+
+  const WAZE_NAV_STEPS = [
+    { dist: "500 m", text: "Turn left on Gorordo Ave", icon: "chevron-left" as const },
+    { dist: "1.2 km", text: "Continue straight on Gov. M. Cuenco Ave", icon: "chevron-up" as const },
+    { dist: "300 m", text: "Turn right on Gen. Maxilom Ave", icon: "chevron-right" as const },
+  ];
 
   const slideAnim = useRef(new Animated.Value(-160)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -170,6 +178,20 @@ export default function DriverHomeScreen() {
     fetch();
     return () => { cancelled = true; };
   }, [selectedDest, userLoc, activeRide?.passengers, selectedPassengerIndex]);
+
+  // Compute heading from the first segment of the route polyline
+  useEffect(() => {
+    if (!routePolyline || routePolyline.length < 2) return;
+    const p0 = routePolyline[0];
+    const p1 = routePolyline[1];
+    const toRad = (d: number) => (d * Math.PI) / 180;
+    const toDeg = (r: number) => (r * 180) / Math.PI;
+    const dLng = toRad(p1.lng - p0.lng);
+    const y = Math.sin(dLng) * Math.cos(toRad(p1.lat));
+    const x = Math.cos(toRad(p0.lat)) * Math.sin(toRad(p1.lat)) -
+      Math.sin(toRad(p0.lat)) * Math.cos(toRad(p1.lat)) * Math.cos(dLng);
+    setHeading((toDeg(Math.atan2(y, x)) + 360) % 360);
+  }, [routePolyline]);
 
   useEffect(() => {
     if (!demoDriverDest || selectedDest) return;
@@ -328,6 +350,15 @@ export default function DriverHomeScreen() {
   const passengers = activeRide?.passengers ?? [];
   const hasActiveRide = passengers.length > 0;
   const activeCount = passengers.filter(p => p.status !== "completed").length;
+
+  // Cycle Waze nav steps when there are active passengers
+  useEffect(() => {
+    if (activeCount === 0) return;
+    const timer = setInterval(() => {
+      setNavStep(s => (s + 1) % WAZE_NAV_STEPS.length);
+    }, 7000);
+    return () => clearInterval(timer);
+  }, [activeCount]);
   const etaMin = (selectedDest || activePassenger) ? (routeInfo?.durationMin ?? 18) : null;
   const fuelEst = routeInfo ? `₱${Math.max(Math.round(routeInfo.distanceKm * 60 / 10 / 10) * 10, 20)}` : null;
 
@@ -342,6 +373,7 @@ export default function DriverHomeScreen() {
         fitRouteKey={fitRouteKey}
         recenterKey={recenterKey}
         onUserDrag={() => setShowRecenter(true)}
+        heading={heading}
       />
       <LoadingOverlay visible={isLoading} message="Preparing route..." />
 
@@ -461,6 +493,25 @@ export default function DriverHomeScreen() {
         </Animated.View>
       )}
 
+      {activeCount > 0 && (
+        <View style={[styles.wazeNav, { backgroundColor: colors.primary, top: topPad + 60 }]}>
+          <View style={styles.wazeNavBox}>
+            <View style={[styles.wazeNavIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
+              <Feather name={WAZE_NAV_STEPS[navStep].icon} size={24} color="#fff" />
+            </View>
+            <View style={styles.wazeNavText}>
+              <Text style={styles.wazeNavDist}>{WAZE_NAV_STEPS[navStep].dist}</Text>
+              <Text style={styles.wazeNavInst} numberOfLines={1}>{WAZE_NAV_STEPS[navStep].text}</Text>
+            </View>
+          </View>
+          <View style={styles.wazeNavDots}>
+            {WAZE_NAV_STEPS.map((_, i) => (
+              <View key={i} style={[styles.wazeNavDot, { backgroundColor: i === navStep ? "#fff" : "rgba(255,255,255,0.4)" }]} />
+            ))}
+          </View>
+        </View>
+      )}
+
       <ChatSheet
         visible={showChat}
         onClose={() => setShowChat(false)}
@@ -562,6 +613,29 @@ export default function DriverHomeScreen() {
             </>
           ) : activeCount > 0 ? (
             <>
+              <View style={styles.wazeBentoRow}>
+                <View style={[styles.wazeBentoBox, { backgroundColor: colors.tertiaryContainer }]}>
+                  <Feather name="clock" size={16} color={colors.onTertiaryContainer} />
+                  <Text style={[styles.wazeBentoValue, { color: colors.onTertiaryContainer, fontFamily: "Sora_800ExtraBold" }]}>
+                    {etaMin != null ? `${etaMin}` : "—"}
+                  </Text>
+                  <Text style={[styles.wazeBentoLabel, { color: colors.onTertiaryContainer }]}>min</Text>
+                </View>
+                <View style={[styles.wazeBentoBox, { backgroundColor: colors.surfaceVariant }]}>
+                  <Feather name="maximize" size={16} color={colors.onSurfaceVariant} />
+                  <Text style={[styles.wazeBentoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>
+                    {routeInfo ? `${routeInfo.distanceKm.toFixed(1)}` : "—"}
+                  </Text>
+                  <Text style={[styles.wazeBentoLabel, { color: colors.onSurfaceVariant }]}>km</Text>
+                </View>
+                <View style={[styles.wazeBentoBox, { backgroundColor: colors.surfaceVariant }]}>
+                  <Feather name="star" size={16} color={colors.onSurfaceVariant} />
+                  <Text style={[styles.wazeBentoValue, { color: colors.onSurface, fontFamily: "Sora_800ExtraBold" }]}>
+                    {activeCount}
+                  </Text>
+                  <Text style={[styles.wazeBentoLabel, { color: colors.onSurfaceVariant }]}>riders</Text>
+                </View>
+              </View>
               <Pressable
                 style={[styles.collapseBar, { backgroundColor: colors.primary }]}
                 onPress={() => setShowPassengerList(v => !v)}
@@ -683,6 +757,19 @@ export default function DriverHomeScreen() {
                   </Pressable>
                 </View>
               )}
+
+              <Button
+                mode="contained"
+                buttonColor={colors.tertiary}
+                textColor="#fff"
+                onPress={handleCompleteRide}
+                style={{ borderRadius: 16 }}
+                contentStyle={{ height: 50 }}
+                labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 16 }}
+                icon={() => <Feather name="flag" size={16} color="#fff" />}
+              >
+                End Ride
+              </Button>
             </>
           ) : null}
         </View>
@@ -886,5 +973,75 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
+  },
+  wazeNav: {
+    position: "absolute",
+    left: 12,
+    right: 12,
+    zIndex: 50,
+    borderRadius: 14,
+    padding: 14,
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 12,
+    borderWidth: 2,
+    borderColor: "rgba(0,0,0,0.2)",
+  },
+  wazeNavBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  wazeNavIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  wazeNavText: {
+    flex: 1,
+  },
+  wazeNavDist: {
+    fontSize: 26,
+    color: "#fff",
+    fontFamily: "Sora_800ExtraBold",
+    letterSpacing: -0.5,
+  },
+  wazeNavInst: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.85)",
+    fontFamily: "Inter_600SemiBold",
+  },
+  wazeNavDots: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 6,
+  },
+  wazeNavDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  wazeBentoRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  wazeBentoBox: {
+    flex: 1,
+    borderRadius: 14,
+    padding: 12,
+    alignItems: "center",
+    gap: 4,
+  },
+  wazeBentoValue: {
+    fontSize: 20,
+  },
+  wazeBentoLabel: {
+    fontSize: 10,
+    fontFamily: "Inter_400Regular",
   },
 });

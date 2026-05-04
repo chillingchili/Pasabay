@@ -18,6 +18,7 @@ interface RealMapProps {
   onMapPress?: (event: any) => void;
   style?: object;
   bottomInset?: number;
+  heading?: number;
 }
 
 export function RealMap(props: RealMapProps) {

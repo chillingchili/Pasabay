@@ -14,7 +14,7 @@ export default function MatchingScreen() {
   const colors = useColors();
   const { fs, isSmall } = useScale();
   const dimensions = useWindowDimensions();
-  const { matchConfirmed, clearMatchConfirmed } = useApp();
+  const { matchConfirmed, clearMatchConfirmed, completedRide } = useApp();
   const params = useLocalSearchParams<{
     destination?: string;
     pickupLat?: string; pickupLng?: string;
@@ -120,11 +120,11 @@ export default function MatchingScreen() {
   }, [restartKey]);
 
   useEffect(() => {
-    if (matchConfirmed && !didNavigate.current) {
+    if (matchConfirmed && !completedRide && !didNavigate.current) {
       didNavigate.current = true;
       router.replace("/(main)/match-found");
     }
-  }, [matchConfirmed]);
+  }, [matchConfirmed, completedRide]);
 
   useEffect(() => {
     const off = onMatchDeclined(() => {

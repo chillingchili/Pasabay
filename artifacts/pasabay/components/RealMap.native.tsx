@@ -24,6 +24,7 @@ interface RealMapProps {
   onMapPress?: (event: any) => void;
   style?: object;
   bottomInset?: number;
+  heading?: number;
 }
 
 const DEFAULT_REGION: Region = {
