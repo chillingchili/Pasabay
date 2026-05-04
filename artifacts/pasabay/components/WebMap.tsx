@@ -216,7 +216,7 @@ export function WebMap({
     if (pickupPoint) addMarker(L, pickupPoint.lat, pickupPoint.lng, "#3B82F6", 30, 14);
     if (dropoffPoint) addMarker(L, dropoffPoint.lat, dropoffPoint.lng, "#EF4444", 30, 14);
     if (driverLocation) addCarMarker(L, driverLocation.lat, driverLocation.lng, "#0D9E75", 36);
-    if (userLocation) addCarMarker(L, userLocation.lat, userLocation.lng, "#0D9E75", 32);
+    if (userLocation) addMarker(L, userLocation.lat, userLocation.lng, "#0D9E75", 26, 12);
 
     if (showRoute && routePolyline && routePolyline.length > 1) {
       const coords = routePolyline.map((p) => [p.lat, p.lng]);
