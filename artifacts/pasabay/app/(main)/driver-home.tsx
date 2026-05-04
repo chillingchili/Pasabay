@@ -700,21 +700,6 @@ export default function DriverHomeScreen() {
                       <Text style={[styles.cancelBtnText, { color: colors.error }]}>End Route</Text>
                     </Pressable>
                   )}
-
-                  {activeCount > 0 && (
-                    <Button
-                      mode="contained"
-                      buttonColor={colors.tertiary}
-                      textColor="#fff"
-                      onPress={handleCompleteRide}
-                      style={{ borderRadius: 16 }}
-                      contentStyle={{ height: 50 }}
-                      labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 16 }}
-                      icon={() => <Feather name="flag" size={16} color="#fff" />}
-                    >
-                      End Ride
-                    </Button>
-                  )}
                 </>
               )}
             </>
