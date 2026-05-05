@@ -524,27 +524,27 @@ export default function DriverHomeScreen() {
           {!isOnline && selectedDest ? (
             <>
               <View style={styles.wazeBentoRow}>
-                <View style={[styles.wazeBentoBox, { backgroundColor: colors.tertiaryContainer }]}>
+                <Surface style={[styles.wazeBentoBox, { backgroundColor: colors.tertiaryContainer }]}>
                   <Feather name="clock" size={16} color={colors.onTertiaryContainer} />
                   <Text style={[styles.wazeBentoValue, { color: colors.onTertiaryContainer, fontFamily: "Sora_800ExtraBold" }]}>
                     {etaMin != null ? `${etaMin}` : "—"}
                   </Text>
                   <Text style={[styles.wazeBentoLabel, { color: colors.onTertiaryContainer }]}>min</Text>
-                </View>
-                <View style={[styles.wazeBentoBox, { backgroundColor: colors.surfaceVariant }]}>
+                </Surface>
+                <Surface style={[styles.wazeBentoBox, { backgroundColor: colors.surfaceVariant }]}>
                   <Feather name="maximize" size={16} color={colors.onSurfaceVariant} />
                   <Text style={[styles.wazeBentoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>
                     {routeInfo ? `${routeInfo.distanceKm.toFixed(1)}` : "—"}
                   </Text>
                   <Text style={[styles.wazeBentoLabel, { color: colors.onSurfaceVariant }]}>km</Text>
-                </View>
-                <View style={[styles.wazeBentoBox, { backgroundColor: colors.primaryContainer }]}>
+                </Surface>
+                <Surface style={[styles.wazeBentoBox, { backgroundColor: colors.primaryContainer }]}>
                   <Feather name="trending-up" size={16} color={colors.primary} />
                   <Text style={[styles.wazeBentoValue, { color: colors.primary, fontFamily: "Sora_800ExtraBold" }]}>
                     {estEarnings ?? "—"}
                   </Text>
                   <Text style={[styles.wazeBentoLabel, { color: colors.primary }]}>Est. Earnings</Text>
-                </View>
+                </Surface>
               </View>
               <Button
                 mode="contained"
@@ -569,27 +569,27 @@ export default function DriverHomeScreen() {
               </View>
               <Pressable onPress={() => setShowPassengerList(v => !v)} style={{ gap: 10 }}>
                 <View style={styles.wazeBentoRow}>
-                  <View style={[styles.wazeBentoBox, { backgroundColor: colors.tertiaryContainer }]}>
+                  <Surface style={[styles.wazeBentoBox, { backgroundColor: colors.tertiaryContainer }]}>
                     <Feather name="clock" size={16} color={colors.onTertiaryContainer} />
                     <Text style={[styles.wazeBentoValue, { color: colors.onTertiaryContainer, fontFamily: "Sora_800ExtraBold" }]}>
                       {etaMin != null ? `${etaMin}` : "—"}
                     </Text>
                     <Text style={[styles.wazeBentoLabel, { color: colors.onTertiaryContainer }]}>min</Text>
-                  </View>
-                  <View style={[styles.wazeBentoBox, { backgroundColor: colors.surfaceVariant }]}>
+                  </Surface>
+                  <Surface style={[styles.wazeBentoBox, { backgroundColor: colors.surfaceVariant }]}>
                     <Feather name="maximize" size={16} color={colors.onSurfaceVariant} />
                     <Text style={[styles.wazeBentoValue, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>
                       {routeInfo ? `${routeInfo.distanceKm.toFixed(1)}` : "—"}
                     </Text>
                     <Text style={[styles.wazeBentoLabel, { color: colors.onSurfaceVariant }]}>km</Text>
-                  </View>
-                  <View style={[styles.wazeBentoBox, { backgroundColor: colors.surfaceVariant }]}>
+                  </Surface>
+                  <Surface style={[styles.wazeBentoBox, { backgroundColor: colors.surfaceVariant }]}>
                     <FontAwesome name="users" size={14} color={colors.onSurfaceVariant} />
                     <Text style={[styles.wazeBentoValue, { color: colors.onSurface, fontFamily: "Sora_800ExtraBold" }]}>
                       {activeCount}
                     </Text>
                     <Text style={[styles.wazeBentoLabel, { color: colors.onSurfaceVariant }]}>riders</Text>
-                  </View>
+                  </Surface>
                 </View>
                 <View style={{ alignItems: "center" }}>
                   <Feather name={showPassengerList ? "chevron-down" : "chevron-up"} size={20} color={colors.onSurfaceVariant} />

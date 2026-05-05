@@ -94,16 +94,8 @@ export function PreMatchModal({
                   </View>
                 </View>
 
-                <View style={styles.summaryRow}>
-                  <SummaryItem label="Fare" value={`₱${fareEstimate.toFixed(0)}`} colors={colors} />
-                  <View style={[styles.summaryDivider, { backgroundColor: colors.outline }]} />
-                  <SummaryItem label="Distance" value={`${distanceKm.toFixed(1)} km`} colors={colors} />
-                  <View style={[styles.summaryDivider, { backgroundColor: colors.outline }]} />
-                  <SummaryItem label="ETA" value={`~${etaMin} min`} colors={colors} />
-                </View>
-                <Text variant="labelLarge" style={[styles.fareBreakdown, { color: colors.onSurfaceDisabled, fontFamily: "Inter_400Regular", fontSize: 11 }]}>
-                  Est. fuel (₱65/L ÷ 20km/L × {distanceKm.toFixed(1)}km) + ₱8 fee = ₱{fareEstimate.toFixed(0)}
-                </Text>
+                
+                
               </Card.Content>
             </Card>
 

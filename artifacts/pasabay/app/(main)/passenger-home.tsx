@@ -59,7 +59,7 @@ export default function PassengerHomeScreen() {
   const MATCHING_FEE = 8;
   const eff = activeRide?.driver.vehicle?.fuelEfficiency ?? DEF_FUEL_EFF;
   const fuelCost = distanceKm * FUEL_PRICE / eff;
-  const totalFare = Math.max(15, Math.round((fuelCost + MATCHING_FEE) * 100) / 100);
+  const totalFare = parseFloat((fuelCost + MATCHING_FEE).toFixed(2));
 
   const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
 
@@ -124,13 +124,13 @@ export default function PassengerHomeScreen() {
         const dist = route.distanceKm;
         setDistanceKm(dist);
         setEtaMin(Math.round(route.durationSec / 60));
-        const fare = Math.max(15, Math.round((dist * 65 / 20 + 8) * 100) / 100);
+        const fare = Math.max(15, parseFloat(((dist * 65 / 20 + 8) * 100 / 100).toFixed(2)));
         setFareEstimate(fare);
       } else {
         const dist = haversineKm(pickupPoint, dropoffPoint);
         setDistanceKm(dist);
         setEtaMin(Math.round(dist * 3));
-        const fare = Math.max(15, Math.round((dist * 65 / 20 + 8) * 100) / 100);
+        const fare = Math.max(15, parseFloat(((dist * 65 / 20 + 8) * 100 / 100).toFixed(2)));
         setFareEstimate(fare);
       }
     };
@@ -262,9 +262,15 @@ export default function PassengerHomeScreen() {
             onFocus={() => setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           />
-          <Pressable style={[styles.searchBtn, { backgroundColor: colors.primary }]}>
-            <Feather name="search" size={16} color="#fff" />
-          </Pressable>
+          {destination ? (
+            <Pressable style={[styles.searchBtn, { backgroundColor: colors.error }]} onPress={() => setDestination("")}>
+              <Feather name="x" size={16} color="#fff" />
+            </Pressable>
+          ) : (
+            <Pressable style={[styles.searchBtn, { backgroundColor: colors.primary }]}>
+              <Feather name="search" size={16} color="#fff" />
+            </Pressable>
+          )}
         </View>
 
         {showSuggestions && (
@@ -314,10 +320,39 @@ export default function PassengerHomeScreen() {
 
             <View style={[styles.bentoGrid, { marginBottom: 10 }]}>
               <Surface style={[styles.bentoBox, styles.bentoBoxFare, { backgroundColor: colors.tertiaryContainer }]}>
-                <Text style={[styles.bentoValue, { color: colors.onTertiaryContainer, fontFamily: "Sora_800ExtraBold" }]}>
-                  ₱{totalFare.toFixed(2)}
-                </Text>
-                <Text style={[styles.bentoLabel, { color: colors.onTertiaryContainer }]}>Est. Fare</Text>
+                {!showFare ? (
+                  <View style={styles.fareCollapsedWrapper}>
+                    <Text style={[styles.bentoValue, { color: colors.onTertiaryContainer, fontFamily: "Sora_800ExtraBold", textAlign: "center" }]}>
+                      ₱{totalFare.toFixed(2)}
+                    </Text>
+                    <Text style={[styles.bentoLabel, { color: colors.onTertiaryContainer }]}>Est. Fare</Text>
+                    <Pressable onPress={() => setShowFare(true)} style={styles.fareExpandBtn}>
+                      <Text style={[styles.fareExpandText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>See breakdown</Text>
+                      <Feather name="chevron-down" size={12} color={colors.primary} />
+                    </Pressable>
+                  </View>
+                ) : (
+                  <View style={styles.fareBreakdownWrapper}>
+                    <View style={styles.fareBreakdownHeader}>
+                      <Text style={[styles.bentoLabel, { color: colors.onTertiaryContainer }]}>Fare Breakdown</Text>
+                      <Pressable onPress={() => setShowFare(false)}>
+                        <Feather name="x" size={14} color={colors.onTertiaryContainer} />
+                      </Pressable>
+                    </View>
+                    <View style={styles.fareBreakdownRow}>
+                      <Text style={[styles.fareRowLabel, { color: colors.onTertiaryContainer, fontFamily: "Inter_400Regular" }]}>Fuel</Text>
+                      <Text style={[styles.fareRowValue, { color: colors.onTertiaryContainer, fontFamily: "Inter_400Regular" }]}>₱{fuelCost.toFixed(2)}</Text>
+                    </View>
+                    <View style={styles.fareBreakdownRow}>
+                      <Text style={[styles.fareRowLabel, { color: colors.onTertiaryContainer, fontFamily: "Inter_400Regular" }]}>Matching fee</Text>
+                      <Text style={[styles.fareRowValue, { color: colors.onTertiaryContainer, fontFamily: "Inter_400Regular" }]}>₱{MATCHING_FEE.toFixed(2)}</Text>
+                    </View>
+                    <View style={[styles.fareBreakdownTotal, { borderTopColor: colors.onTertiaryContainer }]}>
+                      <Text style={[styles.fareRowLabel, { color: colors.onTertiaryContainer, fontFamily: "Inter_600SemiBold" }]}>Total</Text>
+                      <Text style={[styles.fareRowValue, { color: colors.onTertiaryContainer, fontFamily: "Sora_800ExtraBold" }]}>₱{totalFare.toFixed(2)}</Text>
+                    </View>
+                  </View>
+                )}
               </Surface>
               <View style={styles.bentoSubRow}>
                 <Surface style={[styles.bentoBox, styles.bentoBoxSmall, { backgroundColor: colors.surfaceVariant }]}>
@@ -337,38 +372,9 @@ export default function PassengerHomeScreen() {
               </View>
             </View>
 
-            <Pressable onPress={() => setShowFare(!showFare)} style={styles.fareToggle}>
-              <Text style={[styles.fareToggleText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>
-                {showFare ? "Hide fare breakdown" : "Show fare breakdown"}
-              </Text>
-              <Feather name={showFare ? "chevron-up" : "chevron-down"} size={14} color={colors.primary} />
-            </Pressable>
+            
 
-            {showFare && (
-              <>
-                <View style={[styles.fareDivider, { backgroundColor: colors.outline }]} />
-                <Text style={[styles.fareTitle, { color: colors.onSurfaceVariant, fontFamily: "Inter_600SemiBold" }]}>Estimated fare</Text>
-                <View style={[styles.formulaPill, { backgroundColor: colors.surfaceVariant }]}>
-                  <Text style={[styles.formulaText, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>
-                    {distanceKm.toFixed(1)}km × ₱{FUEL_PRICE}/L ÷ {eff}km/L
-                  </Text>
-                </View>
-                <View style={styles.fareRow}>
-                  <Text style={[styles.fareRowLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>Fuel</Text>
-                  <Text style={[styles.fareRowValue, { color: colors.onSurface, fontFamily: "Inter_400Regular" }]}>₱{fuelCost.toFixed(2)}</Text>
-                </View>
-                <View style={styles.fareRow}>
-                  <Text style={[styles.fareRowLabel, { color: colors.onSurfaceVariant, fontFamily: "Inter_400Regular" }]}>Matching fee</Text>
-                  <Text style={[styles.fareRowValue, { color: colors.onSurface, fontFamily: "Inter_400Regular" }]}>₱{MATCHING_FEE.toFixed(2)}</Text>
-                </View>
-                <View style={[styles.fareTotalRow, { borderTopColor: colors.outline }]}>
-                  <Text style={[styles.fareRowLabel, { color: colors.onSurface, fontFamily: "Inter_600SemiBold" }]}>Total</Text>
-                  <Text style={[styles.fareRowValue, { color: colors.onSurface, fontFamily: "Sora_800ExtraBold" }]}>₱{totalFare.toFixed(2)}</Text>
-                </View>
-              </>
-            )}
-
-            <Animated.View style={{ transform: [{ scale: ctaScale }], marginTop: 10 }}>
+            <Animated.View style={{ transform: [{ scale: ctaScale }], marginTop: 2 }}>
               <Button
                 mode="contained"
                 buttonColor={colors.primary}
@@ -456,6 +462,13 @@ const styles = StyleSheet.create({
   sheetInner: { paddingHorizontal: 20, paddingTop: 16, gap: 10 },
   fareToggle: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4, paddingVertical: 4 },
   fareToggleText: { fontSize: 12 },
+  fareExpandBtn: { flexDirection: "row", alignItems: "center", gap: 2, marginTop: 2 },
+  fareExpandText: { fontSize: 10 },
+  fareBreakdownWrapper: { flex: 1, justifyContent: "center", alignSelf: "stretch" },
+  fareCollapsedWrapper: { flex: 1, justifyContent: "center", alignItems: "center", alignSelf: "stretch" },
+  fareBreakdownHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", alignSelf: "stretch", marginBottom: 6 },
+  fareBreakdownRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", alignSelf: "stretch", marginVertical: 2 },
+  fareBreakdownTotal: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", alignSelf: "stretch", borderTopWidth: 1, paddingTop: 6, marginTop: 4 },
   infoLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
   infoValue: { fontSize: 16, fontFamily: "Inter_600SemiBold" },
   routeRow: { flexDirection: "row", alignItems: "center", gap: 10 },
@@ -469,8 +482,8 @@ const styles = StyleSheet.create({
   metaBlock: { flexDirection: "row", alignItems: "center", gap: 4 },
   metaText: { fontSize: 13, fontFamily: "Inter_500Medium" },
   bentoGrid: { flexDirection: "row", gap: 10, paddingLeft: 0, alignItems: "stretch" },
-  bentoBox: { flex: 1, borderRadius: 16, padding: 16, alignItems: "center", gap: 6 },
-  bentoBoxFare: { flex: 1.5, justifyContent: "center" },
+  bentoBox: { flex: 1, borderRadius: 16, padding: 12, alignItems: "center", gap: 4 },
+  bentoBoxFare: { flex: 1.5, alignItems: "center", justifyContent: "center" },
   bentoBoxSmall: { flex: 1 },
   bentoSubRow: { flex: 1, flexDirection: "column", gap: 10 },
   bentoValue: { fontSize: 18 },

@@ -1,10 +1,10 @@
 import React, { useEffect, useRef } from "react";
-import { Alert, Animated, Platform, StyleSheet, View } from "react-native";
+import { Alert, Animated, Image, Platform, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
 import { useTheme } from "react-native-paper";
-import { Card, Button, Text, Divider } from "react-native-paper";
+import { Button, Text } from "react-native-paper";
 import { Feather } from "@expo/vector-icons";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { useApp } from "@/context/AppContext";
@@ -18,27 +18,6 @@ function GoogleIcon() {
       <Path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
       <Path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
     </Svg>
-  );
-}
-
-function TeaserCard() {
-  const { colors } = useTheme();
-  return (
-    <Card mode="outlined" style={{ backgroundColor: colors.surfaceVariant, borderRadius: 14, width: 280 }}>
-      <Card.Content style={{ padding: 16 }}>
-        <View style={styles.teaserRow}>
-          <View style={[styles.teaserDot, { backgroundColor: colors.primary }]} />
-          <Text variant="labelLarge" style={[styles.teaserLabel, { color: colors.onSurfaceVariant }]}>From</Text>
-          <Text variant="bodyLarge" style={[styles.teaserValue, { color: colors.onSurface }]}>Your location</Text>
-        </View>
-        <Divider style={{ backgroundColor: colors.outlineVariant, marginLeft: 18 }} />
-        <View style={styles.teaserRow}>
-          <View style={[styles.teaserDot, { backgroundColor: colors.primary }]} />
-          <Text variant="labelLarge" style={[styles.teaserLabel, { color: colors.onSurfaceVariant }]}>To</Text>
-          <Text variant="bodyLarge" style={[styles.teaserValue, { color: colors.onSurfaceDisabled }]}>Where to?</Text>
-        </View>
-      </Card.Content>
-    </Card>
   );
 }
 
@@ -91,9 +70,11 @@ export default function WelcomeScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
       <Animated.View style={[styles.heroSection, { paddingTop: s(60), paddingHorizontal: isSmall ? 16 : 24, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-        <View style={[styles.illustration, { marginBottom: s(20) }]}>
-          <TeaserCard />
-        </View>
+        <Image
+          source={require("@/assets/images/logo.png")}
+          style={{ width: s(120), height: s(120), marginBottom: s(20) }}
+          resizeMode="contain"
+        />
 
         <Text variant="displaySmall" style={[styles.title, { fontSize: fs(28), color: colors.onSurface }]}>
           Your campus, your commute
@@ -174,10 +155,6 @@ const styles = StyleSheet.create({
   illustration: {},
   title: { fontWeight: "800", letterSpacing: -0.5, textAlign: "center" },
   subtitle: { fontSize: 15, textAlign: "center", lineHeight: 22, marginTop: 8 },
-  teaserRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8 },
-  teaserDot: { width: 8, height: 8, borderRadius: 4 },
-  teaserLabel: { fontSize: 12, width: 40 },
-  teaserValue: { fontSize: 14, flex: 1 },
   buttons: { paddingHorizontal: 24, gap: 10 },
   btnFull: { borderRadius: 14 },
   btnContent: { height: 52 },

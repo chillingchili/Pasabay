@@ -20,6 +20,9 @@ export default function ProfileScreen() {
   const [showHelp, setShowHelp] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
+  const [showEmergencyContact, setShowEmergencyContact] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const topPad = Platform.OS === "web" ? Math.min(dimensions.width * 0.17, 67) : insets.top;
   const isWeb = Platform.OS === "web";
@@ -111,15 +114,15 @@ export default function ProfileScreen() {
         <Section title="Account" colors={colors}>
           <MenuItem icon="user" label="Edit profile" colors={colors} onPress={() => { setEditNameValue(user?.name ?? ""); setShowEditName(true); }} />
           <MenuItem icon="credit-card" label="Payment methods" colors={colors} onPress={() => setShowPayment(true)} value={paymentMethod ? paymentMethod === "gcash" ? "GCash" : "Card" : undefined} />
-          <MenuItem icon="shield" label="Verification status" colors={colors} onPress={() => {}} badge="Done" badgeColor={colors.successLight} badgeTextColor={colors.success} />
+          <MenuItem icon="shield" label="Verification status" colors={colors} onPress={() => setShowVerification(true)} badge="Done" badgeColor={colors.successLight} badgeTextColor={colors.success} />
         </Section>
 
         <Section title="Safety" colors={colors}>
-          <MenuItem icon="phone" label="Emergency contact" colors={colors} onPress={() => Alert.alert("Coming Soon", "Emergency contact feature will be available in a future update.")} />
+          <MenuItem icon="phone" label="Emergency contact" colors={colors} onPress={() => setShowEmergencyContact(true)} />
         </Section>
 
         <Section title="App" colors={colors}>
-          <MenuItem icon="settings" label="Settings" colors={colors} onPress={() => Alert.alert("Coming Soon", "Settings will be available in a future update.")} />
+          <MenuItem icon="settings" label="Settings" colors={colors} onPress={() => setShowSettings(true)} />
           <MenuItem icon="help-circle" label="Help & Support" colors={colors} onPress={() => setShowHelp(true)} />
           <MenuItem icon="info" label="About Pasabay" colors={colors} onPress={() => setShowAbout(true)} />
         </Section>
@@ -245,6 +248,123 @@ export default function ProfileScreen() {
             <View style={styles.alertBtns}>
               <Pressable style={[styles.alertBtnConfirm, { backgroundColor: colors.primary }]} onPress={() => setShowAbout(false)}>
                 <Text style={[styles.alertBtnConfirmText, { fontFamily: "Inter_600SemiBold" }]}>Close</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Verification Status Modal */}
+      <Modal visible={showVerification} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.alertBox, webAlertBoxStyle, { backgroundColor: colors.background }]}>
+            <Text style={[styles.alertTitle, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>Verification status</Text>
+            {[
+              { label: "Email verified", icon: "check-circle" },
+              { label: "USC ID verified", icon: "check-circle" },
+              { label: "Driver verified", icon: "check-circle" },
+              { label: "Phone verified", icon: "check-circle" },
+            ].map((item, index) => (
+              <View key={index} style={[styles.verificationItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={[styles.verificationIcon, { backgroundColor: colors.successLight }]}>
+                  <Feather name={item.icon as any} size={18} color={colors.success} />
+                </View>
+                <Text style={[styles.verificationLabel, { color: colors.foreground, fontFamily: "Inter_500Medium", flex: 1 }]}>{item.label}</Text>
+                <Text style={[styles.verificationStatus, { color: colors.success, fontFamily: "Inter_400Regular" }]}>Confirmed</Text>
+              </View>
+            ))}
+            <View style={styles.alertBtns}>
+              <Pressable style={[styles.alertBtnConfirm, { backgroundColor: colors.primary }]} onPress={() => setShowVerification(false)}>
+                <Text style={[styles.alertBtnConfirmText, { fontFamily: "Inter_600SemiBold" }]}>Close</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Emergency Contact Modal */}
+      <Modal visible={showEmergencyContact} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.alertBox, webAlertBoxStyle, { backgroundColor: colors.background }]}>
+            <Text style={[styles.alertTitle, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>Emergency contact</Text>
+            <Text style={[styles.alertMsg, { color: colors.textSecondary, fontFamily: "Inter_400Regular" }]}>
+              This contact will be notified in case of emergencies during your rides.
+            </Text>
+            <Text style={[styles.inputLabel, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>Contact name</Text>
+            <TextInput
+              style={[styles.nameInput, { backgroundColor: colors.card, color: colors.foreground, borderColor: colors.border, fontFamily: "Inter_400Regular" }]}
+              placeholder="e.g. Maria Dela Cruz"
+              placeholderTextColor={colors.textMuted}
+            />
+            <Text style={[styles.inputLabel, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>Phone number</Text>
+            <TextInput
+              style={[styles.nameInput, { backgroundColor: colors.card, color: colors.foreground, borderColor: colors.border, fontFamily: "Inter_400Regular" }]}
+              placeholder="e.g. 0912 345 6789"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="phone-pad"
+            />
+            <Text style={[styles.inputLabel, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>Relationship</Text>
+            <TextInput
+              style={[styles.nameInput, { backgroundColor: colors.card, color: colors.foreground, borderColor: colors.border, fontFamily: "Inter_400Regular" }]}
+              placeholder="e.g. Mother"
+              placeholderTextColor={colors.textMuted}
+            />
+            <View style={styles.alertBtns}>
+              <Pressable style={[styles.alertBtnCancel, { borderColor: colors.border }]} onPress={() => setShowEmergencyContact(false)}>
+                <Text style={[styles.alertBtnCancelText, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>Cancel</Text>
+              </Pressable>
+              <Pressable style={[styles.alertBtnConfirm, { backgroundColor: colors.primary }]} onPress={() => setShowEmergencyContact(false)}>
+                <Text style={[styles.alertBtnConfirmText, { fontFamily: "Inter_600SemiBold" }]}>Save</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Settings Modal */}
+      <Modal visible={showSettings} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.alertBox, webAlertBoxStyle, { backgroundColor: colors.background }]}>
+            <Text style={[styles.alertTitle, { color: colors.foreground, fontFamily: "Sora_800ExtraBold" }]}>Settings</Text>
+            <View style={[styles.settingsItem, { borderColor: colors.border }]}>
+              <View style={[styles.settingsIcon, { backgroundColor: colors.primaryLight }]}>
+                <Feather name="bell" size={16} color={colors.primary} />
+              </View>
+              <Text style={[styles.settingsLabel, { color: colors.foreground, fontFamily: "Inter_400Regular", flex: 1 }]}>Push notifications</Text>
+              <View style={[styles.toggle, { backgroundColor: colors.primary }]}>
+                <View style={[styles.toggleKnob, { backgroundColor: "#fff" }]} />
+              </View>
+            </View>
+            <View style={[styles.settingsItem, { borderColor: colors.border }]}>
+              <View style={[styles.settingsIcon, { backgroundColor: colors.primaryLight }]}>
+                <Feather name="message-circle" size={16} color={colors.primary} />
+              </View>
+              <Text style={[styles.settingsLabel, { color: colors.foreground, fontFamily: "Inter_400Regular", flex: 1 }]}>Ride updates</Text>
+              <View style={[styles.toggle, { backgroundColor: colors.primary }]}>
+                <View style={[styles.toggleKnob, { backgroundColor: "#fff" }]} />
+              </View>
+            </View>
+            <View style={[styles.settingsItem, { borderColor: colors.border }]}>
+              <View style={[styles.settingsIcon, { backgroundColor: colors.primaryLight }]}>
+                <Feather name="shield" size={16} color={colors.primary} />
+              </View>
+              <Text style={[styles.settingsLabel, { color: colors.foreground, fontFamily: "Inter_400Regular", flex: 1 }]}>Location tracking</Text>
+              <View style={[styles.toggle, { backgroundColor: colors.primary }]}>
+                <View style={[styles.toggleKnob, { backgroundColor: "#fff" }]} />
+              </View>
+            </View>
+            <View style={[styles.settingsItem, { borderColor: colors.border }]}>
+              <View style={[styles.settingsIcon, { backgroundColor: colors.destructiveLight }]}>
+                <Feather name="moon" size={16} color={colors.destructive} />
+              </View>
+              <Text style={[styles.settingsLabel, { color: colors.foreground, fontFamily: "Inter_400Regular", flex: 1 }]}>Dark mode</Text>
+              <View style={[styles.toggle, { backgroundColor: colors.textMuted }]}>
+                <View style={[styles.toggleKnob, { backgroundColor: "#fff", alignSelf: "flex-end" }]} />
+              </View>
+            </View>
+            <View style={styles.alertBtns}>
+              <Pressable style={[styles.alertBtnConfirm, { backgroundColor: colors.primary }]} onPress={() => setShowSettings(false)}>
+                <Text style={[styles.alertBtnConfirmText, { fontFamily: "Inter_600SemiBold" }]}>Done</Text>
               </Pressable>
             </View>
           </View>
@@ -393,4 +513,14 @@ const styles = StyleSheet.create({
   paymentOption: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderRadius: 12, borderWidth: 1, marginTop: 6 },
   paymentIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   paymentOptionLabel: { fontSize: 15, flex: 1 },
+  verificationItem: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderRadius: 12, borderWidth: 1, marginTop: 6 },
+  verificationIcon: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  verificationLabel: { fontSize: 14 },
+  verificationStatus: { fontSize: 12, marginTop: 2 },
+  inputLabel: { fontSize: 13, marginTop: 10, marginBottom: -4 },
+  settingsItem: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderBottomWidth: 1 },
+  settingsIcon: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  settingsLabel: { fontSize: 14 },
+  toggle: { width: 44, height: 24, borderRadius: 12, padding: 2, justifyContent: "center" },
+  toggleKnob: { width: 20, height: 20, borderRadius: 10 },
 });
