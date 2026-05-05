@@ -69,10 +69,10 @@ export default function WelcomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
-      <Animated.View style={[styles.heroSection, { paddingTop: s(60), paddingHorizontal: isSmall ? 16 : 24, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+      <Animated.View style={[styles.heroSection, { paddingTop: s(20), paddingHorizontal: isSmall ? 16 : 24, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         <Image
           source={require("@/assets/images/logo.png")}
-          style={{ width: s(120), height: s(120), marginBottom: s(20) }}
+          style={{ width: s(200), height: s(200), marginBottom: -s(16) }}
           resizeMode="contain"
         />
 

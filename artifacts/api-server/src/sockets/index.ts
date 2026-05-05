@@ -281,20 +281,7 @@ export function registerSocketHandlers(io: Server) {
 
         if (existingRides.length > 0) {
           rideId = existingRides[0].id;
-
-          const existingPassengers = await db.select().from(ridePassengersTable)
-            .where(eq(ridePassengersTable.rideId, rideId));
-
-          const allDistances = existingPassengers.map(p => p.distanceKm);
-          allDistances.push(data.distanceKm);
-
-          const recalculated = calculatePassengerFare({
-            passengerDistanceKm: data.distanceKm,
-            allPassengerDistancesKm: allDistances,
-            totalRouteDistanceKm: route.distanceKm,
-            fuelPricePhp: 65,
-          });
-          finalFare = recalculated.fare;
+          const rideFuelPrice = existingRides[0].fuelPricePhp ?? 65;
 
           await db.insert(ridePassengersTable).values({
             rideId,
@@ -302,16 +289,43 @@ export function registerSocketHandlers(io: Server) {
             pickupName: data.pickupName, pickupLat: data.pickupLat, pickupLng: data.pickupLng,
             dropoffName: data.dropoffName, dropoffLat: data.dropoffLat, dropoffLng: data.dropoffLng,
             distanceKm: data.distanceKm,
-            fare: finalFare,
+            fare: 0,
             matchingFee: MATCHING_FEE,
             status: "matched",
           });
+
+          const allPassengers = await db.select().from(ridePassengersTable)
+            .where(eq(ridePassengersTable.rideId, rideId));
+
+          const allDistances = allPassengers.map(p => p.distanceKm);
+
+          for (const passenger of allPassengers) {
+            const recalculated = calculatePassengerFare({
+              passengerDistanceKm: passenger.distanceKm,
+              allPassengerDistancesKm: allDistances,
+              totalRouteDistanceKm: route.distanceKm,
+              fuelPricePhp: rideFuelPrice,
+            });
+            await db.update(ridePassengersTable)
+              .set({ fare: recalculated.fare })
+              .where(eq(ridePassengersTable.id, passenger.id));
+            io.to(`user:${passenger.passengerId}`).emit("fare:updated", {
+              rideId,
+              fare: recalculated.fare,
+              matchingFee: MATCHING_FEE,
+              total: recalculated.fare + MATCHING_FEE,
+              note: "Fare recalculated — another passenger joined your ride",
+            });
+          }
+
+          const newPassengerEntry = allPassengers.find(p => p.passengerId === data.passengerId);
+          finalFare = newPassengerEntry?.fare ?? 0;
 
           await db.update(activeRoutesTable)
             .set({ availableSeats: String(availableSeats - 1), updatedAt: new Date() })
             .where(eq(activeRoutesTable.id, session.routeId));
 
-          console.log("[MATCH-STAGE-4a] Driver accepted — added to existing ride:", { rideId, passengerId: data.passengerId, remainingSeats: availableSeats - 1 });
+          console.log("[MATCH-STAGE-4a] Driver accepted — added to existing ride:", { rideId, passengerId: data.passengerId, remainingSeats: availableSeats - 1, allPassengers: allPassengers.length });
         } else {
           const [ride] = await db.insert(ridesTable).values({
             routeId: session.routeId,
