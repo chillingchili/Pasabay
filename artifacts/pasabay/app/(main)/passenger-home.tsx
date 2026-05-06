@@ -374,11 +374,24 @@ export default function PassengerHomeScreen() {
 
             
 
+            {destination && !paymentMethod && !activeRide && (
+              <Pressable
+                style={[styles.paymentWarning, { backgroundColor: colors.errorContainer }]}
+                onPress={() => router.push("/(main)/profile")}
+              >
+                <Feather name="alert-circle" size={14} color={colors.error} />
+                <Text style={[styles.paymentWarningText, { color: colors.error, fontFamily: "Inter_500Medium" }]}>
+                  No payment method set — tap to add one
+                </Text>
+                <Feather name="chevron-right" size={14} color={colors.error} />
+              </Pressable>
+            )}
+
             <Animated.View style={{ transform: [{ scale: ctaScale }], marginTop: 2 }}>
               <Button
                 mode="contained"
-                buttonColor={colors.primary}
-                textColor={colors.onPrimary}
+                buttonColor={paymentMethod ? colors.primary : colors.surfaceVariant}
+                textColor={paymentMethod ? colors.onPrimary : colors.onSurfaceVariant}
                 onPress={() => {
                   Animated.sequence([
                     Animated.spring(ctaScale, { toValue: 0.96, useNativeDriver: true, tension: 150, friction: 5 }),
@@ -389,7 +402,8 @@ export default function PassengerHomeScreen() {
                 style={{ borderRadius: 16, elevation: 10, shadowColor: colors.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12 }}
                 contentStyle={{ height: 50 }}
                 labelStyle={{ fontFamily: "Inter_600SemiBold", fontSize: 16 }}
-                icon={() => <Feather name="search" size={16} color={colors.onPrimary} />}
+                icon={() => <Feather name="search" size={16} color={paymentMethod ? colors.onPrimary : colors.onSurfaceVariant} />}
+                disabled={!paymentMethod}
               >
                 Find a Pasabay
               </Button>
@@ -490,6 +504,16 @@ const styles = StyleSheet.create({
   bentoLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
   formulaPill: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, alignSelf: "flex-start" },
   formulaText: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  paymentWarning: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginBottom: 2,
+  },
+  paymentWarningText: { flex: 1, fontSize: 13 },
   fareDivider: { height: 1, marginTop: 4 },
   fareTitle: { fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 },
   fareRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
