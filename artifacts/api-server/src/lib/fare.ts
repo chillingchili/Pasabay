@@ -51,7 +51,7 @@ export function validateFuelEfficiency(
   driverInput: number,
   make: string,
   year: number
-): { valid: boolean; approved: number } {
+): { valid: boolean; warning?: string; approved: number } {
   const BASE_EFFICIENCY = 20;
   const TOLERANCE = 0.35;
 
@@ -62,7 +62,11 @@ export function validateFuelEfficiency(
   if (driverInput >= low && driverInput <= high) {
     return { valid: true, approved: driverInput };
   }
-  return { valid: false, approved: estimatedEfficiency };
+  return {
+    valid: false,
+    warning: `Your input (${driverInput} km/L) differs significantly from the typical ${estimatedEfficiency.toFixed(1)} km/L for a ${year} ${make}. Using your value — please verify.`,
+    approved: driverInput,
+  };
 }
 
 function estimateVehicleEfficiency(make: string, year: number): number {

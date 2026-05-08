@@ -1,14 +1,13 @@
 import { useApp } from "@/context/AppContext";
 import { Redirect } from "expo-router";
 import React, { useEffect, useRef } from "react";
-import { Animated, StyleSheet, View } from "react-native";
+import { Animated, Image, StyleSheet, View } from "react-native";
 import { Text, useTheme } from "react-native-paper";
-import { PasabayLogo } from "@/components/PasabayLogo";
 import { useScale } from "@/hooks/useScale";
 
 export default function SplashScreen() {
   const { isLoading, isAuthenticated, user } = useApp();
-  const { s, fs } = useScale();
+  const { s } = useScale();
   const { colors } = useTheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
@@ -33,7 +32,11 @@ export default function SplashScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.primary }]}>
       <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }], gap: s(12) }]}>
-        <PasabayLogo size={s(80)} color="#fff" />
+        <Image
+          source={require("@/assets/images/logo.png")}
+          style={{ width: s(120), height: s(120) }}
+          resizeMode="contain"
+        />
         <Text variant="displaySmall" style={styles.name}>Pasabay</Text>
         <Text variant="bodyLarge" style={styles.tagline}>Campus Commute</Text>
         <View style={styles.dots}>

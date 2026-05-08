@@ -75,8 +75,8 @@ export default function VehicleDetailsScreen() {
           fuelEfficiency: fuelEff ? parseFloat(fuelEff) : undefined,
         }),
       });
-      if (fuelEff && response?.fuelEfficiencyApproved === false && response?.fuelEfficiency != null) {
-        Alert.alert("Fuel Efficiency Adjusted", `Adjusted to ${Number(response.fuelEfficiency).toFixed(1)} km/L based on vehicle specs.`);
+      if (fuelEff && response?.fuelEfficiencyApproved === false && response?.fuelEfficiencyWarning) {
+        Alert.alert("Check Fuel Efficiency", response.fuelEfficiencyWarning);
       }
       await refreshUser();
       await safeSetItem("pasabay_driver_verified", JSON.stringify({

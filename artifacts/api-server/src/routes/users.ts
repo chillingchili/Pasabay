@@ -82,9 +82,10 @@ router.post("/driver", requireAuth, async (req, res) => {
     vehicle,
     fuelEfficiencyApproved: valid,
     fuelEfficiency: approved,
+    fuelEfficiencyWarning: !valid ? `Your fuel efficiency (${rawEfficiency} km/L) differs from typical values for this vehicle. Using your value — please verify it's correct.` : undefined,
     message: valid
       ? "Vehicle registered. Driver license under review."
-      : `Fuel efficiency adjusted to estimated value: ${approved.toFixed(1)} km/L`,
+      : "Vehicle registered. Note: fuel efficiency differs from typical estimate — please verify.",
   });
 });
 
