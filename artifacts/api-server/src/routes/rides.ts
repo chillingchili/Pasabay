@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, vehiclesTable, ridesTable, ridePassengersTable, activeRoutesTable } from "@workspace/db/schema";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, inArray } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth.js";
-import { calculatePassengerFare } from "../lib/fare.js";
+import { calculatePassengerFare, DEFAULT_FUEL_EFFICIENCY_KM_PER_L, DEFAULT_FUEL_PRICE_PHP_PER_L } from "../lib/fare.js";
 import { getRoute, projectPointOnPolyline, polylineDistanceKm, haversineKm } from "../lib/osrm.js";
 import type { RoutePoint } from "../lib/osrm.js";
 import { z } from "zod/v4";
@@ -133,6 +133,12 @@ router.post("/request", requireAuth, async (req, res) => {
 
   console.log("[MATCH-STAGE-2] Active routes after capacity filter:", activeRoutesWithCapacity.length);
 
+  const driverIds = [...new Set(activeRoutesWithCapacity.map(r => r.driverId))];
+  const driverVehicles = await db.select({ userId: vehiclesTable.userId, fuelEfficiency: vehiclesTable.fuelEfficiency })
+    .from(vehiclesTable)
+    .where(inArray(vehiclesTable.userId, driverIds));
+  const vehicleMap = new Map(driverVehicles.map(v => [v.userId, v.fuelEfficiency ?? DEFAULT_FUEL_EFFICIENCY_KM_PER_L]));
+
   const MATCH_RADIUS_KM = radiusKm ?? 0.3;
   const matches: { routeId: string; driverId: string; pickupSnapped: RoutePoint; dropoffSnapped: RoutePoint; passengerDistKm: number; fare: number; matchingFee: number; pickupEtaMin: number }[] = [];
 
@@ -155,12 +161,14 @@ router.post("/request", requireAuth, async (req, res) => {
 
     const passengerDistKm = polylineDistanceKm(polyline, pickupProj.segmentIndex, dropoffProj.segmentIndex);
     const totalRouteDistKm = route.distanceKm;
+    const driverFuelEfficiency = vehicleMap.get(route.driverId) ?? DEFAULT_FUEL_EFFICIENCY_KM_PER_L;
 
     const fareResult = calculatePassengerFare({
       passengerDistanceKm: passengerDistKm,
       allPassengerDistancesKm: [passengerDistKm],
       totalRouteDistanceKm: totalRouteDistKm,
-      fuelPricePhp: route.id ? 65 : 65,
+      fuelPricePhp: DEFAULT_FUEL_PRICE_PHP_PER_L,
+      fuelEfficiencyKmPerL: driverFuelEfficiency,
     });
 
     const currentPos: RoutePoint = { lat: route.currentLat, lng: route.currentLng };

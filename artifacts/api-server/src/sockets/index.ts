@@ -4,7 +4,7 @@ import { activeRoutesTable, ridesTable, ridePassengersTable, usersTable, vehicle
 import { eq, and, sql } from "drizzle-orm";
 import { verifyAccessToken } from "../lib/jwt.js";
 import { getRoute, projectPointOnPolyline, polylineDistanceKm, haversineKm } from "../lib/osrm.js";
-import { calculatePassengerFare, MATCHING_FEE_PHP as MATCHING_FEE } from "../lib/fare.js";
+import { calculatePassengerFare, MATCHING_FEE_PHP as MATCHING_FEE, DEFAULT_FUEL_EFFICIENCY_KM_PER_L } from "../lib/fare.js";
 import type { RoutePoint } from "../lib/osrm.js";
 import { logger } from "../lib/logger.js";
 
@@ -305,6 +305,7 @@ export function registerSocketHandlers(io: Server) {
               allPassengerDistancesKm: allDistances,
               totalRouteDistanceKm: route.distanceKm,
               fuelPricePhp: rideFuelPrice,
+              fuelEfficiencyKmPerL: vehicle?.fuelEfficiency ?? DEFAULT_FUEL_EFFICIENCY_KM_PER_L,
             });
             await db.update(ridePassengersTable)
               .set({ fare: recalculated.fare })
